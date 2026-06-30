@@ -67,20 +67,30 @@ function bindEvents() {
   els.fileInput.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    let base64;
     try {
-      const base64 = await fileToBase64(file);
+      base64 = await fileToBase64(file);
       await loadWorkbook(base64);
-      state.workbookBase64 = base64;
-      localStorage.setItem(STORAGE_KEY, base64);
-      localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
-      state.sourceName = `현재 데이터: ${file.name}`;
-      state.currentFileName = file.name;
-      showToast("현재 데이터가 교체 저장되었습니다. GitHub 저장을 진행합니다.");
-      render();
-      await saveCurrentWorkbookToGitHub();
     } catch (error) {
       console.error(error);
       showToast("업로드한 엑셀을 읽지 못했습니다.");
+      event.target.value = "";
+      return;
+    }
+
+    state.workbookBase64 = base64;
+    localStorage.setItem(STORAGE_KEY, base64);
+    localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
+    state.sourceName = `현재 데이터: ${file.name}`;
+    state.currentFileName = file.name;
+    showToast("현재 데이터가 교체 저장되었습니다. GitHub 저장을 진행합니다.");
+    render();
+
+    try {
+      await saveCurrentWorkbookToGitHub();
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || "GitHub 저장 중 오류가 발생했습니다.");
     } finally {
       event.target.value = "";
     }
@@ -526,13 +536,38 @@ async function saveCurrentWorkbookToGitHub() {
     return;
   }
 
-  const token = localStorage.getItem(GITHUB_TOKEN_KEY) || window.prompt("GitHub 저장을 위해 토큰을 입력해 주세요. 입력한 토큰은 이 브라우저에 저장됩니다.");
+  let token = localStorage.getItem(GITHUB_TOKEN_KEY);
+  let isSavedToken = Boolean(token);
+  if (!token) token = window.prompt("GitHub 저장을 위해 토큰을 입력해 주세요. 입력한 토큰은 이 브라우저에 저장됩니다.");
   if (!token) {
     showToast("브라우저에는 저장되었습니다. 공유하려면 GitHub 저장을 완료해 주세요.");
     return;
   }
   localStorage.setItem(GITHUB_TOKEN_KEY, token);
 
+  let result = await putWorkbookToGitHub(token);
+  if ((result.status === 401 || result.status === 403) && isSavedToken) {
+    localStorage.removeItem(GITHUB_TOKEN_KEY);
+    token = window.prompt("저장된 GitHub 토큰이 만료되었거나 권한이 없습니다. 새 토큰을 입력해 주세요.");
+    if (!token) {
+      throw new Error("GitHub 저장 실패: 새 토큰이 입력되지 않았습니다.");
+    }
+    localStorage.setItem(GITHUB_TOKEN_KEY, token);
+    result = await putWorkbookToGitHub(token);
+  }
+
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) localStorage.removeItem(GITHUB_TOKEN_KEY);
+    throw new Error(result.message);
+  }
+
+  state.sourceName = `공유 데이터: ${state.currentFileName || "current.xlsx"}`;
+  localStorage.setItem(SOURCE_KEY, state.sourceName);
+  showToast("GitHub에 공유 엑셀을 저장했습니다. 잠시 후 다른 사용자에게도 반영됩니다.");
+  render();
+}
+
+async function putWorkbookToGitHub(token) {
   const apiBase = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}`;
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -546,7 +581,11 @@ async function saveCurrentWorkbookToGitHub() {
     const payload = await existing.json();
     sha = payload.sha;
   } else if (existing.status !== 404) {
-    throw new Error(`GitHub 파일 확인 실패: ${existing.status}`);
+    return {
+      ok: false,
+      status: existing.status,
+      message: `GitHub 파일 확인 실패: ${existing.status}`,
+    };
   }
 
   const messageName = state.currentFileName || "current.xlsx";
@@ -565,17 +604,15 @@ async function saveCurrentWorkbookToGitHub() {
   });
 
   if (!saveResponse.ok) {
-    if (saveResponse.status === 401 || saveResponse.status === 403) {
-      localStorage.removeItem(GITHUB_TOKEN_KEY);
-    }
     const text = await saveResponse.text();
-    throw new Error(`GitHub 저장 실패: ${saveResponse.status} ${text}`);
+    return {
+      ok: false,
+      status: saveResponse.status,
+      message: `GitHub 저장 실패: ${saveResponse.status} ${text}`,
+    };
   }
 
-  state.sourceName = `공유 데이터: ${messageName}`;
-  localStorage.setItem(SOURCE_KEY, state.sourceName);
-  showToast("GitHub에 공유 엑셀을 저장했습니다. 잠시 후 다른 사용자에게도 반영됩니다.");
-  render();
+  return { ok: true, status: saveResponse.status };
 }
 
 function rowsMatchingSearch() {
