@@ -413,7 +413,7 @@ button:disabled {
 
 .date-tabs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .table-wrap {
@@ -502,6 +502,12 @@ tbody tr:nth-child(even) td {
   font-size: 14px;
 }
 
+@media (max-width: 1180px) {
+  .date-tabs {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 820px) {
   .app-shell {
     width: min(100vw - 24px, 1480px);
@@ -545,6 +551,16 @@ tbody tr:nth-child(even) td {
   }
 
   .timeline-grid {
-    grid-template-columns: repeat(20, 66px);
+    grid-template-columns: repeat(30, 44px);
+    overflow-x: auto;
+  }
+
+  .timeline-months {
+    grid-template-columns: repeat(30, 44px);
+    overflow-x: auto;
+  }
+
+  .date-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
