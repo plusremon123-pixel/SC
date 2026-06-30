@@ -14,6 +14,9 @@ const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
 const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "과목"];
+const TIMELINE_DAYS = 30;
+const DEFAULT_QA_DAYS = 5;
+const DEFAULT_STAGE_DAYS = 5;
 const KOREA_HOLIDAYS_2026 = new Set([
   "2026-01-01",
   "2026-02-16",
@@ -62,6 +65,7 @@ const els = {
   dateTabs: document.querySelector("#dateTabs"),
   releaseTimelineSection: document.querySelector("#releaseTimelineSection"),
   releaseTimeline: document.querySelector("#releaseTimeline"),
+  timelineMonths: document.querySelector("#timelineMonths"),
   timelineRange: document.querySelector("#timelineRange"),
   timelineSummary: document.querySelector("#timelineSummary"),
   timelineModeButtons: document.querySelectorAll("[data-timeline-mode]"),
@@ -121,11 +125,14 @@ function bindEvents() {
     localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
     state.sourceName = `현재 데이터: ${file.name}`;
     state.currentFileName = file.name;
+    state.timelineMarks = createDefaultTimelineMarks();
+    localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
     showToast("현재 데이터가 교체 저장되었습니다. Supabase 저장을 진행합니다.");
     render();
 
     try {
       await saveCurrentWorkbookToSupabase();
+      await saveTimelineToSupabase("기본 체크 일정도 저장했습니다.");
     } catch (error) {
       console.error(error);
       showToast(error.message || "Supabase 저장 중 오류가 발생했습니다.");
@@ -369,6 +376,7 @@ function renderReleaseTimeline() {
   els.releaseTimeline.innerHTML = "";
   if (!state.selectedDate || state.selectedDate === ALL_DATES) {
     els.releaseTimelineSection.hidden = true;
+    els.timelineMonths.innerHTML = "";
     els.timelineSummary.innerHTML = "";
     return;
   }
@@ -377,6 +385,7 @@ function renderReleaseTimeline() {
   const days = releaseTimelineDays(state.selectedDate);
   const marks = timelineMarksForSelectedDate();
   els.timelineRange.textContent = `${formatDateWithDay(days[0])} ~ ${formatDateWithDay(days[days.length - 1])}`;
+  renderTimelineMonths(days);
 
   const fragment = document.createDocumentFragment();
   days.forEach((date, index) => {
@@ -389,7 +398,7 @@ function renderReleaseTimeline() {
     button.disabled = Boolean(blockedReason);
     button.dataset.date = date;
     button.title = `${formatDateWithDay(date)} ${blockedReason || markLabel(mark)}`;
-    button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span>`;
+    button.innerHTML = `<span class="day">${Number(date.slice(8, 10))}일</span>`;
     button.addEventListener("click", async () => {
       if (isOpenDate) {
         showToast("오픈일은 마지막 칸에 자동 표시됩니다.");
@@ -440,6 +449,23 @@ function timelineSummaryItem(days, mark, label) {
   const text = `${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
 
   return `<span class="timeline-summary-item"><i class="summary-dot ${mark}"></i><strong>${label}</strong>: ${text}</span>`;
+}
+
+function renderTimelineMonths(days) {
+  const groups = [];
+  days.forEach((date) => {
+    const month = `${Number(date.slice(5, 7))}월`;
+    const latest = groups[groups.length - 1];
+    if (latest?.month === month) {
+      latest.count += 1;
+    } else {
+      groups.push({ month, count: 1 });
+    }
+  });
+
+  els.timelineMonths.innerHTML = groups
+    .map((group) => `<span style="--month-span: ${group.count}">${group.month}</span>`)
+    .join("");
 }
 
 function renderPrimaryTabs() {
@@ -684,9 +710,9 @@ function formatDateDotWithDay(date) {
 function releaseTimelineDays(openDate) {
   const [year, month, day] = openDate.split("-").map(Number);
   const end = new Date(year, month - 1, day);
-  return Array.from({ length: 20 }, (_, index) => {
+  return Array.from({ length: TIMELINE_DAYS }, (_, index) => {
     const date = new Date(end);
-    date.setDate(end.getDate() - (19 - index));
+    date.setDate(end.getDate() - (TIMELINE_DAYS - 1 - index));
     return dateToYmd(date);
   });
 }
@@ -714,10 +740,10 @@ async function loadSharedTimeline() {
   }
 }
 
-async function saveTimelineToSupabase() {
+async function saveTimelineToSupabase(message = "체크 설정을 저장했습니다.") {
   const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, state.timelineMarks);
   if (!result.ok) throw new Error(result.message);
-  showToast("체크 설정을 저장했습니다.");
+  showToast(message);
 }
 
 function migrateTimelineMarks(value) {
@@ -745,6 +771,34 @@ function normalizeTimelineMarksForDate(openDate, marks) {
       && (mark === "qa" || mark === "stage")
     ))
   );
+}
+
+function createDefaultTimelineMarks() {
+  const marksByOpenDate = {};
+  unique(state.rows.map((row) => row.__openDate)).forEach((openDate) => {
+    const workdays = workdaysBefore(openDate, DEFAULT_QA_DAYS + DEFAULT_STAGE_DAYS);
+    const marks = {};
+    workdays.slice(0, DEFAULT_QA_DAYS).forEach((date) => {
+      marks[date] = "qa";
+    });
+    workdays.slice(DEFAULT_QA_DAYS, DEFAULT_QA_DAYS + DEFAULT_STAGE_DAYS).forEach((date) => {
+      marks[date] = "stage";
+    });
+    marksByOpenDate[openDate] = normalizeTimelineMarksForDate(openDate, marks);
+  });
+  return marksByOpenDate;
+}
+
+function workdaysBefore(openDate, count) {
+  const [year, month, day] = openDate.split("-").map(Number);
+  const cursor = new Date(year, month - 1, day);
+  const dates = [];
+  while (dates.length < count) {
+    cursor.setDate(cursor.getDate() - 1);
+    const date = dateToYmd(cursor);
+    if (!timelineBlockedReason(date)) dates.unshift(date);
+  }
+  return dates;
 }
 
 function timelineBlockedReason(date) {
