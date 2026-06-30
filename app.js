@@ -496,21 +496,26 @@ async function copyTextToClipboard(text) {
 
 function buildQaSummaryText() {
   const rows = rowsMatchingSearch().filter((row) => row.__openDate === state.selectedDate);
+  const stageRange = timelineCopyRange("stage") || "설정 없음";
   const lines = [
-    `오픈 : ${formatDateDotWithDay(state.selectedDate)}`,
-    timelineCopyLine("stage", "스테이징"),
+    "[일정]",
+    `오픈일 : ${formatDateDotWithDay(state.selectedDate)}`,
+    `스테이징 예정 기간 : ${stageRange}`,
+    "QA 요청 기간 : 스테이징 기간 동일",
+    "",
+    "[과목별 오픈 차시]",
     ...subjectCopyLines(rows),
-  ].filter(Boolean);
+  ];
 
   return lines.join("\n");
 }
 
-function timelineCopyLine(mark, label) {
+function timelineCopyRange(mark) {
   const days = releaseTimelineDays(state.selectedDate);
   const marks = timelineMarksForSelectedDate();
   const marked = days.slice(0, -1).filter((date) => marks[date] === mark);
   if (!marked.length) return "";
-  return `${label} : ${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
+  return `${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
 }
 
 function subjectCopyLines(rows) {
