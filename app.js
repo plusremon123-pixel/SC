@@ -1,14 +1,13 @@
 const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
-const GITHUB_TOKEN_KEY = "schedule-card-github-token-v1";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
-const GITHUB_OWNER = "plusremon123-pixel";
-const GITHUB_REPO = "SC";
-const GITHUB_BRANCH = "main";
-const GITHUB_DATA_PATH = "data/current.xlsx";
+const SUPABASE_URL = "https://vmebzlinboxmgcrrorwv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR";
+const SUPABASE_BUCKET = "schedule-data";
+const SUPABASE_DATA_PATH = "current.xlsx";
 const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
@@ -90,14 +89,14 @@ function bindEvents() {
     localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
     state.sourceName = `현재 데이터: ${file.name}`;
     state.currentFileName = file.name;
-    showToast("현재 데이터가 교체 저장되었습니다. GitHub 저장을 진행합니다.");
+    showToast("현재 데이터가 교체 저장되었습니다. Supabase 저장을 진행합니다.");
     render();
 
     try {
-      await saveCurrentWorkbookToGitHub();
+      await saveCurrentWorkbookToSupabase();
     } catch (error) {
       console.error(error);
-      showToast(error.message || "GitHub 저장 중 오류가 발생했습니다.");
+      showToast(error.message || "Supabase 저장 중 오류가 발생했습니다.");
     } finally {
       event.target.value = "";
     }
@@ -181,7 +180,7 @@ async function loadWorkbook(base64) {
 
 async function loadSharedWorkbook() {
   try {
-    const response = await fetch(`./${GITHUB_DATA_PATH}?v=${Date.now()}`, { cache: "no-store" });
+    const response = await fetch(supabasePublicUrl(), { cache: "no-store" });
     if (!response.ok) return false;
 
     const buffer = await response.arrayBuffer();
@@ -547,77 +546,32 @@ function dateLabel(date) {
   return date === ALL_DATES ? "전체" : date;
 }
 
-async function saveCurrentWorkbookToGitHub() {
+async function saveCurrentWorkbookToSupabase() {
   if (!state.workbookBase64) {
     showToast("먼저 엑셀을 업로드해 주세요.");
     return;
   }
 
-  let token = localStorage.getItem(GITHUB_TOKEN_KEY);
-  let isSavedToken = Boolean(token);
-  if (!token) token = window.prompt("GitHub 저장을 위해 토큰을 입력해 주세요. 입력한 토큰은 이 브라우저에 저장됩니다.");
-  if (!token) {
-    showToast("브라우저에는 저장되었습니다. 공유하려면 GitHub 저장을 완료해 주세요.");
-    return;
-  }
-  localStorage.setItem(GITHUB_TOKEN_KEY, token);
-
-  let result = await putWorkbookToGitHub(token);
-  if ((result.status === 401 || result.status === 403) && isSavedToken) {
-    localStorage.removeItem(GITHUB_TOKEN_KEY);
-    token = window.prompt("저장된 GitHub 토큰이 만료되었거나 권한이 없습니다. 새 토큰을 입력해 주세요.");
-    if (!token) {
-      throw new Error("GitHub 저장 실패: 새 토큰이 입력되지 않았습니다.");
-    }
-    localStorage.setItem(GITHUB_TOKEN_KEY, token);
-    result = await putWorkbookToGitHub(token);
-  }
-
-  if (!result.ok) {
-    if (result.status === 401 || result.status === 403) localStorage.removeItem(GITHUB_TOKEN_KEY);
-    throw new Error(result.message);
-  }
+  const result = await putWorkbookToSupabase();
+  if (!result.ok) throw new Error(result.message);
 
   state.sourceName = `공유 데이터: ${state.currentFileName || "current.xlsx"}`;
   localStorage.setItem(SOURCE_KEY, state.sourceName);
-  showToast("GitHub에 공유 엑셀을 저장했습니다. 잠시 후 다른 사용자에게도 반영됩니다.");
+  showToast("Supabase에 공유 엑셀을 저장했습니다. 다른 사용자에게도 반영됩니다.");
   render();
 }
 
-async function putWorkbookToGitHub(token) {
-  const apiBase = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}`;
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-
-  let sha;
-  const existing = await fetch(`${apiBase}?ref=${GITHUB_BRANCH}`, { headers });
-  if (existing.ok) {
-    const payload = await existing.json();
-    sha = payload.sha;
-  } else if (existing.status !== 404) {
-    return {
-      ok: false,
-      status: existing.status,
-      message: `GitHub 파일 확인 실패: ${existing.status}`,
-    };
-  }
-
-  const messageName = state.currentFileName || "current.xlsx";
-  const saveResponse = await fetch(apiBase, {
-    method: "PUT",
+async function putWorkbookToSupabase() {
+  const bytes = base64ToArrayBuffer(state.workbookBase64);
+  const saveResponse = await fetch(supabaseObjectUrl(), {
+    method: "POST",
     headers: {
-      ...headers,
-      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "x-upsert": "true",
     },
-    body: JSON.stringify({
-      branch: GITHUB_BRANCH,
-      message: `Update shared workbook: ${messageName}`,
-      content: state.workbookBase64,
-      sha,
-    }),
+    body: bytes,
   });
 
   if (!saveResponse.ok) {
@@ -625,11 +579,19 @@ async function putWorkbookToGitHub(token) {
     return {
       ok: false,
       status: saveResponse.status,
-      message: `GitHub 저장 실패: ${saveResponse.status} ${text}`,
+      message: `Supabase 저장 실패: ${saveResponse.status} ${text}`,
     };
   }
 
   return { ok: true, status: saveResponse.status };
+}
+
+function supabaseObjectUrl() {
+  return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${SUPABASE_DATA_PATH}`;
+}
+
+function supabasePublicUrl() {
+  return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${SUPABASE_DATA_PATH}?v=${Date.now()}`;
 }
 
 function rowsMatchingSearch() {
