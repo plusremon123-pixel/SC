@@ -26,7 +26,6 @@ const state = {
 
 const els = {
   fileInput: document.querySelector("#fileInput"),
-  githubSaveButton: document.querySelector("#githubSaveButton"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
   sourceMeta: document.querySelector("#sourceMeta"),
@@ -83,13 +82,6 @@ function bindEvents() {
     } finally {
       event.target.value = "";
     }
-  });
-
-  els.githubSaveButton.addEventListener("click", () => {
-    saveCurrentWorkbookToGitHub().catch((error) => {
-      console.error(error);
-      showToast("GitHub 저장 중 오류가 발생했습니다.");
-    });
   });
 
   els.downloadButton.addEventListener("click", () => {
@@ -395,7 +387,6 @@ function renderTable() {
   els.tableTitle.textContent = tablePath.filter(Boolean).join(" > ") || "조회 결과";
   els.rowCount.textContent = `${rows.length.toLocaleString("ko-KR")}건`;
   els.downloadButton.disabled = state.rows.length === 0;
-  els.githubSaveButton.disabled = !state.workbookBase64;
 
   els.tableHeader.innerHTML = "";
   els.tableBody.innerHTML = "";
