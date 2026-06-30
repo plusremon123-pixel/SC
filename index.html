@@ -42,6 +42,22 @@
         <div id="dateTabs" class="tabs date-tabs"></div>
       </section>
 
+      <section id="releaseTimelineSection" class="timeline-section" hidden>
+        <div class="timeline-head">
+          <div>
+            <div class="section-title">서비스 체크</div>
+            <div id="timelineRange" class="timeline-range"></div>
+          </div>
+          <div class="timeline-legend" aria-label="체크 상태 선택">
+            <button type="button" class="timeline-mode qa active" data-timeline-mode="qa">검증계</button>
+            <button type="button" class="timeline-mode stage" data-timeline-mode="stage">스테이징</button>
+            <button type="button" class="timeline-mode open" data-timeline-mode="open">오픈</button>
+            <button type="button" class="timeline-mode clear" data-timeline-mode="">지우기</button>
+          </div>
+        </div>
+        <div id="releaseTimeline" class="timeline-grid"></div>
+      </section>
+
       <div class="depth-row">
         <section class="tab-section">
           <div id="primaryTabTitle" class="section-title">구분</div>

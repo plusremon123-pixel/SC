@@ -190,6 +190,108 @@ button:disabled {
   padding: 14px 16px 12px;
 }
 
+.timeline-section {
+  margin-top: 14px;
+  padding: 14px 16px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.timeline-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.timeline-range {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.timeline-mode {
+  height: 34px;
+  border-radius: 6px;
+  background: #fff;
+  font-weight: 700;
+}
+
+.timeline-mode.active {
+  outline: 3px solid rgba(23, 107, 135, 0.25);
+}
+
+.timeline-mode.qa,
+.timeline-cell.qa {
+  background: #6f35a5;
+  color: #fff;
+}
+
+.timeline-mode.stage,
+.timeline-cell.stage {
+  background: #06a8de;
+  color: #fff;
+}
+
+.timeline-mode.open,
+.timeline-cell.open {
+  background: #e11d25;
+  color: #fff;
+}
+
+.timeline-mode.clear {
+  border-color: var(--line);
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(20, minmax(58px, 1fr));
+  border: 1px solid #222;
+  overflow-x: auto;
+}
+
+.timeline-cell {
+  min-height: 52px;
+  padding: 6px 4px;
+  border-right: 1px solid #222;
+  background: #fff;
+  text-align: center;
+  cursor: pointer;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.timeline-cell:last-child {
+  border-right: 0;
+}
+
+.timeline-cell .day {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.timeline-cell .month {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.timeline-cell .d-day {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
 .depth-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -358,5 +460,18 @@ tbody tr:nth-child(even) td {
 
   .depth-row {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-head {
+    display: block;
+  }
+
+  .timeline-legend {
+    justify-content: flex-start;
+    margin-top: 10px;
+  }
+
+  .timeline-grid {
+    grid-template-columns: repeat(20, 66px);
   }
 }

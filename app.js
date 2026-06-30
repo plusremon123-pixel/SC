@@ -1,6 +1,7 @@
 const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
+const TIMELINE_KEY = "schedule-card-release-timeline-v1";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
@@ -23,6 +24,8 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   tabOrder: "category-first",
+  timelineMode: "qa",
+  timelineMarks: {},
   search: "",
 };
 
@@ -33,6 +36,10 @@ const els = {
   sourceMeta: document.querySelector("#sourceMeta"),
   summary: document.querySelector("#summary"),
   dateTabs: document.querySelector("#dateTabs"),
+  releaseTimelineSection: document.querySelector("#releaseTimelineSection"),
+  releaseTimeline: document.querySelector("#releaseTimeline"),
+  timelineRange: document.querySelector("#timelineRange"),
+  timelineModeButtons: document.querySelectorAll("[data-timeline-mode]"),
   primaryTabs: document.querySelector("#primaryTabs"),
   secondaryTabs: document.querySelector("#secondaryTabs"),
   primaryTabTitle: document.querySelector("#primaryTabTitle"),
@@ -56,6 +63,7 @@ async function init() {
   state.workbookBase64 = localStorage.getItem(STORAGE_KEY);
   state.sourceName = localStorage.getItem(SOURCE_KEY) || "";
   state.tabOrder = localStorage.getItem(TAB_ORDER_KEY) || "category-first";
+  state.timelineMarks = readTimelineMarks();
   const sharedLoaded = await loadSharedWorkbook();
   if (!sharedLoaded && state.workbookBase64) {
     await loadWorkbook(state.workbookBase64);
@@ -123,6 +131,13 @@ function bindEvents() {
       state.selectedCategory = "";
       state.selectedSubject = "";
       render();
+    });
+  });
+
+  els.timelineModeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      state.timelineMode = button.dataset.timelineMode;
+      renderTimelineMode();
     });
   });
 }
@@ -284,9 +299,16 @@ function render() {
     : "저장된 데이터 없음";
   renderOrderControl();
   renderDateTabs();
+  renderReleaseTimeline();
   renderPrimaryTabs();
   renderSecondaryTabs();
   renderTable();
+}
+
+function renderTimelineMode() {
+  els.timelineModeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.timelineMode === state.timelineMode);
+  });
 }
 
 function isCategoryFirst() {
@@ -321,6 +343,42 @@ function renderDateTabs() {
       render();
     }, null, date));
   });
+}
+
+function renderReleaseTimeline() {
+  renderTimelineMode();
+  els.releaseTimeline.innerHTML = "";
+  if (!state.selectedDate || state.selectedDate === ALL_DATES) {
+    els.releaseTimelineSection.hidden = true;
+    return;
+  }
+
+  els.releaseTimelineSection.hidden = false;
+  const days = releaseTimelineDays(state.selectedDate);
+  els.timelineRange.textContent = `${formatDateWithDay(days[0])} ~ ${formatDateWithDay(days[days.length - 1])}`;
+
+  const fragment = document.createDocumentFragment();
+  days.forEach((date, index) => {
+    const mark = state.timelineMarks[date] || "";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `timeline-cell${mark ? ` ${mark}` : ""}`;
+    button.dataset.date = date;
+    button.title = `${formatDateWithDay(date)} ${markLabel(mark)}`;
+    const dDay = index === days.length - 1 ? "오픈" : `D-${days.length - 1 - index}`;
+    button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span><span class="d-day">${dDay}</span>`;
+    button.addEventListener("click", () => {
+      if (state.timelineMode) {
+        state.timelineMarks[date] = state.timelineMode;
+      } else {
+        delete state.timelineMarks[date];
+      }
+      localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
+      renderReleaseTimeline();
+    });
+    fragment.appendChild(button);
+  });
+  els.releaseTimeline.appendChild(fragment);
 }
 
 function renderPrimaryTabs() {
@@ -552,6 +610,31 @@ function formatDateWithDay(date) {
   const parsed = new Date(year, month - 1, day);
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   return `${date} (${weekdays[parsed.getDay()]})`;
+}
+
+function releaseTimelineDays(openDate) {
+  const [year, month, day] = openDate.split("-").map(Number);
+  const end = new Date(year, month - 1, day);
+  return Array.from({ length: 20 }, (_, index) => {
+    const date = new Date(end);
+    date.setDate(end.getDate() - (19 - index));
+    return dateToYmd(date);
+  });
+}
+
+function readTimelineMarks() {
+  try {
+    return JSON.parse(localStorage.getItem(TIMELINE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function markLabel(mark) {
+  if (mark === "qa") return "검증계";
+  if (mark === "stage") return "스테이징";
+  if (mark === "open") return "오픈";
+  return "";
 }
 
 async function saveCurrentWorkbookToSupabase() {
