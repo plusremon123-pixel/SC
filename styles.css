@@ -125,8 +125,7 @@ button:disabled {
   min-width: min(520px, 100%);
 }
 
-.search span,
-.section-title {
+.search span {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
@@ -354,10 +353,6 @@ button:disabled {
 
 .depth-row .tab-section {
   min-width: 0;
-}
-
-.section-title {
-  margin-bottom: 10px;
 }
 
 .tabs {

@@ -34,7 +34,6 @@ const els = {
   fileInput: document.querySelector("#fileInput"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
-  sourceMeta: document.querySelector("#sourceMeta"),
   summary: document.querySelector("#summary"),
   dateTabs: document.querySelector("#dateTabs"),
   releaseTimelineSection: document.querySelector("#releaseTimelineSection"),
@@ -44,8 +43,6 @@ const els = {
   timelineModeButtons: document.querySelectorAll("[data-timeline-mode]"),
   primaryTabs: document.querySelector("#primaryTabs"),
   secondaryTabs: document.querySelector("#secondaryTabs"),
-  primaryTabTitle: document.querySelector("#primaryTabTitle"),
-  secondaryTabTitle: document.querySelector("#secondaryTabTitle"),
   categoryFirstButton: document.querySelector("#categoryFirstButton"),
   subjectFirstButton: document.querySelector("#subjectFirstButton"),
   tableHeader: document.querySelector("#tableHeader"),
@@ -294,9 +291,6 @@ function ensureSelections() {
 
 function render() {
   ensureSelections();
-  els.sourceMeta.textContent = state.sourceName
-    ? `${state.sourceName} · ${state.rows.length.toLocaleString("ko-KR")}건`
-    : "엑셀 업로드/교체로 현재 데이터를 불러와 주세요.";
   els.summary.textContent = state.rows.length
     ? `${unique(state.rows.map((row) => row.__openDate)).length}개 날짜 · ${unique(state.rows.map((row) => row.__subject)).length}개 과목 · ${state.sheets.length}개 구분`
     : "저장된 데이터 없음";
@@ -321,8 +315,6 @@ function isCategoryFirst() {
 function renderOrderControl() {
   els.categoryFirstButton.classList.toggle("active", isCategoryFirst());
   els.subjectFirstButton.classList.toggle("active", !isCategoryFirst());
-  els.primaryTabTitle.textContent = isCategoryFirst() ? "구분" : "과목";
-  els.secondaryTabTitle.textContent = isCategoryFirst() ? "과목" : "구분";
 }
 
 function renderDateTabs() {

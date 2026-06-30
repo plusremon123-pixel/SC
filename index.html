@@ -11,7 +11,6 @@
       <header class="topbar">
         <div>
           <h1>개정 차시별 운영 오픈 일정</h1>
-          <p id="sourceMeta">데이터 준비 중</p>
         </div>
         <div class="actions">
           <label class="file-button">
@@ -38,16 +37,12 @@
       </section>
 
       <section class="tab-section">
-        <div class="section-title">오픈 날짜</div>
         <div id="dateTabs" class="tabs date-tabs"></div>
       </section>
 
       <section id="releaseTimelineSection" class="timeline-section" hidden>
         <div class="timeline-head">
-          <div>
-            <div class="section-title">서비스 체크</div>
-            <div id="timelineRange" class="timeline-range"></div>
-          </div>
+          <div id="timelineRange" class="timeline-range"></div>
           <div class="timeline-legend" aria-label="체크 상태 선택">
             <button type="button" class="timeline-mode qa active" data-timeline-mode="qa">검증계</button>
             <button type="button" class="timeline-mode stage" data-timeline-mode="stage">스테이징</button>
@@ -60,12 +55,10 @@
 
       <div class="depth-row">
         <section class="tab-section">
-          <div id="primaryTabTitle" class="section-title">구분</div>
           <div id="primaryTabs" class="tabs"></div>
         </section>
 
         <section class="tab-section">
-          <div id="secondaryTabTitle" class="section-title">과목</div>
           <div id="secondaryTabs" class="tabs"></div>
         </section>
       </div>
