@@ -2,6 +2,8 @@ const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const GITHUB_TOKEN_KEY = "schedule-card-github-token-v1";
+const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
+const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
 const GITHUB_OWNER = "plusremon123-pixel";
 const GITHUB_REPO = "SC";
@@ -67,6 +69,11 @@ function bindEvents() {
   els.fileInput.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!confirmUploadPassword()) {
+      showToast("비밀번호가 맞지 않아 업로드를 취소했습니다.");
+      event.target.value = "";
+      return;
+    }
     let base64;
     try {
       base64 = await fileToBase64(file);
@@ -119,6 +126,16 @@ function bindEvents() {
       render();
     });
   });
+}
+
+function confirmUploadPassword() {
+  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === "true") return true;
+
+  const password = window.prompt("엑셀 업로드/교체 비밀번호를 입력해 주세요.");
+  if (password !== UPLOAD_PASSWORD) return false;
+
+  sessionStorage.setItem(UPLOAD_AUTH_KEY, "true");
+  return true;
 }
 
 async function loadWorkbook(base64) {
