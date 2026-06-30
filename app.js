@@ -68,6 +68,7 @@ const els = {
   timelineRange: document.querySelector("#timelineRange"),
   timelineSummary: document.querySelector("#timelineSummary"),
   timelineModeButtons: document.querySelectorAll("[data-timeline-mode]"),
+  qaCopyButton: document.querySelector("#qaCopyButton"),
   primaryTabs: document.querySelector("#primaryTabs"),
   secondaryTabs: document.querySelector("#secondaryTabs"),
   categoryFirstButton: document.querySelector("#categoryFirstButton"),
@@ -168,6 +169,13 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.timelineMode = button.dataset.timelineMode;
       renderTimelineMode();
+    });
+  });
+
+  els.qaCopyButton.addEventListener("click", () => {
+    copyQaSummary().catch((error) => {
+      console.error(error);
+      showToast("QA 내용을 복사하지 못했습니다.");
     });
   });
 }
@@ -449,6 +457,76 @@ function timelineSummaryItem(days, mark, label) {
   return `<span class="timeline-summary-item"><i class="summary-dot ${mark}"></i><strong>${label}</strong>: ${text}</span>`;
 }
 
+async function copyQaSummary() {
+  if (!state.selectedDate || state.selectedDate === ALL_DATES) {
+    showToast("오픈 날짜를 선택한 뒤 복사해 주세요.");
+    return;
+  }
+
+  const text = buildQaSummaryText();
+  await copyTextToClipboard(text);
+  showToast("QA 내용을 복사했습니다.");
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // Fall back to the selection-based copy path below.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) {
+    window.prompt("자동 복사가 막혔습니다. 아래 내용을 복사해 주세요.", text);
+  }
+}
+
+function buildQaSummaryText() {
+  const rows = rowsMatchingSearch().filter((row) => row.__openDate === state.selectedDate);
+  const lines = [
+    timelineCopyLine("stage", "스테이징"),
+    `오픈 : ${formatDateDotWithDay(state.selectedDate)}`,
+    ...subjectCopyLines(rows),
+  ].filter(Boolean);
+
+  return lines.join("\n");
+}
+
+function timelineCopyLine(mark, label) {
+  const days = releaseTimelineDays(state.selectedDate);
+  const marks = timelineMarksForSelectedDate();
+  const marked = days.slice(0, -1).filter((date) => marks[date] === mark);
+  if (!marked.length) return "";
+  return `${label} : ${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
+}
+
+function subjectCopyLines(rows) {
+  const subjects = unique(rows.map((row) => row.__subject)).sort(localeSort);
+  return subjects.map((subject) => {
+    const subjectRows = rows.filter((row) => row.__subject === subject);
+    const categories = unique(subjectRows.map((row) => row.__sheet))
+      .sort((a, b) => state.sheets.findIndex((sheet) => sheet.name === a) - state.sheets.findIndex((sheet) => sheet.name === b))
+      .map((category) => {
+        const count = subjectRows.filter((row) => row.__sheet === category).length;
+        return `${category} (${count.toLocaleString("ko-KR")}건)`;
+      });
+
+    return `${subject} (${subjectRows.length.toLocaleString("ko-KR")}건) : ${categories.join(", ")}`;
+  });
+}
+
 function renderTimelineMonths(days) {
   const groups = [];
   days.forEach((date) => {
@@ -592,11 +670,17 @@ function displayHeaders(headers) {
   if (state.selectedCategory === "성취도평가") {
     next = moveAfter(next, "진입 과목명", "학년");
   }
+  if (usesRepresentativeUnitAsSubject(state.selectedCategory)) {
+    next = moveAfter(next, "대표단원(한글/국어)", "학년");
+  }
+  if (state.selectedCategory === "학교공부") {
+    next = moveAfter(next, "과목차시", "출판사");
+  }
   return moveToFront(next, "학년");
 }
 
 function displayHeaderLabel(header, category) {
-  if (category === "검정교과서") {
+  if (usesRepresentativeUnitAsSubject(category)) {
     if (header === "대표단원(한글/국어)") return "과목";
     if (header === "과목") return "구분";
   }
@@ -605,6 +689,10 @@ function displayHeaderLabel(header, category) {
     if (header === "과목") return "구분";
   }
   return header;
+}
+
+function usesRepresentativeUnitAsSubject(category) {
+  return category === "검정교과서" || category === "학교시험";
 }
 
 function moveBefore(headers, source, target) {
@@ -925,13 +1013,13 @@ function compareRows(a, b) {
 }
 
 function sortSubject(row) {
-  if (row.__sheet === "검정교과서") return String(row["대표단원(한글/국어)"] || row.__subject || "");
+  if (usesRepresentativeUnitAsSubject(row.__sheet)) return String(row["대표단원(한글/국어)"] || row.__subject || "");
   if (row.__sheet === "성취도평가") return String(row["진입 과목명"] || row.__subject || "");
   return String(row["과목"] || row.__subject || "");
 }
 
 function sortGroup(row) {
-  if (row.__sheet === "검정교과서" || row.__sheet === "성취도평가") return String(row["과목"] || "");
+  if (usesRepresentativeUnitAsSubject(row.__sheet) || row.__sheet === "성취도평가") return String(row["과목"] || "");
   return String(row.__sheet || "");
 }
 

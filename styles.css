@@ -231,8 +231,9 @@ button:disabled {
   color: #fff;
 }
 
-.timeline-mode.clear {
-  border-color: var(--line);
+.timeline-mode.copy {
+  border-color: #9fb3c8;
+  color: #243447;
 }
 
 .timeline-months {
