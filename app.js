@@ -314,12 +314,12 @@ function renderDateTabs() {
   }
   dates.forEach((date) => {
     const count = searchedRows.filter((row) => row.__openDate === date).length;
-    els.dateTabs.appendChild(tabButton(date, count, date === state.selectedDate, () => {
+    els.dateTabs.appendChild(tabButton(formatDateWithDay(date), count, date === state.selectedDate, () => {
       state.selectedDate = date;
       state.selectedCategory = "";
       state.selectedSubject = "";
       render();
-    }));
+    }, null, date));
   });
 }
 
@@ -391,11 +391,11 @@ function renderCategoryTabs(level) {
   });
 }
 
-function tabButton(label, count, active, onClick, detailCount = null) {
+function tabButton(label, count, active, onClick, detailCount = null, dataLabel = label) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = `tab${active ? " active" : ""}`;
-  button.dataset.label = label;
+  button.dataset.label = dataLabel;
   const countText = detailCount == null
     ? count.toLocaleString("ko-KR")
     : `${count.toLocaleString("ko-KR")} (${detailCount.toLocaleString("ko-KR")})`;
@@ -543,7 +543,15 @@ function dateMatches(row, date) {
 }
 
 function dateLabel(date) {
-  return date === ALL_DATES ? "전체" : date;
+  return date === ALL_DATES ? "전체" : formatDateWithDay(date);
+}
+
+function formatDateWithDay(date) {
+  if (!date || date === ALL_DATES) return "전체";
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${date} (${weekdays[parsed.getDay()]})`;
 }
 
 async function saveCurrentWorkbookToSupabase() {
