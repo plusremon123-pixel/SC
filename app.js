@@ -39,6 +39,7 @@ const els = {
   releaseTimelineSection: document.querySelector("#releaseTimelineSection"),
   releaseTimeline: document.querySelector("#releaseTimeline"),
   timelineRange: document.querySelector("#timelineRange"),
+  timelineSummary: document.querySelector("#timelineSummary"),
   timelineModeButtons: document.querySelectorAll("[data-timeline-mode]"),
   primaryTabs: document.querySelector("#primaryTabs"),
   secondaryTabs: document.querySelector("#secondaryTabs"),
@@ -350,35 +351,62 @@ function renderReleaseTimeline() {
   els.releaseTimeline.innerHTML = "";
   if (!state.selectedDate || state.selectedDate === ALL_DATES) {
     els.releaseTimelineSection.hidden = true;
+    els.timelineSummary.innerHTML = "";
     return;
   }
 
   els.releaseTimelineSection.hidden = false;
   const days = releaseTimelineDays(state.selectedDate);
+  const marks = timelineMarksForSelectedDate();
   els.timelineRange.textContent = `${formatDateWithDay(days[0])} ~ ${formatDateWithDay(days[days.length - 1])}`;
 
   const fragment = document.createDocumentFragment();
   days.forEach((date, index) => {
-    const mark = state.timelineMarks[date] || "";
+    const mark = marks[date] || "";
     const button = document.createElement("button");
     button.type = "button";
     button.className = `timeline-cell${mark ? ` ${mark}` : ""}`;
     button.dataset.date = date;
     button.title = `${formatDateWithDay(date)} ${markLabel(mark)}`;
-    const dDay = index === days.length - 1 ? "오픈" : `D-${days.length - 1 - index}`;
-    button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span><span class="d-day">${dDay}</span>`;
+    button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span>`;
     button.addEventListener("click", () => {
       if (state.timelineMode) {
-        state.timelineMarks[date] = state.timelineMode;
+        marks[date] = state.timelineMode;
       } else {
-        delete state.timelineMarks[date];
+        delete marks[date];
       }
+      state.timelineMarks[state.selectedDate] = marks;
       localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
       renderReleaseTimeline();
     });
     fragment.appendChild(button);
   });
   els.releaseTimeline.appendChild(fragment);
+  renderTimelineSummary(days);
+}
+
+function renderTimelineSummary(days) {
+  const items = [
+    ["qa", "검증계"],
+    ["stage", "스테이징"],
+    ["open", "오픈"],
+  ].map(([mark, label]) => timelineSummaryItem(days, mark, label)).filter(Boolean);
+
+  els.timelineSummary.innerHTML = items.length
+    ? items.join("")
+    : `<span class="timeline-summary-item">체크된 일정이 없습니다.</span>`;
+}
+
+function timelineSummaryItem(days, mark, label) {
+  const marks = timelineMarksForSelectedDate();
+  const marked = days.filter((date) => marks[date] === mark);
+  if (!marked.length) return "";
+
+  const text = mark === "open"
+    ? formatDateDotWithDay(marked[marked.length - 1])
+    : `${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
+
+  return `<span class="timeline-summary-item"><i class="summary-dot ${mark}"></i><strong>${label}</strong>: ${text}</span>`;
 }
 
 function renderPrimaryTabs() {
@@ -612,6 +640,14 @@ function formatDateWithDay(date) {
   return `${date} (${weekdays[parsed.getDay()]})`;
 }
 
+function formatDateDotWithDay(date) {
+  if (!date) return "";
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(2, "0")}(${weekdays[parsed.getDay()]})`;
+}
+
 function releaseTimelineDays(openDate) {
   const [year, month, day] = openDate.split("-").map(Number);
   const end = new Date(year, month - 1, day);
@@ -624,10 +660,25 @@ function releaseTimelineDays(openDate) {
 
 function readTimelineMarks() {
   try {
-    return JSON.parse(localStorage.getItem(TIMELINE_KEY) || "{}");
+    const value = JSON.parse(localStorage.getItem(TIMELINE_KEY) || "{}");
+    return migrateTimelineMarks(value);
   } catch {
     return {};
   }
+}
+
+function migrateTimelineMarks(value) {
+  const entries = Object.entries(value || {});
+  if (!entries.length) return {};
+  const hasLegacyFlatMarks = entries.some(([, mark]) => typeof mark === "string");
+  if (!hasLegacyFlatMarks) return value;
+  return {};
+}
+
+function timelineMarksForSelectedDate() {
+  if (!state.selectedDate || state.selectedDate === ALL_DATES) return {};
+  if (!state.timelineMarks[state.selectedDate]) state.timelineMarks[state.selectedDate] = {};
+  return state.timelineMarks[state.selectedDate];
 }
 
 function markLabel(mark) {
