@@ -125,12 +125,6 @@ button:disabled {
   min-width: min(520px, 100%);
 }
 
-.search span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .search input {
   width: 100%;
   height: 38px;
@@ -139,24 +133,11 @@ button:disabled {
   padding: 0 12px;
 }
 
-.summary {
-  color: var(--muted);
-  font-size: 13px;
-  text-align: right;
-}
-
 .order-control {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-left: auto;
-}
-
-.order-control span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .segmented {
@@ -413,7 +394,14 @@ button:disabled {
 }
 
 .date-tabs .tab {
-  min-width: 108px;
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+}
+
+.date-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
 }
 
 .table-wrap {
@@ -465,7 +453,7 @@ th {
   background: #243447;
   color: #fff;
   font-weight: 800;
-  text-align: left;
+  text-align: center;
 }
 
 td.number,
@@ -516,11 +504,6 @@ tbody tr:nth-child(even) td {
   .actions {
     justify-content: flex-start;
     margin-top: 14px;
-  }
-
-  .summary {
-    margin-top: 10px;
-    text-align: left;
   }
 
   .order-control {

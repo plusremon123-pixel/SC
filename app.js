@@ -61,7 +61,6 @@ const els = {
   fileInput: document.querySelector("#fileInput"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
-  summary: document.querySelector("#summary"),
   dateTabs: document.querySelector("#dateTabs"),
   releaseTimelineSection: document.querySelector("#releaseTimelineSection"),
   releaseTimeline: document.querySelector("#releaseTimeline"),
@@ -322,9 +321,6 @@ function ensureSelections() {
 
 function render() {
   ensureSelections();
-  els.summary.textContent = state.rows.length
-    ? `${unique(state.rows.map((row) => row.__openDate)).length}개 날짜 · ${unique(state.rows.map((row) => row.__subject)).length}개 과목 · ${state.sheets.length}개 구분`
-    : "저장된 데이터 없음";
   renderOrderControl();
   renderDateTabs();
   renderReleaseTimeline();
@@ -409,6 +405,8 @@ function renderReleaseTimeline() {
         return;
       }
       if (state.timelineMode === "clear") {
+        delete marks[date];
+      } else if (marks[date] === state.timelineMode) {
         delete marks[date];
       } else {
         marks[date] = state.timelineMode;
