@@ -292,6 +292,48 @@ button:disabled {
   opacity: 0.85;
 }
 
+.timeline-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.timeline-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.timeline-summary-item strong {
+  font-weight: 800;
+}
+
+.summary-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.summary-dot.qa {
+  background: #6f35a5;
+}
+
+.summary-dot.stage {
+  background: #06a8de;
+}
+
+.summary-dot.open {
+  background: #e11d25;
+}
+
 .depth-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
