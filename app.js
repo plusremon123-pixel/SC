@@ -9,6 +9,7 @@ const SUPABASE_URL = "https://vmebzlinboxmgcrrorwv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR";
 const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
+const SUPABASE_TIMELINE_PATH = "timeline.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
@@ -65,6 +66,7 @@ async function init() {
   state.sourceName = localStorage.getItem(SOURCE_KEY) || "";
   state.tabOrder = localStorage.getItem(TAB_ORDER_KEY) || "category-first";
   state.timelineMarks = readTimelineMarks();
+  await loadSharedTimeline();
   const sharedLoaded = await loadSharedWorkbook();
   if (!sharedLoaded && state.workbookBase64) {
     await loadWorkbook(state.workbookBase64);
@@ -146,7 +148,7 @@ function bindEvents() {
 function confirmUploadPassword() {
   if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === "true") return true;
 
-  const password = window.prompt("엑셀 업로드/교체 비밀번호를 입력해 주세요.");
+  const password = window.prompt("수정 비밀번호를 입력해 주세요.");
   if (password !== UPLOAD_PASSWORD) return false;
 
   sessionStorage.setItem(UPLOAD_AUTH_KEY, "true");
@@ -369,7 +371,11 @@ function renderReleaseTimeline() {
     button.dataset.date = date;
     button.title = `${formatDateWithDay(date)} ${markLabel(mark)}`;
     button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span>`;
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
+      if (!confirmUploadPassword()) {
+        showToast("비밀번호가 맞지 않아 체크 수정을 취소했습니다.");
+        return;
+      }
       if (state.timelineMode) {
         marks[date] = state.timelineMode;
       } else {
@@ -378,6 +384,12 @@ function renderReleaseTimeline() {
       state.timelineMarks[state.selectedDate] = marks;
       localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
       renderReleaseTimeline();
+      try {
+        await saveTimelineToSupabase();
+      } catch (error) {
+        console.error(error);
+        showToast(error.message || "체크 설정 저장 중 오류가 발생했습니다.");
+      }
     });
     fragment.appendChild(button);
   });
@@ -667,6 +679,26 @@ function readTimelineMarks() {
   }
 }
 
+async function loadSharedTimeline() {
+  try {
+    const response = await fetch(supabasePublicUrl(SUPABASE_TIMELINE_PATH), { cache: "no-store" });
+    if (!response.ok) return false;
+    const value = await response.json();
+    state.timelineMarks = migrateTimelineMarks(value);
+    localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
+    return true;
+  } catch (error) {
+    console.warn("공유 체크 설정을 불러오지 못했습니다.", error);
+    return false;
+  }
+}
+
+async function saveTimelineToSupabase() {
+  const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, state.timelineMarks);
+  if (!result.ok) throw new Error(result.message);
+  showToast("체크 설정을 저장했습니다.");
+}
+
 function migrateTimelineMarks(value) {
   const entries = Object.entries(value || {});
   if (!entries.length) return {};
@@ -728,12 +760,36 @@ async function putWorkbookToSupabase() {
   return { ok: true, status: saveResponse.status };
 }
 
-function supabaseObjectUrl() {
-  return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${SUPABASE_DATA_PATH}`;
+async function putJsonToSupabase(path, value) {
+  const saveResponse = await fetch(supabaseObjectUrl(path), {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "x-upsert": "true",
+    },
+    body: JSON.stringify(value),
+  });
+
+  if (!saveResponse.ok) {
+    const text = await saveResponse.text();
+    return {
+      ok: false,
+      status: saveResponse.status,
+      message: `Supabase 체크 설정 저장 실패: ${saveResponse.status} ${text}`,
+    };
+  }
+
+  return { ok: true, status: saveResponse.status };
 }
 
-function supabasePublicUrl() {
-  return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${SUPABASE_DATA_PATH}?v=${Date.now()}`;
+function supabaseObjectUrl(path = SUPABASE_DATA_PATH) {
+  return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${path}`;
+}
+
+function supabasePublicUrl(path = SUPABASE_DATA_PATH) {
+  return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${path}?v=${Date.now()}`;
 }
 
 function rowsMatchingSearch() {
