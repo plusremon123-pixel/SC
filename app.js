@@ -69,6 +69,7 @@ function bindEvents() {
     try {
       const base64 = await fileToBase64(file);
       await loadWorkbook(base64);
+      state.workbookBase64 = base64;
       localStorage.setItem(STORAGE_KEY, base64);
       localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
       state.sourceName = `현재 데이터: ${file.name}`;
