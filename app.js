@@ -364,7 +364,8 @@ function renderReleaseTimeline() {
 
   const fragment = document.createDocumentFragment();
   days.forEach((date, index) => {
-    const mark = marks[date] || "";
+    const isOpenDate = index === days.length - 1;
+    const mark = isOpenDate ? "open" : (marks[date] || "");
     const button = document.createElement("button");
     button.type = "button";
     button.className = `timeline-cell${mark ? ` ${mark}` : ""}`;
@@ -372,16 +373,20 @@ function renderReleaseTimeline() {
     button.title = `${formatDateWithDay(date)} ${markLabel(mark)}`;
     button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span>`;
     button.addEventListener("click", async () => {
+      if (isOpenDate) {
+        showToast("오픈일은 마지막 칸에 자동 표시됩니다.");
+        return;
+      }
       if (!confirmUploadPassword()) {
         showToast("비밀번호가 맞지 않아 체크 수정을 취소했습니다.");
         return;
       }
-      if (state.timelineMode) {
-        marks[date] = state.timelineMode;
-      } else {
+      if (state.timelineMode === "clear") {
         delete marks[date];
+      } else {
+        marks[date] = state.timelineMode;
       }
-      state.timelineMarks[state.selectedDate] = marks;
+      state.timelineMarks[state.selectedDate] = normalizeTimelineMarksForDate(state.selectedDate, marks);
       localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
       renderReleaseTimeline();
       try {
@@ -401,8 +406,8 @@ function renderTimelineSummary(days) {
   const items = [
     ["qa", "검증계"],
     ["stage", "스테이징"],
-    ["open", "오픈"],
   ].map(([mark, label]) => timelineSummaryItem(days, mark, label)).filter(Boolean);
+  items.push(`<span class="timeline-summary-item"><i class="summary-dot open"></i><strong>오픈</strong>: ${formatDateDotWithDay(state.selectedDate)}</span>`);
 
   els.timelineSummary.innerHTML = items.length
     ? items.join("")
@@ -411,12 +416,10 @@ function renderTimelineSummary(days) {
 
 function timelineSummaryItem(days, mark, label) {
   const marks = timelineMarksForSelectedDate();
-  const marked = days.filter((date) => marks[date] === mark);
+  const marked = days.slice(0, -1).filter((date) => marks[date] === mark);
   if (!marked.length) return "";
 
-  const text = mark === "open"
-    ? formatDateDotWithDay(marked[marked.length - 1])
-    : `${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
+  const text = `${formatDateDotWithDay(marked[0])}~${formatDateDotWithDay(marked[marked.length - 1])} (${marked.length}일간)`;
 
   return `<span class="timeline-summary-item"><i class="summary-dot ${mark}"></i><strong>${label}</strong>: ${text}</span>`;
 }
@@ -703,8 +706,23 @@ function migrateTimelineMarks(value) {
   const entries = Object.entries(value || {});
   if (!entries.length) return {};
   const hasLegacyFlatMarks = entries.some(([, mark]) => typeof mark === "string");
-  if (!hasLegacyFlatMarks) return value;
-  return {};
+  if (hasLegacyFlatMarks) return {};
+  return normalizeTimelineMarks(value);
+}
+
+function normalizeTimelineMarks(value) {
+  return Object.fromEntries(
+    Object.entries(value || {}).map(([openDate, marks]) => [
+      openDate,
+      normalizeTimelineMarksForDate(openDate, marks),
+    ])
+  );
+}
+
+function normalizeTimelineMarksForDate(openDate, marks) {
+  return Object.fromEntries(
+    Object.entries(marks || {}).filter(([date, mark]) => date !== openDate && (mark === "qa" || mark === "stage"))
+  );
 }
 
 function timelineMarksForSelectedDate() {

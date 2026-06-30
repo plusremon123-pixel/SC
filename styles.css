@@ -192,8 +192,8 @@ button:disabled {
 
 .timeline-section {
   margin-top: 14px;
-  padding: 14px 16px 16px;
-  background: var(--panel);
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
   border: 1px solid var(--line);
   border-radius: 8px;
 }
@@ -216,37 +216,40 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
   color: var(--muted);
   font-size: 13px;
 }
 
 .timeline-mode {
-  height: 34px;
-  border-radius: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
   background: #fff;
   font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .timeline-mode.active {
-  outline: 3px solid rgba(23, 107, 135, 0.25);
+  outline: 3px solid rgba(23, 107, 135, 0.18);
+  outline-offset: 2px;
 }
 
 .timeline-mode.qa,
 .timeline-cell.qa {
-  background: #6f35a5;
+  background: #7651c9;
   color: #fff;
 }
 
 .timeline-mode.stage,
 .timeline-cell.stage {
-  background: #06a8de;
+  background: #0797c9;
   color: #fff;
 }
 
 .timeline-mode.open,
 .timeline-cell.open {
-  background: #e11d25;
+  background: #e02b34;
   color: #fff;
 }
 
@@ -257,34 +260,43 @@ button:disabled {
 .timeline-grid {
   display: grid;
   grid-template-columns: repeat(20, minmax(58px, 1fr));
-  border: 1px solid #222;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #d7e1ec;
+  border-radius: 8px;
+  background: #edf3f8;
   overflow-x: auto;
 }
 
 .timeline-cell {
-  min-height: 52px;
-  padding: 6px 4px;
-  border-right: 1px solid #222;
+  min-height: 54px;
+  padding: 7px 4px;
+  border: 1px solid #d6e0eb;
+  border-radius: 6px;
   background: #fff;
   text-align: center;
   cursor: pointer;
   display: grid;
   align-content: center;
   gap: 2px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
-.timeline-cell:last-child {
-  border-right: 0;
+.timeline-cell:hover {
+  border-color: #9bb4c9;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.10);
+  transform: translateY(-1px);
 }
 
 .timeline-cell .day {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
 }
 
 .timeline-cell .month {
-  font-size: 11px;
-  opacity: 0.8;
+  font-size: 12px;
+  opacity: 0.78;
 }
 
 .timeline-cell .d-day {
