@@ -14,6 +14,30 @@ const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
 const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "과목"];
+const KOREA_HOLIDAYS_2026 = new Set([
+  "2026-01-01",
+  "2026-02-16",
+  "2026-02-17",
+  "2026-02-18",
+  "2026-03-01",
+  "2026-03-02",
+  "2026-05-01",
+  "2026-05-05",
+  "2026-05-24",
+  "2026-05-25",
+  "2026-06-03",
+  "2026-06-06",
+  "2026-07-17",
+  "2026-08-15",
+  "2026-08-17",
+  "2026-09-24",
+  "2026-09-25",
+  "2026-09-26",
+  "2026-10-03",
+  "2026-10-05",
+  "2026-10-09",
+  "2026-12-25",
+]);
 
 const state = {
   workbookBase64: null,
@@ -357,12 +381,14 @@ function renderReleaseTimeline() {
   const fragment = document.createDocumentFragment();
   days.forEach((date, index) => {
     const isOpenDate = index === days.length - 1;
-    const mark = isOpenDate ? "open" : (marks[date] || "");
+    const blockedReason = isOpenDate ? "" : timelineBlockedReason(date);
+    const mark = isOpenDate ? "open" : (blockedReason ? "" : (marks[date] || ""));
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `timeline-cell${mark ? ` ${mark}` : ""}`;
+    button.className = `timeline-cell${mark ? ` ${mark}` : ""}${blockedReason ? " disabled" : ""}`;
+    button.disabled = Boolean(blockedReason);
     button.dataset.date = date;
-    button.title = `${formatDateWithDay(date)} ${markLabel(mark)}`;
+    button.title = `${formatDateWithDay(date)} ${blockedReason || markLabel(mark)}`;
     button.innerHTML = `<span class="month">${Number(date.slice(5, 7))}월</span><span class="day">${Number(date.slice(8, 10))}일</span>`;
     button.addEventListener("click", async () => {
       if (isOpenDate) {
@@ -713,8 +739,24 @@ function normalizeTimelineMarks(value) {
 
 function normalizeTimelineMarksForDate(openDate, marks) {
   return Object.fromEntries(
-    Object.entries(marks || {}).filter(([date, mark]) => date !== openDate && (mark === "qa" || mark === "stage"))
+    Object.entries(marks || {}).filter(([date, mark]) => (
+      date !== openDate
+      && !timelineBlockedReason(date)
+      && (mark === "qa" || mark === "stage")
+    ))
   );
+}
+
+function timelineBlockedReason(date) {
+  if (isWeekend(date)) return "주말";
+  if (KOREA_HOLIDAYS_2026.has(date)) return "공휴일";
+  return "";
+}
+
+function isWeekend(date) {
+  const [year, month, day] = date.split("-").map(Number);
+  const dayOfWeek = new Date(year, month - 1, day).getDay();
+  return dayOfWeek === 0 || dayOfWeek === 6;
 }
 
 function timelineMarksForSelectedDate() {
