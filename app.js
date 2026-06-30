@@ -503,6 +503,7 @@ function buildQaSummaryText() {
     `스테이징 예정 기간 : ${stageRange}`,
     "QA 요청 기간 : 스테이징 기간 동일",
     "",
+    "",
     "[과목별 오픈 차시]",
     ...subjectCopyLines(rows),
   ];
