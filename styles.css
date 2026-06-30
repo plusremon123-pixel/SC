@@ -395,13 +395,24 @@ button:disabled {
 
 .date-tabs .tab {
   width: 100%;
+  min-height: 32px;
   min-width: 0;
+  padding: 6px 8px;
   justify-content: center;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.date-tabs .tab .count {
+  margin-left: 4px;
+  font-size: 11px;
 }
 
 .date-tabs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(106px, 1fr));
 }
 
 .table-wrap {
