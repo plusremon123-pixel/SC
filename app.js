@@ -2,6 +2,10 @@ const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const ALL_DATES = "__all_dates__";
+const GITHUB_OWNER = "plusremon123-pixel";
+const GITHUB_REPO = "SC";
+const GITHUB_BRANCH = "main";
+const GITHUB_DATA_PATH = "data/current.xlsx";
 const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
@@ -10,6 +14,7 @@ const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "
 const state = {
   workbookBase64: null,
   sourceName: "",
+  currentFileName: "",
   sheets: [],
   rows: [],
   selectedDate: "",
@@ -21,6 +26,7 @@ const state = {
 
 const els = {
   fileInput: document.querySelector("#fileInput"),
+  githubSaveButton: document.querySelector("#githubSaveButton"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
   sourceMeta: document.querySelector("#sourceMeta"),
@@ -49,7 +55,8 @@ async function init() {
   state.workbookBase64 = localStorage.getItem(STORAGE_KEY);
   state.sourceName = localStorage.getItem(SOURCE_KEY) || "";
   state.tabOrder = localStorage.getItem(TAB_ORDER_KEY) || "category-first";
-  if (state.workbookBase64) {
+  const sharedLoaded = await loadSharedWorkbook();
+  if (!sharedLoaded && state.workbookBase64) {
     await loadWorkbook(state.workbookBase64);
   }
   bindEvents();
@@ -66,14 +73,23 @@ function bindEvents() {
       localStorage.setItem(STORAGE_KEY, base64);
       localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
       state.sourceName = `현재 데이터: ${file.name}`;
-      showToast("현재 데이터가 교체 저장되었습니다.");
+      state.currentFileName = file.name;
+      showToast("현재 데이터가 교체 저장되었습니다. GitHub 저장을 진행합니다.");
       render();
+      await saveCurrentWorkbookToGitHub();
     } catch (error) {
       console.error(error);
       showToast("업로드한 엑셀을 읽지 못했습니다.");
     } finally {
       event.target.value = "";
     }
+  });
+
+  els.githubSaveButton.addEventListener("click", () => {
+    saveCurrentWorkbookToGitHub().catch((error) => {
+      console.error(error);
+      showToast("GitHub 저장 중 오류가 발생했습니다.");
+    });
   });
 
   els.downloadButton.addEventListener("click", () => {
@@ -140,6 +156,26 @@ async function loadWorkbook(base64) {
   state.sheets = sheets;
   state.rows = rows.filter((row) => row.__openDate);
   ensureSelections();
+}
+
+async function loadSharedWorkbook() {
+  try {
+    const response = await fetch(`./${GITHUB_DATA_PATH}?v=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return false;
+
+    const buffer = await response.arrayBuffer();
+    const base64 = arrayBufferToBase64(buffer);
+    await loadWorkbook(base64);
+    state.workbookBase64 = base64;
+    state.sourceName = "공유 데이터: current.xlsx";
+    state.currentFileName = "current.xlsx";
+    localStorage.setItem(STORAGE_KEY, base64);
+    localStorage.setItem(SOURCE_KEY, state.sourceName);
+    return true;
+  } catch (error) {
+    console.warn("공유 데이터를 불러오지 못했습니다.", error);
+    return false;
+  }
 }
 
 function getHeaders(worksheet) {
@@ -359,6 +395,7 @@ function renderTable() {
   els.tableTitle.textContent = tablePath.filter(Boolean).join(" > ") || "조회 결과";
   els.rowCount.textContent = `${rows.length.toLocaleString("ko-KR")}건`;
   els.downloadButton.disabled = state.rows.length === 0;
+  els.githubSaveButton.disabled = !state.workbookBase64;
 
   els.tableHeader.innerHTML = "";
   els.tableBody.innerHTML = "";
@@ -490,6 +527,60 @@ function dateLabel(date) {
   return date === ALL_DATES ? "전체" : date;
 }
 
+async function saveCurrentWorkbookToGitHub() {
+  if (!state.workbookBase64) {
+    showToast("먼저 엑셀을 업로드해 주세요.");
+    return;
+  }
+
+  const token = window.prompt("GitHub 저장을 위해 토큰을 입력해 주세요. 토큰은 저장하지 않습니다.");
+  if (!token) {
+    showToast("브라우저에는 저장되었습니다. 공유하려면 GitHub 저장을 완료해 주세요.");
+    return;
+  }
+
+  const apiBase = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+
+  let sha;
+  const existing = await fetch(`${apiBase}?ref=${GITHUB_BRANCH}`, { headers });
+  if (existing.ok) {
+    const payload = await existing.json();
+    sha = payload.sha;
+  } else if (existing.status !== 404) {
+    throw new Error(`GitHub 파일 확인 실패: ${existing.status}`);
+  }
+
+  const messageName = state.currentFileName || "current.xlsx";
+  const saveResponse = await fetch(apiBase, {
+    method: "PUT",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      branch: GITHUB_BRANCH,
+      message: `Update shared workbook: ${messageName}`,
+      content: state.workbookBase64,
+      sha,
+    }),
+  });
+
+  if (!saveResponse.ok) {
+    const text = await saveResponse.text();
+    throw new Error(`GitHub 저장 실패: ${saveResponse.status} ${text}`);
+  }
+
+  state.sourceName = `공유 데이터: ${messageName}`;
+  localStorage.setItem(SOURCE_KEY, state.sourceName);
+  showToast("GitHub에 공유 엑셀을 저장했습니다. 잠시 후 다른 사용자에게도 반영됩니다.");
+  render();
+}
+
 function rowsMatchingSearch() {
   return state.rows.filter((row) => rowMatchesSearch(row));
 }
@@ -609,6 +700,16 @@ function base64ToArrayBuffer(base64) {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return bytes.buffer;
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function saveBlob(blob, filename) {
