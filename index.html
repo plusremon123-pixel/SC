@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>개정 차시별 운영 오픈 일정</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>개정 차시별 운영 오픈 일정</h1>
+          <p id="sourceMeta">데이터 준비 중</p>
+        </div>
+        <div class="actions">
+          <label class="file-button">
+            엑셀 업로드/교체
+            <input id="fileInput" type="file" accept=".xlsx,.xls" />
+          </label>
+          <button id="downloadButton" type="button" class="primary">엑셀 다운로드</button>
+        </div>
+      </header>
+
+      <section class="controls">
+        <label class="search">
+          <span>검색</span>
+          <input id="searchInput" type="search" placeholder="단원명, 차시명, 출판사 검색" />
+        </label>
+        <div class="order-control" aria-label="탭 순서 선택">
+          <span>탭 순서</span>
+          <div class="segmented">
+            <button id="categoryFirstButton" type="button" data-tab-order="category-first">구분 먼저</button>
+            <button id="subjectFirstButton" type="button" data-tab-order="subject-first">과목 먼저</button>
+          </div>
+        </div>
+        <div class="summary" id="summary"></div>
+      </section>
+
+      <section class="tab-section">
+        <div class="section-title">오픈 날짜</div>
+        <div id="dateTabs" class="tabs date-tabs"></div>
+      </section>
+
+      <div class="depth-row">
+        <section class="tab-section">
+          <div id="primaryTabTitle" class="section-title">구분</div>
+          <div id="primaryTabs" class="tabs"></div>
+        </section>
+
+        <section class="tab-section">
+          <div id="secondaryTabTitle" class="section-title">과목</div>
+          <div id="secondaryTabs" class="tabs"></div>
+        </section>
+      </div>
+
+      <section class="table-wrap">
+        <div class="table-head">
+          <strong id="tableTitle">조회 결과</strong>
+          <span id="rowCount">0건</span>
+        </div>
+        <div class="scroll-area">
+          <table>
+            <thead id="tableHeader"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+          <div id="emptyState" class="empty" hidden>조건에 맞는 데이터가 없습니다.</div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="./vendor/exceljs.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
