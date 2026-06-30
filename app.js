@@ -17,6 +17,7 @@ const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "
 const TIMELINE_DAYS = 30;
 const DEFAULT_QA_DAYS = 5;
 const DEFAULT_STAGE_DAYS = 5;
+const COPY_SUBJECT_ORDER = ["국어", "수학", "과학", "사회", "영어"];
 const KOREA_HOLIDAYS_2026 = new Set([
   "2026-01-01",
   "2026-02-16",
@@ -496,8 +497,8 @@ async function copyTextToClipboard(text) {
 function buildQaSummaryText() {
   const rows = rowsMatchingSearch().filter((row) => row.__openDate === state.selectedDate);
   const lines = [
-    timelineCopyLine("stage", "스테이징"),
     `오픈 : ${formatDateDotWithDay(state.selectedDate)}`,
+    timelineCopyLine("stage", "스테이징"),
     ...subjectCopyLines(rows),
   ].filter(Boolean);
 
@@ -513,7 +514,7 @@ function timelineCopyLine(mark, label) {
 }
 
 function subjectCopyLines(rows) {
-  const subjects = unique(rows.map((row) => row.__subject)).sort(localeSort);
+  const subjects = unique(rows.map((row) => row.__subject)).sort(compareCopySubject);
   return subjects.map((subject) => {
     const subjectRows = rows.filter((row) => row.__subject === subject);
     const categories = unique(subjectRows.map((row) => row.__sheet))
@@ -525,6 +526,14 @@ function subjectCopyLines(rows) {
 
     return `${subject} (${subjectRows.length.toLocaleString("ko-KR")}건) : ${categories.join(", ")}`;
   });
+}
+
+function compareCopySubject(a, b) {
+  const aIndex = COPY_SUBJECT_ORDER.indexOf(a);
+  const bIndex = COPY_SUBJECT_ORDER.indexOf(b);
+  const aOrder = aIndex === -1 ? COPY_SUBJECT_ORDER.length : aIndex;
+  const bOrder = bIndex === -1 ? COPY_SUBJECT_ORDER.length : bIndex;
+  return aOrder - bOrder || localeSort(a, b);
 }
 
 function renderTimelineMonths(days) {
