@@ -1,6 +1,7 @@
 const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
+const GITHUB_TOKEN_KEY = "schedule-card-github-token-v1";
 const ALL_DATES = "__all_dates__";
 const GITHUB_OWNER = "plusremon123-pixel";
 const GITHUB_REPO = "SC";
@@ -525,11 +526,12 @@ async function saveCurrentWorkbookToGitHub() {
     return;
   }
 
-  const token = window.prompt("GitHub 저장을 위해 토큰을 입력해 주세요. 토큰은 저장하지 않습니다.");
+  const token = localStorage.getItem(GITHUB_TOKEN_KEY) || window.prompt("GitHub 저장을 위해 토큰을 입력해 주세요. 입력한 토큰은 이 브라우저에 저장됩니다.");
   if (!token) {
     showToast("브라우저에는 저장되었습니다. 공유하려면 GitHub 저장을 완료해 주세요.");
     return;
   }
+  localStorage.setItem(GITHUB_TOKEN_KEY, token);
 
   const apiBase = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_DATA_PATH}`;
   const headers = {
@@ -563,6 +565,9 @@ async function saveCurrentWorkbookToGitHub() {
   });
 
   if (!saveResponse.ok) {
+    if (saveResponse.status === 401 || saveResponse.status === 403) {
+      localStorage.removeItem(GITHUB_TOKEN_KEY);
+    }
     const text = await saveResponse.text();
     throw new Error(`GitHub 저장 실패: ${saveResponse.status} ${text}`);
   }
