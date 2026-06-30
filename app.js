@@ -358,7 +358,7 @@ function renderDateTabs() {
   }
   dates.forEach((date) => {
     const count = searchedRows.filter((row) => row.__openDate === date).length;
-    els.dateTabs.appendChild(tabButton(formatDateWithDay(date), count, date === state.selectedDate, () => {
+    els.dateTabs.appendChild(tabButton(formatDateTabLabel(date), count, date === state.selectedDate, () => {
       state.selectedDate = date;
       state.selectedCategory = "";
       state.selectedSubject = "";
@@ -695,6 +695,14 @@ function formatDateWithDay(date) {
   const parsed = new Date(year, month - 1, day);
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   return `${date} (${weekdays[parsed.getDay()]})`;
+}
+
+function formatDateTabLabel(date) {
+  if (!date || date === ALL_DATES) return "전체";
+  const [year, month, day] = date.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${month}월 ${day}일 (${weekdays[parsed.getDay()]})`;
 }
 
 function formatDateDotWithDay(date) {
