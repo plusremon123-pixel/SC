@@ -663,9 +663,12 @@ function buildQaSummaryText() {
   const stageRange = timelineCopyRange("stage") || "설정 없음";
   const lines = [
     "[일정]",
-    `오픈일 : ${formatDateDotWithDay(state.selectedDate)}`,
-    `스테이징 예정 기간 : ${stageRange}`,
-    "QA 요청 기간 : 스테이징 기간 동일",
+    ` - 오픈일 : ${formatDateDotWithDay(state.selectedDate)}`,
+    ` - 스테이징 예정 기간 : ${stageRange}`,
+    " - QA 요청 기간 : 스테이징 기간 동일",
+    "",
+    "[총 오픈 차시]",
+    `- ${rows.length.toLocaleString("ko-KR")}차시`,
     "",
     "[과목별 오픈 차시]",
     ...subjectCopyLines(rows),
@@ -693,7 +696,7 @@ function subjectCopyLines(rows) {
         return `${category} (${count.toLocaleString("ko-KR")}건)`;
       });
 
-    return `${subject} (${subjectRows.length.toLocaleString("ko-KR")}건) : ${categories.join(", ")}`;
+    return `- ${subject} (${subjectRows.length.toLocaleString("ko-KR")}건) : ${categories.join(", ")}`;
   });
 }
 
