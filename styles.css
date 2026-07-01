@@ -629,6 +629,12 @@ button:disabled {
   overflow-y: visible;
 }
 
+.scroll-area.analysis-scroll {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
 .scroll-area.overall-scroll {
   max-height: none;
   overflow-x: auto;
@@ -741,6 +747,10 @@ tbody tr:nth-child(even) td {
   }
 
   .scroll-area.overall-scroll {
+    max-height: none;
+  }
+
+  .scroll-area.analysis-scroll {
     max-height: none;
   }
 
