@@ -10,6 +10,7 @@ const SUPABASE_KEY = "sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR";
 const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
+const SUPABASE_OVERALL_PATH = "overall-schedule.json";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
@@ -54,7 +55,7 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   tabOrder: "category-first",
-  currentView: "lesson",
+  currentView: "overall",
   timelineMode: "qa",
   timelineMarks: {},
   overallSchedule: null,
@@ -67,6 +68,7 @@ const els = {
   lessonViewButton: document.querySelector("#lessonViewButton"),
   overallViewButton: document.querySelector("#overallViewButton"),
   fileInput: document.querySelector("#fileInput"),
+  overallFileInput: document.querySelector("#overallFileInput"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
   dateTabs: document.querySelector("#dateTabs"),
@@ -165,6 +167,29 @@ function bindEvents() {
     }
   });
 
+  els.overallFileInput.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!confirmUploadPassword()) {
+      showToast("비밀번호가 맞지 않아 전체 일정 업로드를 취소했습니다.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const base64 = await fileToBase64(file);
+      state.overallSchedule = await parseOverallScheduleWorkbook(base64, file.name);
+      state.currentView = "overall";
+      render();
+      await saveOverallScheduleToSupabase();
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || "전체 일정 엑셀을 저장하지 못했습니다.");
+    } finally {
+      event.target.value = "";
+    }
+  });
+
   els.downloadButton.addEventListener("click", () => {
     downloadFilteredWorkbook().catch((error) => {
       console.error(error);
@@ -255,6 +280,42 @@ async function loadWorkbook(base64) {
   ensureSelections();
 }
 
+async function parseOverallScheduleWorkbook(base64, fileName) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(base64ToArrayBuffer(base64));
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) throw new Error("전체 일정 엑셀에 시트가 없습니다.");
+
+  const rows = [];
+  let category = "";
+  for (let rowNumber = 4; rowNumber <= worksheet.actualRowCount; rowNumber += 1) {
+    const values = Array.from({ length: 8 }, (_, index) => normalizeCell(worksheet.getRow(rowNumber).getCell(index + 2).value));
+    if (values.every((value) => value === "")) continue;
+    if (values[0]) category = values[0];
+    if (!values[1]) continue;
+
+    rows.push({
+      row: rowNumber,
+      category,
+      subject: values[1],
+      term: values[2],
+      round: values[3],
+      openDate: normalizeOverallDate(values[4]),
+      openDateText: values[4],
+      scope: values[5],
+      lessonShare: values[6],
+      note: values[7],
+    });
+  }
+
+  if (!rows.length) throw new Error("전체 일정 엑셀에서 일정 데이터를 찾지 못했습니다.");
+  return {
+    source: fileName,
+    sheet: worksheet.name,
+    rows,
+  };
+}
+
 async function loadSharedWorkbook() {
   try {
     const response = await fetch(supabasePublicUrl(), { cache: "no-store" });
@@ -276,6 +337,9 @@ async function loadSharedWorkbook() {
 }
 
 async function loadOverallSchedule() {
+  const sharedLoaded = await loadSharedOverallSchedule();
+  if (sharedLoaded) return true;
+
   try {
     const response = await fetch(`${OVERALL_SCHEDULE_PATH}?v=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) return false;
@@ -284,6 +348,18 @@ async function loadOverallSchedule() {
   } catch (error) {
     console.warn("전체 일정 데이터를 불러오지 못했습니다.", error);
     state.overallSchedule = null;
+    return false;
+  }
+}
+
+async function loadSharedOverallSchedule() {
+  try {
+    const response = await fetch(supabasePublicUrl(SUPABASE_OVERALL_PATH), { cache: "no-store" });
+    if (!response.ok) return false;
+    state.overallSchedule = await response.json();
+    return true;
+  } catch (error) {
+    console.warn("공유 전체 일정을 불러오지 못했습니다.", error);
     return false;
   }
 }
@@ -323,6 +399,16 @@ function normalizeDate(value) {
   if (text.length === 8) return `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`;
   if (value instanceof Date) return dateToYmd(value);
   return "";
+}
+
+function normalizeOverallDate(value) {
+  if (!value) return "";
+  if (value instanceof Date) return dateToYmd(value);
+  const normalized = normalizeDate(value);
+  if (normalized) return normalized;
+  const match = String(value).match(/(\d{1,2})월\s*(\d{1,2})일/);
+  if (!match) return "";
+  return `2026-${String(Number(match[1])).padStart(2, "0")}-${String(Number(match[2])).padStart(2, "0")}`;
 }
 
 function dateToYmd(date) {
@@ -745,7 +831,7 @@ function renderOverallSchedule() {
     kpiHtml("검수제외", counts.skipped || 0, "muted"),
   ].join("");
 
-  const headers = ["상태", "오픈일", "카테고리", "과목", "학기", "차수", "콘텐츠 범위", "차시 수/비중", "등록 차시", "비고"];
+  const headers = ["카테고리", "과목", "학기", "차수", "오픈일", "콘텐츠 범위", "차시 수/비중", "비고", "검수 상태", "등록 차시"];
   els.overallTableHeader.innerHTML = `<tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr>`;
   els.overallTableBody.innerHTML = "";
 
@@ -754,20 +840,20 @@ function renderOverallSchedule() {
     const tr = document.createElement("tr");
     tr.className = `audit-${row.audit.status}`;
     [
-      row.audit.label,
-      formatDateWithDay(row.openDate),
       compactScheduleCategory(row.category),
       row.subject,
       row.term,
       row.round,
+      formatDateWithDay(row.openDate),
       row.scope,
       row.lessonShare,
-      row.audit.detail,
       row.note,
+      row.audit.label,
+      row.audit.detail,
     ].forEach((value, index) => {
       const td = document.createElement("td");
       td.textContent = value || "";
-      if (![2, 6, 7, 8, 9].includes(index)) td.classList.add("center");
+      if (![0, 5, 6, 7, 9].includes(index)) td.classList.add("center");
       tr.appendChild(td);
     });
     fragment.appendChild(tr);
@@ -1000,6 +1086,12 @@ async function saveTimelineToSupabase(message = "체크 설정을 저장했습�
   const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, state.timelineMarks);
   if (!result.ok) throw new Error(result.message);
   showToast(message);
+}
+
+async function saveOverallScheduleToSupabase() {
+  const result = await putJsonToSupabase(SUPABASE_OVERALL_PATH, state.overallSchedule);
+  if (!result.ok) throw new Error(result.message);
+  showToast("전체 일정을 저장했습니다.");
 }
 
 function migrateTimelineMarks(value) {

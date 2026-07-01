@@ -502,17 +502,17 @@ button:disabled {
   max-height: calc(100vh - 300px);
 }
 
-tr.audit-matched td:first-child {
+tr.audit-matched td:nth-child(9) {
   color: #137333;
   font-weight: 800;
 }
 
-tr.audit-missing td:first-child {
+tr.audit-missing td:nth-child(9) {
   color: var(--danger);
   font-weight: 800;
 }
 
-tr.audit-skipped td:first-child {
+tr.audit-skipped td:nth-child(9) {
   color: var(--muted);
   font-weight: 800;
 }

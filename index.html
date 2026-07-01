@@ -14,19 +14,23 @@
         </div>
         <div class="actions">
           <label class="file-button">
-            엑셀 업로드/교체
+            차시 엑셀 업로드/교체
             <input id="fileInput" type="file" accept=".xlsx,.xls" />
           </label>
-          <button id="downloadButton" type="button" class="primary">엑셀 다운로드</button>
+          <label class="file-button">
+            전체 일정 업로드/교체
+            <input id="overallFileInput" type="file" accept=".xlsx,.xls" />
+          </label>
+          <button id="downloadButton" type="button" class="primary">차시 엑셀 다운로드</button>
         </div>
       </header>
 
       <nav class="view-tabs" aria-label="화면 선택">
-        <button id="lessonViewButton" type="button" class="active">차시별 일정</button>
-        <button id="overallViewButton" type="button">전체 일정</button>
+        <button id="overallViewButton" type="button" class="active">전체 일정</button>
+        <button id="lessonViewButton" type="button">차시별 일정</button>
       </nav>
 
-      <div id="lessonView">
+      <div id="lessonView" hidden>
         <section class="controls">
           <label class="search">
             <input id="searchInput" type="search" placeholder="단원명, 차시명, 출판사 검색" />
@@ -82,10 +86,10 @@
         </section>
       </div>
 
-      <div id="overallView" hidden>
+      <div id="overallView">
         <section class="overall-panel">
           <div class="overall-head">
-            <strong>전체 일정 검수</strong>
+            <strong>전체 일정</strong>
             <span id="overallSummary"></span>
           </div>
           <div class="overall-kpis" id="overallKpis"></div>
