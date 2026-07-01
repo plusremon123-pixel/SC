@@ -312,6 +312,8 @@ async function parseOverallScheduleWorkbook(base64, fileName) {
   return {
     source: fileName,
     sheet: worksheet.name,
+    title: normalizeCell(worksheet.getRow(2).getCell(2).value),
+    version: normalizeCell(worksheet.getRow(2).getCell(9).value),
     rows,
   };
 }
@@ -823,7 +825,7 @@ function renderOverallSchedule() {
   }, {});
 
   els.overallSummary.textContent = state.overallSchedule
-    ? `${state.overallSchedule.sheet} · ${scheduleRows.length.toLocaleString("ko-KR")}건`
+    ? `${state.overallSchedule.source || state.overallSchedule.sheet} · ${scheduleRows.length.toLocaleString("ko-KR")}건`
     : "일정 데이터 없음";
   els.overallKpis.innerHTML = [
     kpiHtml("등록됨", counts.matched || 0, "ok"),
@@ -832,15 +834,29 @@ function renderOverallSchedule() {
   ].join("");
 
   const headers = ["카테고리", "과목", "학기", "차수", "오픈일", "콘텐츠 범위", "차시 수/비중", "비고", "검수 상태", "등록 차시"];
-  els.overallTableHeader.innerHTML = `<tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr>`;
+  els.overallTableHeader.innerHTML = `
+    <tr class="overall-title-row">
+      <th colspan="7">${escapeHtml(state.overallSchedule?.title || "스마트올 5, 6학년 2학기 콘텐츠 오픈 예정일")}</th>
+      <th colspan="3">${escapeHtml(state.overallSchedule?.version || "")}</th>
+    </tr>
+    <tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr>
+  `;
   els.overallTableBody.innerHTML = "";
 
   const fragment = document.createDocumentFragment();
-  auditRows.forEach((row) => {
+  const spans = categoryRowSpans(auditRows);
+  auditRows.forEach((row, index) => {
     const tr = document.createElement("tr");
-    tr.className = `audit-${row.audit.status}`;
+    tr.className = `audit-${row.audit.status} subject-${subjectTone(row.subject)}`;
+    if (spans[index]) {
+      const categoryCell = document.createElement("td");
+      categoryCell.className = "overall-category";
+      categoryCell.rowSpan = spans[index];
+      categoryCell.textContent = compactScheduleCategory(row.category);
+      tr.appendChild(categoryCell);
+    }
+
     [
-      compactScheduleCategory(row.category),
       row.subject,
       row.term,
       row.round,
@@ -853,7 +869,7 @@ function renderOverallSchedule() {
     ].forEach((value, index) => {
       const td = document.createElement("td");
       td.textContent = value || "";
-      if (![0, 5, 6, 7, 9].includes(index)) td.classList.add("center");
+      if (![4, 5, 6, 8].includes(index)) td.classList.add("center");
       tr.appendChild(td);
     });
     fragment.appendChild(tr);
@@ -861,6 +877,26 @@ function renderOverallSchedule() {
 
   els.overallTableBody.appendChild(fragment);
   els.overallEmptyState.hidden = scheduleRows.length > 0;
+}
+
+function categoryRowSpans(rows) {
+  const spans = {};
+  let index = 0;
+  while (index < rows.length) {
+    const category = rows[index].category;
+    let count = 1;
+    while (index + count < rows.length && rows[index + count].category === category) count += 1;
+    spans[index] = count;
+    index += count;
+  }
+  return spans;
+}
+
+function subjectTone(subject) {
+  if (subject === "수학") return "math";
+  if (subject === "과학") return "science";
+  if (subject === "영어") return "english";
+  return "plain";
 }
 
 function kpiHtml(label, count, tone) {
