@@ -1415,6 +1415,7 @@ async function downloadFilteredWorkbook() {
     const headers = getHeaders(worksheet);
     if (!OPEN_DATE_CANDIDATES.some((header) => headers.includes(header))) return;
     const sheetRows = exportRows.filter((row) => (row.__sourceSheet || row.__sheet) === worksheet.name);
+    normalizeExportOpenDateHeader(worksheet, headers);
     replaceWorksheetData(worksheet, headers, sheetRows);
   });
 
@@ -1438,16 +1439,42 @@ function getExportRows() {
 }
 
 function replaceWorksheetData(worksheet, headers, rows) {
+  const styleMap = exportStyleMap(worksheet, headers);
   const lastRow = Math.max(worksheet.rowCount, worksheet.actualRowCount);
   if (lastRow > 1) worksheet.spliceRows(2, lastRow - 1);
 
   rows.forEach((record, index) => {
     const row = worksheet.getRow(index + 2);
     headers.forEach((header, colIndex) => {
-      row.getCell(colIndex + 1).value = excelValue(record[header], header);
+      const cell = row.getCell(colIndex + 1);
+      cell.value = excelValue(record[header], header);
+      if (styleMap[header]) cell.style = cloneStyle(styleMap[header]);
     });
     row.commit();
   });
+}
+
+function normalizeExportOpenDateHeader(worksheet, headers) {
+  const openDateIndex = headers.findIndex((header) => OPEN_DATE_CANDIDATES.includes(header));
+  if (openDateIndex === -1) return;
+  headers[openDateIndex] = OPEN_DATE;
+  worksheet.getRow(1).getCell(openDateIndex + 1).value = OPEN_DATE;
+}
+
+function exportStyleMap(worksheet, headers) {
+  const sampleRow = worksheet.getRow(2);
+  const lessonIdIndex = headers.indexOf("차시고유번호");
+  const lessonIdStyle = lessonIdIndex === -1 ? null : sampleRow.getCell(lessonIdIndex + 1).style;
+  return Object.fromEntries(headers.map((header, index) => {
+    const style = isDateHeader(header) && lessonIdStyle
+      ? lessonIdStyle
+      : sampleRow.getCell(index + 1).style;
+    return [header, style];
+  }));
+}
+
+function cloneStyle(style) {
+  return JSON.parse(JSON.stringify(style || {}));
 }
 
 function excelValue(value, header) {
