@@ -475,6 +475,10 @@ td.date {
   text-align: center;
 }
 
+td.center {
+  text-align: center;
+}
+
 tbody tr:nth-child(even) td {
   background: #fbfcfe;
 }

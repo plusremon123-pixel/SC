@@ -667,8 +667,9 @@ function renderTable() {
     headers.forEach((header) => {
       const td = document.createElement("td");
       td.textContent = displayValue(row[header], header);
-      if ([UNIT_ORDER, LESSON_ORDER].includes(header)) td.className = "number";
-      if (header.includes("날짜")) td.className = "date";
+      if (!["단원명", "차시명"].includes(header)) td.classList.add("center");
+      if ([UNIT_ORDER, LESSON_ORDER].includes(header)) td.classList.add("number");
+      if (header.includes("날짜")) td.classList.add("date");
       tr.appendChild(td);
     });
     fragment.appendChild(tr);
