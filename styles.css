@@ -104,6 +104,7 @@ button:disabled {
 .controls,
 .tab-section,
 .table-wrap,
+.math-analysis-panel,
 .overall-panel,
 .view-tabs {
   margin-top: 14px;
@@ -450,6 +451,74 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.analysis-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.analysis-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.analysis-date-tabs {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.analysis-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfe;
+}
+
+.analysis-kpi {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.analysis-kpi strong {
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.analysis-scroll {
+  max-height: none;
+}
+
+.analysis-table {
+  min-width: 1180px;
+}
+
+.analysis-table th:nth-child(1) { width: 90px; }
+.analysis-table th:nth-child(2) { width: 330px; }
+.analysis-table th:nth-child(3) { width: 430px; }
+.analysis-table th:nth-child(4) { width: 260px; }
+.analysis-table th:nth-child(5) { width: 90px; }
+
+.analysis-table tbody tr.duplicate td {
+  background: #fffaf0;
+}
+
+.analysis-table tbody tr.duplicate td:last-child {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .overall-panel {

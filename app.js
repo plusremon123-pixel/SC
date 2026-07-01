@@ -56,6 +56,7 @@ const state = {
   selectedDate: "",
   selectedSubject: "",
   selectedCategory: "",
+  selectedMathAnalysisDate: "",
   tabOrder: "category-first",
   currentView: "lesson",
   timelineMode: "qa",
@@ -66,8 +67,10 @@ const state = {
 
 const els = {
   lessonView: document.querySelector("#lessonView"),
+  mathAnalysisView: document.querySelector("#mathAnalysisView"),
   overallView: document.querySelector("#overallView"),
   lessonViewButton: document.querySelector("#lessonViewButton"),
+  mathAnalysisViewButton: document.querySelector("#mathAnalysisViewButton"),
   overallViewButton: document.querySelector("#overallViewButton"),
   fileInput: document.querySelector("#fileInput"),
   overallFileInput: document.querySelector("#overallFileInput"),
@@ -90,6 +93,11 @@ const els = {
   tableTitle: document.querySelector("#tableTitle"),
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
+  mathAnalysisDateTabs: document.querySelector("#mathAnalysisDateTabs"),
+  mathAnalysisKpis: document.querySelector("#mathAnalysisKpis"),
+  mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
+  mathAnalysisTableBody: document.querySelector("#mathAnalysisTableBody"),
+  mathAnalysisEmptyState: document.querySelector("#mathAnalysisEmptyState"),
   overallSummary: document.querySelector("#overallSummary"),
   overallTableHeader: document.querySelector("#overallTableHeader"),
   overallTableBody: document.querySelector("#overallTableBody"),
@@ -125,6 +133,11 @@ async function init() {
 function bindEvents() {
   els.lessonViewButton.addEventListener("click", () => {
     state.currentView = "lesson";
+    render();
+  });
+
+  els.mathAnalysisViewButton.addEventListener("click", () => {
+    state.currentView = "math-analysis";
     render();
   });
 
@@ -492,13 +505,17 @@ function render() {
   renderSecondaryTabs();
   renderTable();
   renderOverallSchedule();
+  renderMathAnalysis();
 }
 
 function renderView() {
   const isOverall = state.currentView === "overall";
-  els.lessonView.hidden = isOverall;
+  const isMathAnalysis = state.currentView === "math-analysis";
+  els.lessonView.hidden = isOverall || isMathAnalysis;
+  els.mathAnalysisView.hidden = !isMathAnalysis;
   els.overallView.hidden = !isOverall;
-  els.lessonViewButton.classList.toggle("active", !isOverall);
+  els.lessonViewButton.classList.toggle("active", !isOverall && !isMathAnalysis);
+  els.mathAnalysisViewButton.classList.toggle("active", isMathAnalysis);
   els.overallViewButton.classList.toggle("active", isOverall);
 }
 
@@ -836,6 +853,124 @@ function renderTable() {
   els.tableBody.appendChild(fragment);
   els.emptyState.hidden = rows.length > 0;
   els.emptyState.textContent = state.rows.length ? "조건에 맞는 데이터가 없습니다." : "엑셀 파일을 업로드하면 데이터가 표시됩니다.";
+}
+
+function renderMathAnalysis() {
+  const rows = mathSchoolworkRows();
+  const dates = unique(rows.map((row) => row.__openDate)).sort();
+  if (!dates.includes(state.selectedMathAnalysisDate)) state.selectedMathAnalysisDate = dates[0] || "";
+
+  els.mathAnalysisDateTabs.innerHTML = "";
+  dates.forEach((date) => {
+    const count = rows.filter((row) => row.__openDate === date).length;
+    els.mathAnalysisDateTabs.appendChild(tabButton(formatDateTabLabel(date), count, date === state.selectedMathAnalysisDate, () => {
+      state.selectedMathAnalysisDate = date;
+      renderMathAnalysis();
+    }, null, date));
+  });
+
+  const selectedRows = rows.filter((row) => row.__openDate === state.selectedMathAnalysisDate);
+  const groups = mathLessonGroups(selectedRows);
+  const duplicateGroups = groups.filter((group) => group.publishers.length > 1);
+  const unitCount = unique(selectedRows.map((row) => mathUnitKey(row))).length;
+
+  els.mathAnalysisSummary.textContent = state.selectedMathAnalysisDate
+    ? `${formatDateWithDay(state.selectedMathAnalysisDate)} · 학교공부 수학 ${selectedRows.length.toLocaleString("ko-KR")}건`
+    : "학교공부 수학 데이터 없음";
+  els.mathAnalysisKpis.innerHTML = [
+    analysisKpi("전체 차시", selectedRows.length),
+    analysisKpi("단원", unitCount),
+    analysisKpi("차시 묶음", groups.length),
+    analysisKpi("중복 차시", duplicateGroups.length),
+  ].join("");
+
+  els.mathAnalysisTableBody.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+  groups.forEach((group) => {
+    const tr = document.createElement("tr");
+    if (group.publishers.length > 1) tr.classList.add("duplicate");
+    [
+      group.grade,
+      group.unitLabel,
+      group.lessonLabel,
+      group.publishers.join(", "),
+      `${group.publishers.length.toLocaleString("ko-KR")}개`,
+    ].forEach((value, index) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      if (index === 0 || index === 4) td.classList.add("center");
+      tr.appendChild(td);
+    });
+    fragment.appendChild(tr);
+  });
+  els.mathAnalysisTableBody.appendChild(fragment);
+  els.mathAnalysisEmptyState.hidden = groups.length > 0;
+}
+
+function mathSchoolworkRows() {
+  return state.rows.filter((row) => row.__sheet === "학교공부" && row.__subject === "수학");
+}
+
+function mathLessonGroups(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const key = [
+      row["학년"] || "",
+      row[UNIT_ORDER] || "",
+      normalizeText(row["단원명"]),
+      row[LESSON_ORDER] || "",
+    ].join("||");
+    if (!groups.has(key)) {
+      groups.set(key, {
+        grade: row["학년"] || "",
+        unitOrder: toNumber(row[UNIT_ORDER]),
+        lessonOrder: toNumber(row[LESSON_ORDER]),
+        unitLabel: formatMathUnit(row[UNIT_ORDER], row["단원명"]),
+        lessonLabel: formatMathLesson(row[LESSON_ORDER], row["차시명"]),
+        publishers: [],
+      });
+    }
+    const group = groups.get(key);
+    const publisher = row["출판사"] || "미분류";
+    if (!group.publishers.includes(publisher)) group.publishers.push(publisher);
+  });
+
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      publishers: group.publishers.sort(localeSort),
+    }))
+    .sort((a, b) => gradeNumber(a.grade) - gradeNumber(b.grade)
+      || a.unitOrder - b.unitOrder
+      || a.lessonOrder - b.lessonOrder
+      || a.lessonLabel.localeCompare(b.lessonLabel, "ko"));
+}
+
+function formatMathUnit(unitOrder, unitName) {
+  const order = toNumber(unitOrder);
+  const name = String(unitName || "").replace(/^\s*\d+\.\s*/, "").trim();
+  return `${Number.isFinite(order) && order !== 999999 ? `${order}단원 ` : ""}${name}`.trim();
+}
+
+function formatMathLesson(lessonOrder, lessonName) {
+  const order = toNumber(lessonOrder);
+  return `${Number.isFinite(order) && order !== 999999 ? `${order}차시 ` : ""}${String(lessonName || "").trim()}`.trim();
+}
+
+function mathUnitKey(row) {
+  return [row["학년"] || "", row[UNIT_ORDER] || "", normalizeText(row["단원명"])].join("||");
+}
+
+function normalizeText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function gradeNumber(grade) {
+  return Number((String(grade || "").match(/\d+/) || ["999"])[0]);
+}
+
+function analysisKpi(label, count) {
+  return `<span class="analysis-kpi"><strong>${count.toLocaleString("ko-KR")}</strong>${label}</span>`;
 }
 
 function renderOverallSchedule() {
