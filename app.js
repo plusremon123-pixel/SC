@@ -410,11 +410,18 @@ function normalizeSheetName(sheetName) {
 
 function normalizeSubject(record, subjectHeader, sheetName) {
   if (sheetName === "수학마스터") return "수학";
-  if (subjectHeader && record[subjectHeader]) return String(record[subjectHeader]).trim();
+  if (subjectHeader && record[subjectHeader]) return normalizeSubjectName(record[subjectHeader]);
   for (const header of SUBJECT_CANDIDATES) {
-    if (record[header]) return String(record[header]).trim();
+    if (record[header]) return normalizeSubjectName(record[header]);
   }
   return "미분류";
+}
+
+function normalizeSubjectName(value) {
+  const subject = String(value || "").trim();
+  const compact = subject.replace(/\s+/g, "").toLowerCase();
+  if (compact === "ai수학" || compact === "all수학") return "수학";
+  return subject;
 }
 
 function normalizeDate(value) {
@@ -1312,9 +1319,9 @@ function compareRows(a, b) {
 }
 
 function sortSubject(row) {
-  if (usesRepresentativeUnitAsSubject(row.__sheet)) return String(row["대표단원(한글/국어)"] || row.__subject || "");
-  if (row.__sheet === "성취도평가") return String(row["진입 과목명"] || row.__subject || "");
-  return String(row["과목"] || row.__subject || "");
+  if (usesRepresentativeUnitAsSubject(row.__sheet)) return normalizeSubjectName(row["대표단원(한글/국어)"] || row.__subject || "");
+  if (row.__sheet === "성취도평가") return normalizeSubjectName(row["진입 과목명"] || row.__subject || "");
+  return normalizeSubjectName(row["과목"] || row.__subject || "");
 }
 
 function sortGroup(row) {
