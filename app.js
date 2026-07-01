@@ -10,6 +10,7 @@ const SUPABASE_KEY = "sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR";
 const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
+const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
@@ -53,12 +54,18 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   tabOrder: "category-first",
+  currentView: "lesson",
   timelineMode: "qa",
   timelineMarks: {},
+  overallSchedule: null,
   search: "",
 };
 
 const els = {
+  lessonView: document.querySelector("#lessonView"),
+  overallView: document.querySelector("#overallView"),
+  lessonViewButton: document.querySelector("#lessonViewButton"),
+  overallViewButton: document.querySelector("#overallViewButton"),
   fileInput: document.querySelector("#fileInput"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
@@ -79,6 +86,11 @@ const els = {
   tableTitle: document.querySelector("#tableTitle"),
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
+  overallSummary: document.querySelector("#overallSummary"),
+  overallKpis: document.querySelector("#overallKpis"),
+  overallTableHeader: document.querySelector("#overallTableHeader"),
+  overallTableBody: document.querySelector("#overallTableBody"),
+  overallEmptyState: document.querySelector("#overallEmptyState"),
   toast: document.querySelector("#toast"),
 };
 
@@ -93,6 +105,7 @@ async function init() {
   state.tabOrder = localStorage.getItem(TAB_ORDER_KEY) || "category-first";
   state.timelineMarks = readTimelineMarks();
   await loadSharedTimeline();
+  await loadOverallSchedule();
   const sharedLoaded = await loadSharedWorkbook();
   if (!sharedLoaded && state.workbookBase64) {
     await loadWorkbook(state.workbookBase64);
@@ -102,6 +115,16 @@ async function init() {
 }
 
 function bindEvents() {
+  els.lessonViewButton.addEventListener("click", () => {
+    state.currentView = "lesson";
+    render();
+  });
+
+  els.overallViewButton.addEventListener("click", () => {
+    state.currentView = "overall";
+    render();
+  });
+
   els.fileInput.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -252,6 +275,19 @@ async function loadSharedWorkbook() {
   }
 }
 
+async function loadOverallSchedule() {
+  try {
+    const response = await fetch(`${OVERALL_SCHEDULE_PATH}?v=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return false;
+    state.overallSchedule = await response.json();
+    return true;
+  } catch (error) {
+    console.warn("전체 일정 데이터를 불러오지 못했습니다.", error);
+    state.overallSchedule = null;
+    return false;
+  }
+}
+
 function getHeaders(worksheet) {
   const headerRow = worksheet.getRow(1);
   const headers = [];
@@ -330,12 +366,22 @@ function ensureSelections() {
 
 function render() {
   ensureSelections();
+  renderView();
   renderOrderControl();
   renderDateTabs();
   renderReleaseTimeline();
   renderPrimaryTabs();
   renderSecondaryTabs();
   renderTable();
+  renderOverallSchedule();
+}
+
+function renderView() {
+  const isOverall = state.currentView === "overall";
+  els.lessonView.hidden = isOverall;
+  els.overallView.hidden = !isOverall;
+  els.lessonViewButton.classList.toggle("active", !isOverall);
+  els.overallViewButton.classList.toggle("active", isOverall);
 }
 
 function renderTimelineMode() {
@@ -677,6 +723,107 @@ function renderTable() {
   els.tableBody.appendChild(fragment);
   els.emptyState.hidden = rows.length > 0;
   els.emptyState.textContent = state.rows.length ? "조건에 맞는 데이터가 없습니다." : "엑셀 파일을 업로드하면 데이터가 표시됩니다.";
+}
+
+function renderOverallSchedule() {
+  const scheduleRows = state.overallSchedule?.rows || [];
+  const auditRows = scheduleRows.map((row) => ({
+    ...row,
+    audit: auditScheduleRow(row),
+  }));
+  const counts = auditRows.reduce((acc, row) => {
+    acc[row.audit.status] = (acc[row.audit.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  els.overallSummary.textContent = state.overallSchedule
+    ? `${state.overallSchedule.sheet} · ${scheduleRows.length.toLocaleString("ko-KR")}건`
+    : "일정 데이터 없음";
+  els.overallKpis.innerHTML = [
+    kpiHtml("등록됨", counts.matched || 0, "ok"),
+    kpiHtml("미등록", counts.missing || 0, "warn"),
+    kpiHtml("검수제외", counts.skipped || 0, "muted"),
+  ].join("");
+
+  const headers = ["상태", "오픈일", "카테고리", "과목", "학기", "차수", "콘텐츠 범위", "차시 수/비중", "등록 차시", "비고"];
+  els.overallTableHeader.innerHTML = `<tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr>`;
+  els.overallTableBody.innerHTML = "";
+
+  const fragment = document.createDocumentFragment();
+  auditRows.forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.className = `audit-${row.audit.status}`;
+    [
+      row.audit.label,
+      formatDateWithDay(row.openDate),
+      compactScheduleCategory(row.category),
+      row.subject,
+      row.term,
+      row.round,
+      row.scope,
+      row.lessonShare,
+      row.audit.detail,
+      row.note,
+    ].forEach((value, index) => {
+      const td = document.createElement("td");
+      td.textContent = value || "";
+      if (![2, 6, 7, 8, 9].includes(index)) td.classList.add("center");
+      tr.appendChild(td);
+    });
+    fragment.appendChild(tr);
+  });
+
+  els.overallTableBody.appendChild(fragment);
+  els.overallEmptyState.hidden = scheduleRows.length > 0;
+}
+
+function kpiHtml(label, count, tone) {
+  return `<span class="overall-kpi ${tone}"><strong>${count.toLocaleString("ko-KR")}</strong>${label}</span>`;
+}
+
+function auditScheduleRow(scheduleRow) {
+  const categories = scheduleTargetCategories(scheduleRow.category);
+  if (!categories.length || !scheduleRow.openDate) {
+    return { status: "skipped", label: "검수제외", detail: "매칭 대상 없음" };
+  }
+
+  const matches = state.rows.filter((row) => (
+    row.__openDate === scheduleRow.openDate
+    && categories.includes(row.__sheet)
+    && scheduleSubjectMatches(row, scheduleRow, categories)
+  ));
+
+  if (!matches.length) {
+    return { status: "missing", label: "미등록", detail: `${categories.join(", ")} 기준 등록 차시 없음` };
+  }
+
+  const detail = categories
+    .map((category) => {
+      const count = matches.filter((row) => row.__sheet === category).length;
+      return count ? `${category} ${count.toLocaleString("ko-KR")}건` : "";
+    })
+    .filter(Boolean)
+    .join(", ");
+  return { status: "matched", label: "등록됨", detail };
+}
+
+function scheduleTargetCategories(category) {
+  const value = String(category || "");
+  if (value.includes("학교공부")) return ["학교공부", "학교시험"];
+  if (value.includes("성취도평가")) return ["성취도평가"];
+  if (value.includes("학교시험")) return ["학교시험"];
+  if (value.includes("검정")) return ["검정교과서"];
+  if (value.includes("수학 마스터") || value.includes("AI수학")) return ["수학마스터"];
+  return [];
+}
+
+function scheduleSubjectMatches(row, scheduleRow, categories) {
+  if (categories.includes("수학마스터")) return row.__subject === "수학";
+  return row.__subject === scheduleRow.subject;
+}
+
+function compactScheduleCategory(category) {
+  return String(category || "").replace(/\n+/g, " / ");
 }
 
 function displayHeaders(headers) {
