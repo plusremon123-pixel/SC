@@ -109,9 +109,14 @@ async function init() {
   state.timelineMarks = readTimelineMarks();
   await loadSharedTimeline();
   await loadOverallSchedule();
-  const sharedLoaded = await loadSharedWorkbook();
-  if (!sharedLoaded && state.workbookBase64) {
+  const hasLocalUpload = state.workbookBase64 && state.sourceName.startsWith("현재 데이터:");
+  if (hasLocalUpload) {
     await loadWorkbook(state.workbookBase64);
+  } else {
+    const sharedLoaded = await loadSharedWorkbook();
+    if (!sharedLoaded && state.workbookBase64) {
+      await loadWorkbook(state.workbookBase64);
+    }
   }
   bindEvents();
   render();
@@ -150,6 +155,7 @@ function bindEvents() {
     state.workbookBase64 = base64;
     localStorage.setItem(STORAGE_KEY, base64);
     localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
+    state.currentView = "lesson";
     state.sourceName = `현재 데이터: ${file.name}`;
     state.currentFileName = file.name;
     state.timelineMarks = createDefaultTimelineMarks();
@@ -162,7 +168,7 @@ function bindEvents() {
       await saveTimelineToSupabase("기본 체크 일정도 저장했습니다.");
     } catch (error) {
       console.error(error);
-      showToast(error.message || "Supabase 저장 중 오류가 발생했습니다.");
+      showToast(error.message ? `화면에는 반영됐지만 공유 저장 실패: ${error.message}` : "화면에는 반영됐지만 공유 저장에 실패했습니다.");
     } finally {
       event.target.value = "";
     }
