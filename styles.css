@@ -110,12 +110,26 @@ button:disabled {
 .tab-section,
 .table-wrap,
 .math-analysis-panel,
+.schedule-card-panel,
 .overall-panel,
 .view-tabs {
   margin-top: 14px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.schedule-card-panel {
+  overflow: hidden;
+  padding: 0;
+}
+
+.schedule-card-panel iframe {
+  display: block;
+  width: 100%;
+  min-height: calc(100vh - 170px);
+  border: 0;
+  background: #f7f8fb;
 }
 
 .view-tabs {

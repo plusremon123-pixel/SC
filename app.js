@@ -70,9 +70,11 @@ const state = {
 const els = {
   lessonView: document.querySelector("#lessonView"),
   mathAnalysisView: document.querySelector("#mathAnalysisView"),
+  scheduleCardView: document.querySelector("#scheduleCardView"),
   overallView: document.querySelector("#overallView"),
   lessonViewButton: document.querySelector("#lessonViewButton"),
   mathAnalysisViewButton: document.querySelector("#mathAnalysisViewButton"),
+  scheduleCardViewButton: document.querySelector("#scheduleCardViewButton"),
   overallViewButton: document.querySelector("#overallViewButton"),
   fileInput: document.querySelector("#fileInput"),
   overallFileInput: document.querySelector("#overallFileInput"),
@@ -145,6 +147,11 @@ function bindEvents() {
 
   els.overallViewButton.addEventListener("click", () => {
     state.currentView = "overall";
+    render();
+  });
+
+  els.scheduleCardViewButton.addEventListener("click", () => {
+    state.currentView = "schedule-card";
     render();
   });
 
@@ -514,11 +521,14 @@ function render() {
 function renderView() {
   const isOverall = state.currentView === "overall";
   const isMathAnalysis = state.currentView === "math-analysis";
-  els.lessonView.hidden = isOverall || isMathAnalysis;
+  const isScheduleCard = state.currentView === "schedule-card";
+  els.lessonView.hidden = isOverall || isMathAnalysis || isScheduleCard;
   els.mathAnalysisView.hidden = !isMathAnalysis;
+  els.scheduleCardView.hidden = !isScheduleCard;
   els.overallView.hidden = !isOverall;
-  els.lessonViewButton.classList.toggle("active", !isOverall && !isMathAnalysis);
+  els.lessonViewButton.classList.toggle("active", !isOverall && !isMathAnalysis && !isScheduleCard);
   els.mathAnalysisViewButton.classList.toggle("active", isMathAnalysis);
+  els.scheduleCardViewButton.classList.toggle("active", isScheduleCard);
   els.overallViewButton.classList.toggle("active", isOverall);
 }
 
