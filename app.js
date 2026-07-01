@@ -942,6 +942,7 @@ function mathLessonGroups(rows) {
     }))
     .sort((a, b) => gradeNumber(a.grade) - gradeNumber(b.grade)
       || a.unitOrder - b.unitOrder
+      || a.unitLabel.localeCompare(b.unitLabel, "ko")
       || a.lessonOrder - b.lessonOrder
       || a.lessonLabel.localeCompare(b.lessonLabel, "ko"));
 }
