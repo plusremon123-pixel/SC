@@ -90,7 +90,6 @@ const els = {
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
   overallSummary: document.querySelector("#overallSummary"),
-  overallKpis: document.querySelector("#overallKpis"),
   overallTableHeader: document.querySelector("#overallTableHeader"),
   overallTableBody: document.querySelector("#overallTableBody"),
   overallEmptyState: document.querySelector("#overallEmptyState"),
@@ -676,7 +675,7 @@ function timelineCopyRange(mark) {
 }
 
 function subjectCopyLines(rows) {
-  const subjects = unique(rows.map((row) => row.__subject)).sort(compareCopySubject);
+  const subjects = unique(rows.map((row) => row.__subject)).sort(compareSubjectOrder);
   return subjects.map((subject) => {
     const subjectRows = rows.filter((row) => row.__subject === subject);
     const categories = unique(subjectRows.map((row) => row.__sheet))
@@ -688,14 +687,6 @@ function subjectCopyLines(rows) {
 
     return `${subject} (${subjectRows.length.toLocaleString("ko-KR")}건) : ${categories.join(", ")}`;
   });
-}
-
-function compareCopySubject(a, b) {
-  const aIndex = COPY_SUBJECT_ORDER.indexOf(a);
-  const bIndex = COPY_SUBJECT_ORDER.indexOf(b);
-  const aOrder = aIndex === -1 ? COPY_SUBJECT_ORDER.length : aIndex;
-  const bOrder = bIndex === -1 ? COPY_SUBJECT_ORDER.length : bIndex;
-  return aOrder - bOrder || localeSort(a, b);
 }
 
 function renderTimelineMonths(days) {
@@ -838,40 +829,26 @@ function renderTable() {
 
 function renderOverallSchedule() {
   const scheduleRows = state.overallSchedule?.rows || [];
-  const auditRows = scheduleRows.map((row) => ({
-    ...row,
-    audit: auditScheduleRow(row),
-  }));
-  const counts = auditRows.reduce((acc, row) => {
-    acc[row.audit.status] = (acc[row.audit.status] || 0) + 1;
-    return acc;
-  }, {});
-
   els.overallSummary.textContent = state.overallSchedule
     ? `${state.overallSchedule.source || state.overallSchedule.sheet} · ${scheduleRows.length.toLocaleString("ko-KR")}건`
     : "일정 데이터 없음";
-  els.overallKpis.innerHTML = [
-    kpiHtml("등록됨", counts.matched || 0, "ok"),
-    kpiHtml("미등록", counts.missing || 0, "warn"),
-    kpiHtml("검수제외", counts.skipped || 0, "muted"),
-  ].join("");
 
-  const headers = ["카테고리", "과목", "학기", "차수", "오픈일", "콘텐츠 범위", "차시 수/비중", "비고", "검수 상태", "등록 차시"];
+  const headers = ["카테고리", "과목", "학기", "차수", "오픈일", "콘텐츠 범위", "차시 수/비중", "비고"];
   els.overallTableHeader.innerHTML = `
     <tr class="overall-title-row">
       <th colspan="7">${escapeHtml(state.overallSchedule?.title || "스마트올 5, 6학년 2학기 콘텐츠 오픈 예정일")}</th>
-      <th colspan="3">${escapeHtml(state.overallSchedule?.version || "")}</th>
+      <th>${escapeHtml(state.overallSchedule?.version || "")}</th>
     </tr>
     <tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr>
   `;
   els.overallTableBody.innerHTML = "";
 
   const fragment = document.createDocumentFragment();
-  const categorySpans = state.overallSchedule?.mergeSpans?.category || categoryRowSpans(auditRows);
+  const categorySpans = state.overallSchedule?.mergeSpans?.category || categoryRowSpans(scheduleRows);
   const noteSpans = state.overallSchedule?.mergeSpans?.note || {};
-  auditRows.forEach((row, index) => {
+  scheduleRows.forEach((row, index) => {
     const tr = document.createElement("tr");
-    tr.className = `audit-${row.audit.status} subject-${subjectTone(row.subject)}`;
+    tr.className = `subject-${subjectTone(row.subject)}`;
     if (categorySpans[index]) {
       const categoryCell = document.createElement("td");
       categoryCell.className = "overall-category";
@@ -900,13 +877,6 @@ function renderOverallSchedule() {
       if (noteSpans[index]) noteCell.rowSpan = noteSpans[index];
       tr.appendChild(noteCell);
     }
-
-    [row.audit.label, row.audit.detail].forEach((value, cellIndex) => {
-      const td = document.createElement("td");
-      td.textContent = value || "";
-      if (cellIndex === 0) td.classList.add("center");
-      tr.appendChild(td);
-    });
     fragment.appendChild(tr);
   });
 
@@ -981,51 +951,6 @@ function subjectTone(subject) {
   if (subject === "과학") return "science";
   if (subject === "영어") return "english";
   return "plain";
-}
-
-function kpiHtml(label, count, tone) {
-  return `<span class="overall-kpi ${tone}"><strong>${count.toLocaleString("ko-KR")}</strong>${label}</span>`;
-}
-
-function auditScheduleRow(scheduleRow) {
-  const categories = scheduleTargetCategories(scheduleRow.category);
-  if (!categories.length || !scheduleRow.openDate) {
-    return { status: "skipped", label: "검수제외", detail: "매칭 대상 없음" };
-  }
-
-  const matches = state.rows.filter((row) => (
-    row.__openDate === scheduleRow.openDate
-    && categories.includes(row.__sheet)
-    && scheduleSubjectMatches(row, scheduleRow, categories)
-  ));
-
-  if (!matches.length) {
-    return { status: "missing", label: "미등록", detail: `${categories.join(", ")} 기준 등록 차시 없음` };
-  }
-
-  const detail = categories
-    .map((category) => {
-      const count = matches.filter((row) => row.__sheet === category).length;
-      return count ? `${category} ${count.toLocaleString("ko-KR")}건` : "";
-    })
-    .filter(Boolean)
-    .join(", ");
-  return { status: "matched", label: "등록됨", detail };
-}
-
-function scheduleTargetCategories(category) {
-  const value = String(category || "");
-  if (value.includes("학교공부")) return ["학교공부", "학교시험"];
-  if (value.includes("성취도평가")) return ["성취도평가"];
-  if (value.includes("학교시험")) return ["학교시험"];
-  if (value.includes("검정")) return ["검정교과서"];
-  if (value.includes("수학 마스터") || value.includes("AI수학")) return ["수학마스터"];
-  return [];
-}
-
-function scheduleSubjectMatches(row, scheduleRow, categories) {
-  if (categories.includes("수학마스터")) return row.__subject === "수학";
-  return row.__subject === scheduleRow.subject;
 }
 
 function compactScheduleCategory(category) {
@@ -1117,7 +1042,7 @@ function subjectsForDate(date) {
     rowsMatchingSearch()
       .filter((row) => dateMatches(row, date))
       .map((row) => row.__subject),
-  ).sort(localeSort);
+  ).sort(compareSubjectOrder);
 }
 
 function subjectsForDateCategory(date, category) {
@@ -1125,7 +1050,7 @@ function subjectsForDateCategory(date, category) {
     rowsMatchingSearch()
       .filter((row) => dateMatches(row, date) && row.__sheet === category)
       .map((row) => row.__subject),
-  ).sort(localeSort);
+  ).sort(compareSubjectOrder);
 }
 
 function categoriesForDateSubject(date, subject) {
@@ -1500,6 +1425,14 @@ function unique(values) {
 
 function localeSort(a, b) {
   return String(a).localeCompare(String(b), "ko");
+}
+
+function compareSubjectOrder(a, b) {
+  const aIndex = COPY_SUBJECT_ORDER.indexOf(a);
+  const bIndex = COPY_SUBJECT_ORDER.indexOf(b);
+  const aOrder = aIndex === -1 ? COPY_SUBJECT_ORDER.length : aIndex;
+  const bOrder = bIndex === -1 ? COPY_SUBJECT_ORDER.length : bIndex;
+  return aOrder - bOrder || localeSort(a, b);
 }
 
 function fileToBase64(file) {
