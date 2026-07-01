@@ -57,6 +57,8 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   selectedMathAnalysisDate: "",
+  selectedMathPublishers: [],
+  mathPublisherFilterInitialized: false,
   tabOrder: "category-first",
   currentView: "lesson",
   timelineMode: "qa",
@@ -94,6 +96,7 @@ const els = {
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
   mathAnalysisDateTabs: document.querySelector("#mathAnalysisDateTabs"),
+  mathPublisherFilters: document.querySelector("#mathPublisherFilters"),
   mathAnalysisKpis: document.querySelector("#mathAnalysisKpis"),
   mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
   mathAnalysisTableBody: document.querySelector("#mathAnalysisTableBody"),
@@ -300,6 +303,7 @@ async function loadWorkbook(base64) {
 
   state.sheets = sheets;
   state.rows = rows.filter((row) => row.__openDate);
+  state.mathPublisherFilterInitialized = false;
   ensureSelections();
 }
 
@@ -857,18 +861,25 @@ function renderTable() {
 function renderMathAnalysis() {
   const rows = mathSchoolworkRows();
   const dates = unique(rows.map((row) => row.__openDate)).sort();
+  const publishers = mathPublishers(rows);
+  ensureMathPublisherSelection(publishers);
   if (!dates.includes(state.selectedMathAnalysisDate)) state.selectedMathAnalysisDate = dates[0] || "";
+  renderMathPublisherFilters(publishers);
+  const publisherRows = rows.filter((row) => mathPublisherSelected(row));
 
   els.mathAnalysisDateTabs.innerHTML = "";
   dates.forEach((date) => {
-    const count = rows.filter((row) => row.__openDate === date).length;
+    const count = publisherRows.filter((row) => row.__openDate === date).length;
     els.mathAnalysisDateTabs.appendChild(tabButton(formatDateTabLabel(date), count, date === state.selectedMathAnalysisDate, () => {
       state.selectedMathAnalysisDate = date;
       renderMathAnalysis();
     }, null, date));
   });
 
-  const selectedRows = rows.filter((row) => row.__openDate === state.selectedMathAnalysisDate);
+  const selectedRows = rows.filter((row) => (
+    row.__openDate === state.selectedMathAnalysisDate
+    && mathPublisherSelected(row)
+  ));
   const groups = mathLessonGroups(selectedRows);
   const duplicateGroups = groups.filter((group) => group.publishers.length > 1);
   const unitCount = unique(selectedRows.map((row) => mathUnitKey(row))).length;
@@ -904,6 +915,57 @@ function renderMathAnalysis() {
   });
   els.mathAnalysisTableBody.appendChild(fragment);
   els.mathAnalysisEmptyState.hidden = groups.length > 0;
+}
+
+function renderMathPublisherFilters(publishers) {
+  els.mathPublisherFilters.innerHTML = "";
+  if (!publishers.length) return;
+
+  const allButton = document.createElement("button");
+  allButton.type = "button";
+  allButton.className = "publisher-filter-all";
+  allButton.textContent = state.selectedMathPublishers.length === publishers.length ? "전체 해제" : "전체 선택";
+  allButton.addEventListener("click", () => {
+    state.selectedMathPublishers = state.selectedMathPublishers.length === publishers.length ? [] : [...publishers];
+    renderMathAnalysis();
+  });
+  els.mathPublisherFilters.appendChild(allButton);
+
+  publishers.forEach((publisher) => {
+    const label = document.createElement("label");
+    label.className = "publisher-filter";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = state.selectedMathPublishers.includes(publisher);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        state.selectedMathPublishers = unique([...state.selectedMathPublishers, publisher]).sort(localeSort);
+      } else {
+        state.selectedMathPublishers = state.selectedMathPublishers.filter((item) => item !== publisher);
+      }
+      renderMathAnalysis();
+    });
+    label.appendChild(checkbox);
+    label.append(publisher);
+    els.mathPublisherFilters.appendChild(label);
+  });
+}
+
+function mathPublishers(rows) {
+  return unique(rows.map((row) => row["출판사"] || "미분류")).sort(localeSort);
+}
+
+function mathPublisherSelected(row) {
+  return state.selectedMathPublishers.includes(row["출판사"] || "미분류");
+}
+
+function ensureMathPublisherSelection(publishers) {
+  if (!state.mathPublisherFilterInitialized) {
+    state.selectedMathPublishers = [...publishers];
+    state.mathPublisherFilterInitialized = true;
+    return;
+  }
+  state.selectedMathPublishers = state.selectedMathPublishers.filter((publisher) => publishers.includes(publisher));
 }
 
 function mathSchoolworkRows() {

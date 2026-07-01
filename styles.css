@@ -472,6 +472,41 @@ button:disabled {
   border-bottom: 1px solid var(--line);
 }
 
+.publisher-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfe;
+}
+
+.publisher-filter,
+.publisher-filter-all {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.publisher-filter input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+.publisher-filter-all {
+  color: var(--brand-strong);
+  font-weight: 800;
+}
+
 .analysis-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
