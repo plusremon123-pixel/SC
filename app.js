@@ -13,6 +13,7 @@ const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
+const OPEN_DATE_CANDIDATES = [OPEN_DATE, "개정 오픈일"];
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
 const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "과목"];
@@ -247,11 +248,13 @@ async function loadWorkbook(base64) {
   const rows = [];
   workbook.eachSheet((worksheet) => {
     const headers = getHeaders(worksheet);
-    if (!headers.length || !headers.includes(OPEN_DATE)) return;
+    const openDateHeader = OPEN_DATE_CANDIDATES.find((header) => headers.includes(header));
+    if (!headers.length || !openDateHeader) return;
 
     const subjectHeader = SUBJECT_CANDIDATES.find((name) => headers.includes(name));
+    const sheetName = normalizeSheetName(worksheet.name);
     const sheet = {
-      name: worksheet.name,
+      name: sheetName,
       headers,
       subjectHeader,
     };
@@ -265,10 +268,12 @@ async function loadWorkbook(base64) {
       headers.forEach((header, index) => {
         record[header] = values[index];
       });
-      record.__sheet = worksheet.name;
+      record[OPEN_DATE] = record[openDateHeader];
+      record.__sourceSheet = worksheet.name;
+      record.__sheet = sheetName;
       record.__headers = headers;
-      record.__subject = normalizeSubject(record, subjectHeader, worksheet.name);
-      record.__openDate = normalizeDate(record[OPEN_DATE]);
+      record.__subject = normalizeSubject(record, subjectHeader, sheetName);
+      record.__openDate = normalizeDate(record[openDateHeader]);
       record.__unitOrder = toNumber(record[UNIT_ORDER]);
       record.__lessonOrder = toNumber(record[LESSON_ORDER]);
       rows.push(record);
@@ -387,6 +392,12 @@ function normalizeCell(value) {
   return String(value).trim();
 }
 
+function normalizeSheetName(sheetName) {
+  if (sheetName === "전체과목_국수사과영바") return "학교공부";
+  if (sheetName === "검정교과서 학습관") return "검정교과서";
+  return sheetName;
+}
+
 function normalizeSubject(record, subjectHeader, sheetName) {
   if (sheetName === "수학마스터") return "수학";
   if (subjectHeader && record[subjectHeader]) return String(record[subjectHeader]).trim();
@@ -399,6 +410,7 @@ function normalizeSubject(record, subjectHeader, sheetName) {
 function normalizeDate(value) {
   const text = String(value || "").replace(/[^\d]/g, "");
   if (text.length === 8) return `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}`;
+  if (text.length === 6) return `20${text.slice(0, 2)}-${text.slice(2, 4)}-${text.slice(4, 6)}`;
   if (value instanceof Date) return dateToYmd(value);
   return "";
 }
@@ -1329,8 +1341,8 @@ async function downloadFilteredWorkbook() {
 
   workbook.eachSheet((worksheet) => {
     const headers = getHeaders(worksheet);
-    if (!headers.includes(OPEN_DATE)) return;
-    const sheetRows = exportRows.filter((row) => row.__sheet === worksheet.name);
+    if (!OPEN_DATE_CANDIDATES.some((header) => headers.includes(header))) return;
+    const sheetRows = exportRows.filter((row) => (row.__sourceSheet || row.__sheet) === worksheet.name);
     replaceWorksheetData(worksheet, headers, sheetRows);
   });
 
