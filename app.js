@@ -13,7 +13,8 @@ const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
-const OPEN_DATE_CANDIDATES = [OPEN_DATE, "개정 오픈일"];
+const OPEN_DATE_LABEL = "운영 오픈 일정";
+const OPEN_DATE_CANDIDATES = [OPEN_DATE, "개정 오픈일", OPEN_DATE_LABEL];
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
 const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "과목"];
@@ -980,6 +981,7 @@ function displayHeaders(headers) {
 }
 
 function displayHeaderLabel(header, category) {
+  if (OPEN_DATE_CANDIDATES.includes(header)) return OPEN_DATE_LABEL;
   if (usesRepresentativeUnitAsSubject(category)) {
     if (header === "대표단원(한글/국어)") return "과목";
     if (header === "과목") return "구분";
@@ -1390,7 +1392,7 @@ function normalizeExportOpenDateHeader(worksheet, headers) {
   const openDateIndex = headers.findIndex((header) => OPEN_DATE_CANDIDATES.includes(header));
   if (openDateIndex === -1) return;
   headers[openDateIndex] = OPEN_DATE;
-  worksheet.getRow(1).getCell(openDateIndex + 1).value = OPEN_DATE;
+  worksheet.getRow(1).getCell(openDateIndex + 1).value = OPEN_DATE_LABEL;
 }
 
 function exportStyleMap(worksheet, headers) {

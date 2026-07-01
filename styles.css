@@ -445,6 +445,13 @@ button:disabled {
   border-bottom: 1px solid var(--line);
 }
 
+.table-head strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .overall-panel {
   overflow: visible;
 }
@@ -560,6 +567,10 @@ table {
   font-size: 13px;
 }
 
+.table-wrap table {
+  min-width: 1320px;
+}
+
 th,
 td {
   border-right: 1px solid var(--line);
@@ -578,6 +589,7 @@ th {
   color: #fff;
   font-weight: 800;
   text-align: center;
+  white-space: nowrap;
 }
 
 td.number,
