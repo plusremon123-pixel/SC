@@ -98,7 +98,6 @@ const els = {
   mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
   mathAnalysisTableBody: document.querySelector("#mathAnalysisTableBody"),
   mathAnalysisEmptyState: document.querySelector("#mathAnalysisEmptyState"),
-  overallSummary: document.querySelector("#overallSummary"),
   overallTableHeader: document.querySelector("#overallTableHeader"),
   overallTableBody: document.querySelector("#overallTableBody"),
   overallEmptyState: document.querySelector("#overallEmptyState"),
@@ -976,10 +975,6 @@ function analysisKpi(label, count) {
 
 function renderOverallSchedule() {
   const scheduleRows = state.overallSchedule?.rows || [];
-  els.overallSummary.textContent = state.overallSchedule
-    ? `${state.overallSchedule.source || state.overallSchedule.sheet} · ${scheduleRows.length.toLocaleString("ko-KR")}건`
-    : "일정 데이터 없음";
-
   const headers = ["카테고리", "과목", "학기", "차수", "오픈일", "콘텐츠 범위", "차시 수/비중", "비고"];
   els.overallTableHeader.innerHTML = `
     <tr class="overall-title-row">
