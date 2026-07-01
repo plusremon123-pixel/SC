@@ -184,6 +184,7 @@ button:disabled {
 
 .tab-section {
   padding: 14px 16px 12px;
+  min-height: 84px;
 }
 
 .timeline-section {
@@ -380,6 +381,7 @@ button:disabled {
 
 .depth-row .tab-section {
   min-width: 0;
+  min-height: 94px;
 }
 
 .tabs {
@@ -390,6 +392,7 @@ button:disabled {
 
 .tab {
   min-height: 36px;
+  min-width: 112px;
   padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -431,10 +434,13 @@ button:disabled {
 .date-tabs {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-content: start;
+  min-height: 88px;
 }
 
 .table-wrap {
   overflow: visible;
+  min-height: 420px;
 }
 
 .table-head {
@@ -660,6 +666,7 @@ button:disabled {
 
 .table-wrap .scroll-area {
   max-height: none;
+  min-height: 340px;
   overflow-x: auto;
   overflow-y: visible;
 }
