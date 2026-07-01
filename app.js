@@ -987,7 +987,8 @@ function renderOverallSchedule() {
 
   const fragment = document.createDocumentFragment();
   const categorySpans = state.overallSchedule?.mergeSpans?.category || categoryRowSpans(scheduleRows);
-  const noteSpans = state.overallSchedule?.mergeSpans?.note || {};
+  const savedNoteSpans = state.overallSchedule?.mergeSpans?.note || {};
+  const noteSpans = Object.keys(savedNoteSpans).length ? savedNoteSpans : noteRowSpans(scheduleRows);
   scheduleRows.forEach((row, index) => {
     const tr = document.createElement("tr");
     tr.className = `subject-${subjectTone(row.subject)}`;
@@ -1072,6 +1073,34 @@ function mergeSpanMap(rows, merges, columnNumber) {
         spans[index] = 0;
       });
     });
+  return spans;
+}
+
+function noteRowSpans(rows) {
+  const spans = {};
+  let index = 0;
+  while (index < rows.length) {
+    if (!rows[index].note) {
+      index += 1;
+      continue;
+    }
+
+    let count = 1;
+    while (
+      index + count < rows.length
+      && !rows[index + count].note
+      && rows[index + count].category === rows[index].category
+      && rows[index + count].subject === rows[index].subject
+    ) {
+      count += 1;
+    }
+
+    spans[index] = count;
+    for (let offset = 1; offset < count; offset += 1) {
+      spans[index + offset] = 0;
+    }
+    index += count;
+  }
   return spans;
 }
 
