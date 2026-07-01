@@ -547,6 +547,12 @@ button:disabled {
   min-height: 260px;
 }
 
+.scroll-area.overall-scroll {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
 table {
   width: 100%;
   border-collapse: separate;
@@ -645,6 +651,10 @@ tbody tr:nth-child(even) td {
 
   .scroll-area {
     max-height: calc(100vh - 500px);
+  }
+
+  .scroll-area.overall-scroll {
+    max-height: none;
   }
 
   .depth-row {
