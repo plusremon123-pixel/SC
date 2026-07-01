@@ -821,7 +821,7 @@ function renderTable() {
       td.textContent = displayValue(row[header], header);
       if (!["단원명", "차시명"].includes(header)) td.classList.add("center");
       if ([UNIT_ORDER, LESSON_ORDER].includes(header)) td.classList.add("number");
-      if (header.includes("날짜")) td.classList.add("date");
+      if (isDateHeader(header)) td.classList.add("date");
       tr.appendChild(td);
     });
     fragment.appendChild(tr);
@@ -1386,15 +1386,19 @@ function replaceWorksheetData(worksheet, headers, rows) {
 
 function excelValue(value, header) {
   if (value == null || value === "") return null;
-  if (header.includes("날짜")) return Number(String(value).replace(/[^\d]/g, ""));
+  if (isDateHeader(header)) return Number(String(normalizeDate(value) || value).replace(/[^\d]/g, ""));
   const numberHeaders = [UNIT_ORDER, LESSON_ORDER, "차시고유번호"];
   if (numberHeaders.includes(header) && Number.isFinite(Number(value))) return Number(value);
   return value;
 }
 
 function displayValue(value, header) {
-  if (header.includes("날짜")) return normalizeDate(value) || value || "";
+  if (isDateHeader(header)) return normalizeDate(value) || value || "";
   return value ?? "";
+}
+
+function isDateHeader(header) {
+  return header.includes("날짜") || header.includes("오픈일") || OPEN_DATE_CANDIDATES.includes(header);
 }
 
 function unique(values) {
