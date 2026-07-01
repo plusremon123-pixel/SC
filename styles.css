@@ -446,7 +446,7 @@ button:disabled {
 }
 
 .overall-panel {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .overall-head {
@@ -499,7 +499,9 @@ button:disabled {
 }
 
 .overall-scroll {
-  max-height: calc(100vh - 300px);
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .overall-panel table {

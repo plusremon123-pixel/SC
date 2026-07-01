@@ -56,7 +56,7 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   tabOrder: "category-first",
-  currentView: "overall",
+  currentView: "lesson",
   timelineMode: "qa",
   timelineMarks: {},
   overallSchedule: null,
@@ -320,11 +320,16 @@ async function parseOverallScheduleWorkbook(base64, fileName) {
   }
 
   if (!rows.length) throw new Error("전체 일정 엑셀에서 일정 데이터를 찾지 못했습니다.");
+  const merges = mergedRanges(worksheet);
   return {
     source: fileName,
     sheet: worksheet.name,
     title: normalizeCell(worksheet.getRow(2).getCell(2).value),
     version: normalizeCell(worksheet.getRow(2).getCell(9).value),
+    mergeSpans: {
+      category: mergeSpanMap(rows, merges, 2),
+      note: mergeSpanMap(rows, merges, 9),
+    },
     rows,
   };
 }
@@ -862,14 +867,15 @@ function renderOverallSchedule() {
   els.overallTableBody.innerHTML = "";
 
   const fragment = document.createDocumentFragment();
-  const spans = categoryRowSpans(auditRows);
+  const categorySpans = state.overallSchedule?.mergeSpans?.category || categoryRowSpans(auditRows);
+  const noteSpans = state.overallSchedule?.mergeSpans?.note || {};
   auditRows.forEach((row, index) => {
     const tr = document.createElement("tr");
     tr.className = `audit-${row.audit.status} subject-${subjectTone(row.subject)}`;
-    if (spans[index]) {
+    if (categorySpans[index]) {
       const categoryCell = document.createElement("td");
       categoryCell.className = "overall-category";
-      categoryCell.rowSpan = spans[index];
+      categoryCell.rowSpan = categorySpans[index];
       categoryCell.textContent = compactScheduleCategory(row.category);
       tr.appendChild(categoryCell);
     }
@@ -881,13 +887,24 @@ function renderOverallSchedule() {
       formatDateWithDay(row.openDate),
       row.scope,
       row.lessonShare,
-      row.note,
-      row.audit.label,
-      row.audit.detail,
-    ].forEach((value, index) => {
+    ].forEach((value, cellIndex) => {
       const td = document.createElement("td");
       td.textContent = value || "";
-      if (![4, 5, 6, 8].includes(index)) td.classList.add("center");
+      if (![4, 5].includes(cellIndex)) td.classList.add("center");
+      tr.appendChild(td);
+    });
+
+    if (noteSpans[index] !== 0) {
+      const noteCell = document.createElement("td");
+      noteCell.textContent = row.note || "";
+      if (noteSpans[index]) noteCell.rowSpan = noteSpans[index];
+      tr.appendChild(noteCell);
+    }
+
+    [row.audit.label, row.audit.detail].forEach((value, cellIndex) => {
+      const td = document.createElement("td");
+      td.textContent = value || "";
+      if (cellIndex === 0) td.classList.add("center");
       tr.appendChild(td);
     });
     fragment.appendChild(tr);
@@ -895,6 +912,55 @@ function renderOverallSchedule() {
 
   els.overallTableBody.appendChild(fragment);
   els.overallEmptyState.hidden = scheduleRows.length > 0;
+}
+
+function mergedRanges(worksheet) {
+  return (worksheet.model?.merges || []).map(parseCellRange).filter(Boolean);
+}
+
+function parseCellRange(range) {
+  const [start, end = start] = String(range).split(":");
+  const startCell = parseCellRef(start);
+  const endCell = parseCellRef(end);
+  if (!startCell || !endCell) return null;
+  return {
+    top: Math.min(startCell.row, endCell.row),
+    bottom: Math.max(startCell.row, endCell.row),
+    left: Math.min(startCell.col, endCell.col),
+    right: Math.max(startCell.col, endCell.col),
+  };
+}
+
+function parseCellRef(ref) {
+  const match = String(ref).match(/^([A-Z]+)(\d+)$/i);
+  if (!match) return null;
+  return {
+    col: columnNameToNumber(match[1]),
+    row: Number(match[2]),
+  };
+}
+
+function columnNameToNumber(name) {
+  return String(name).toUpperCase().split("").reduce((number, char) => (
+    number * 26 + char.charCodeAt(0) - 64
+  ), 0);
+}
+
+function mergeSpanMap(rows, merges, columnNumber) {
+  const spans = {};
+  merges
+    .filter((merge) => merge.left <= columnNumber && merge.right >= columnNumber)
+    .forEach((merge) => {
+      const indexes = rows
+        .map((row, index) => (row.row >= merge.top && row.row <= merge.bottom ? index : -1))
+        .filter((index) => index !== -1);
+      if (indexes.length <= 1) return;
+      spans[indexes[0]] = indexes.length;
+      indexes.slice(1).forEach((index) => {
+        spans[index] = 0;
+      });
+    });
+  return spans;
 }
 
 function categoryRowSpans(rows) {
