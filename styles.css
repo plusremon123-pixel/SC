@@ -107,6 +107,7 @@ button:disabled {
 }
 
 .controls,
+.view-action-bar,
 .tab-section,
 .table-wrap,
 .math-analysis-panel,
@@ -117,6 +118,13 @@ button:disabled {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.view-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
 }
 
 .schedule-card-panel {

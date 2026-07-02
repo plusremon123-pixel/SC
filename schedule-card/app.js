@@ -922,6 +922,25 @@ function setFileStatus(names, count, isBundle = false) {
   const icon    = document.getElementById('file-status-icon');
   if (summary) summary.textContent = '— ' + msg;
   if (icon)    icon.textContent = count ? '✅' : '📂';
+  requestFrameResize();
+}
+
+function requestFrameResize() {
+  if (window.parent === window) return;
+  window.requestAnimationFrame(() => {
+    const height = Math.ceil(document.documentElement.scrollHeight);
+    window.parent.postMessage({ type: 'schedule-card-height', height }, '*');
+  });
+}
+
+window.addEventListener('load', requestFrameResize);
+window.addEventListener('resize', requestFrameResize);
+if (window.MutationObserver) {
+  new MutationObserver(requestFrameResize).observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+  });
 }
 
 // ════════════════════════════════════════════════════════

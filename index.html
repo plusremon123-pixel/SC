@@ -4,24 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>5,6개정 실무 관리 툴</title>
-    <link rel="stylesheet" href="./styles.css?v=20260701-22" />
+    <link rel="stylesheet" href="./styles.css?v=20260702-1" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div>
           <h1>5,6개정 실무 관리 툴</h1>
-        </div>
-        <div class="actions">
-          <label class="file-button">
-            차시 엑셀 업로드/교체
-            <input id="fileInput" type="file" accept=".xlsx,.xls" />
-          </label>
-          <label class="file-button">
-            전체 일정 업로드/교체
-            <input id="overallFileInput" type="file" accept=".xlsx,.xls" />
-          </label>
-          <button id="downloadButton" type="button" class="primary">차시 엑셀 다운로드</button>
         </div>
       </header>
 
@@ -33,6 +22,14 @@
       </nav>
 
       <div id="lessonView">
+        <section class="view-action-bar">
+          <label class="file-button">
+            차시 엑셀 업로드/교체
+            <input id="fileInput" type="file" accept=".xlsx,.xls" />
+          </label>
+          <button id="downloadButton" type="button" class="primary">차시 엑셀 다운로드</button>
+        </section>
+
         <section class="controls">
           <label class="search">
             <input id="searchInput" type="search" placeholder="단원명, 차시명, 출판사 검색" />
@@ -120,12 +117,18 @@
           <iframe
             id="scheduleCardFrame"
             title="스케쥴 카드"
-            src="./schedule-card/index.html?v=20260701-22"
+            src="./schedule-card/index.html?v=20260702-1"
           ></iframe>
         </section>
       </div>
 
       <div id="overallView" hidden>
+        <section class="view-action-bar">
+          <label class="file-button">
+            콘텐츠 일정 업로드/교체
+            <input id="overallFileInput" type="file" accept=".xlsx,.xls" />
+          </label>
+        </section>
         <section class="overall-panel">
           <div class="scroll-area overall-scroll">
             <table>
@@ -140,7 +143,7 @@
 
     <div id="toast" class="toast" hidden></div>
 
-    <script src="./vendor/exceljs.min.js?v=20260701-22"></script>
-    <script src="./app.js?v=20260701-22"></script>
+    <script src="./vendor/exceljs.min.js?v=20260702-1"></script>
+    <script src="./app.js?v=20260702-1"></script>
   </body>
 </html>

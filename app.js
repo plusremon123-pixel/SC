@@ -135,6 +135,15 @@ async function init() {
 }
 
 function bindEvents() {
+  window.addEventListener("message", (event) => {
+    if (event.data?.type !== "schedule-card-height") return;
+    const height = Number(event.data.height);
+    const frame = document.querySelector("#scheduleCardFrame");
+    if (frame && Number.isFinite(height)) {
+      frame.style.height = `${Math.max(height, 520)}px`;
+    }
+  });
+
   els.lessonViewButton.addEventListener("click", () => {
     state.currentView = "lesson";
     render();
