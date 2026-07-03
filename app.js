@@ -2095,7 +2095,9 @@ function exportStyleMap(worksheet, headers) {
     const style = isDateHeader(header) && lessonIdStyle
       ? lessonIdStyle
       : sampleRow.getCell(index + 1).style;
-    return [header, style];
+    const clonedStyle = cloneStyle(style);
+    if (isDateHeader(header)) clonedStyle.numFmt = "yyyy-mm-dd";
+    return [header, clonedStyle];
   }));
 }
 
@@ -2105,10 +2107,17 @@ function cloneStyle(style) {
 
 function excelValue(value, header) {
   if (value == null || value === "") return null;
-  if (isDateHeader(header)) return normalizeDate(value) || value;
+  if (isDateHeader(header)) return excelDateValue(value);
   const numberHeaders = [UNIT_ORDER, LESSON_ORDER, "차시고유번호"];
   if (numberHeaders.includes(header) && Number.isFinite(Number(value))) return Number(value);
   return value;
+}
+
+function excelDateValue(value) {
+  const normalized = normalizeDate(value);
+  if (!normalized) return value;
+  const [year, month, day] = normalized.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function displayValue(value, header) {
