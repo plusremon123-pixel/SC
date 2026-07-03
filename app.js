@@ -2,7 +2,7 @@ const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const TIMELINE_KEY = "schedule-card-release-timeline-v1";
-const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v1";
+const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v2";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
@@ -14,7 +14,7 @@ const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
-const SHARED_MATH_PUBLISHER_KEY = "__mathPublisherConfig";
+const SHARED_MATH_PUBLISHER_KEY = "__mathPublisherConfigByDateV2";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -1209,13 +1209,9 @@ async function loadSharedMathPublisherConfig() {
 
 function normalizeMathPublisherConfig(config) {
   if (!config || typeof config !== "object") return {};
-  if (isLegacyMathPublisherConfig(config)) {
-    return state.selectedMathAnalysisDate
-      ? { [state.selectedMathAnalysisDate]: clonePlainObject(config) }
-      : { __legacy: clonePlainObject(config) };
-  }
   const normalized = {};
   Object.entries(config).forEach(([date, value]) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
     if (!value || typeof value !== "object") return;
     normalized[date] = {};
     Object.entries(value).forEach(([grade, gradeConfig]) => {
@@ -1230,24 +1226,10 @@ function normalizeMathPublisherConfig(config) {
   return normalized;
 }
 
-function isLegacyMathPublisherConfig(config) {
-  return Object.values(config).some((value) => (
-    value
-    && typeof value === "object"
-    && (Array.isArray(value.main) || Array.isArray(value.sub) || Array.isArray(value.disabledSub))
-  ));
-}
-
 function mathPublisherConfigForSelectedDate() {
   const date = state.selectedMathAnalysisDate || "__noDate";
   if (!state.mathPublisherConfig[date]) {
-    if (state.mathPublisherConfig.__legacy) {
-      state.mathPublisherConfig[date] = clonePlainObject(state.mathPublisherConfig.__legacy);
-      delete state.mathPublisherConfig.__legacy;
-      saveMathPublisherConfig();
-    } else {
-      state.mathPublisherConfig[date] = {};
-    }
+    state.mathPublisherConfig[date] = {};
   }
   return state.mathPublisherConfig[date];
 }
@@ -1745,7 +1727,6 @@ function sharedTimelinePayload() {
 
 function mathPublisherConfigPayload() {
   const config = clonePlainObject(state.mathPublisherConfig);
-  delete config.__legacy;
   delete config.__noDate;
   return config;
 }
