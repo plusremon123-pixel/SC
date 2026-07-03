@@ -1506,7 +1506,11 @@ function compactScheduleCategory(category) {
 }
 
 function displayHeaders(headers) {
-  const filtered = headers.filter((header) => header !== "비고");
+  const filtered = headers.filter((header) => {
+    if (header === "비고") return false;
+    if (state.selectedCategory === "수학마스터" && header === "과목차시") return false;
+    return true;
+  });
   let next = moveBefore(filtered, "단원명", "차시명");
   if (state.selectedCategory === "성취도평가") {
     next = moveAfter(next, "진입 과목명", "학년");
