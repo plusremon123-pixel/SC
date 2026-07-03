@@ -14,7 +14,7 @@ const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
-const SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config.json";
+const SHARED_MATH_PUBLISHER_KEY = "__mathPublisherConfig";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -1190,11 +1190,12 @@ function readMathPublisherConfig() {
 
 async function loadSharedMathPublisherConfig() {
   try {
-    const response = await fetch(supabasePublicUrl(SUPABASE_MATH_PUBLISHER_PATH), { cache: "no-store" });
+    const response = await fetch(supabasePublicUrl(SUPABASE_TIMELINE_PATH), { cache: "no-store" });
     if (!response.ok) return false;
     const value = await response.json();
-    if (!value || typeof value !== "object") return false;
-    state.mathPublisherConfig = value;
+    const config = value?.[SHARED_MATH_PUBLISHER_KEY];
+    if (!config || typeof config !== "object") return false;
+    state.mathPublisherConfig = config;
     localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
     return true;
   } catch (error) {
@@ -1214,7 +1215,7 @@ function saveMathPublisherConfig(options = {}) {
 }
 
 async function saveMathPublisherConfigToSupabase() {
-  const result = await putJsonToSupabase(SUPABASE_MATH_PUBLISHER_PATH, state.mathPublisherConfig);
+  const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, sharedTimelinePayload());
   if (!result.ok) throw new Error(result.message);
   showToast("출판사 설정을 공유 저장했습니다.");
 }
@@ -1649,7 +1650,7 @@ async function loadSharedTimeline() {
 }
 
 async function saveTimelineToSupabase(message = "체크 설정을 저장했습니다.") {
-  const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, state.timelineMarks);
+  const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, sharedTimelinePayload());
   if (!result.ok) throw new Error(result.message);
   showToast(message);
 }
@@ -1661,7 +1662,7 @@ async function saveOverallScheduleToSupabase() {
 }
 
 function migrateTimelineMarks(value) {
-  const entries = Object.entries(value || {});
+  const entries = Object.entries(value || {}).filter(([key]) => !isSharedMetaKey(key));
   if (!entries.length) return {};
   const hasLegacyFlatMarks = entries.some(([, mark]) => typeof mark === "string");
   if (hasLegacyFlatMarks) return {};
@@ -1670,11 +1671,24 @@ function migrateTimelineMarks(value) {
 
 function normalizeTimelineMarks(value) {
   return Object.fromEntries(
-    Object.entries(value || {}).map(([openDate, marks]) => [
-      openDate,
-      normalizeTimelineMarksForDate(openDate, marks),
-    ])
+    Object.entries(value || {})
+      .filter(([key]) => !isSharedMetaKey(key))
+      .map(([openDate, marks]) => [
+        openDate,
+        normalizeTimelineMarksForDate(openDate, marks),
+      ])
   );
+}
+
+function isSharedMetaKey(key) {
+  return String(key || "").startsWith("__");
+}
+
+function sharedTimelinePayload() {
+  return {
+    ...normalizeTimelineMarks(state.timelineMarks),
+    [SHARED_MATH_PUBLISHER_KEY]: state.mathPublisherConfig,
+  };
 }
 
 function normalizeTimelineMarksForDate(openDate, marks) {
