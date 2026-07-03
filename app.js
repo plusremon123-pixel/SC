@@ -4,6 +4,7 @@ const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const TIMELINE_KEY = "schedule-card-release-timeline-v1";
 const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v3";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
+const PUBLISHER_AUTH_KEY = "schedule-card-publisher-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
 const ALL_SUBJECTS = "__all_subjects__";
@@ -284,6 +285,16 @@ function confirmUploadPassword() {
   if (password !== UPLOAD_PASSWORD) return false;
 
   sessionStorage.setItem(UPLOAD_AUTH_KEY, "true");
+  return true;
+}
+
+function confirmPublisherPassword() {
+  if (sessionStorage.getItem(PUBLISHER_AUTH_KEY) === "true") return true;
+
+  const password = window.prompt("출판사 설정 수정 비밀번호를 입력해 주세요.");
+  if (password !== UPLOAD_PASSWORD) return false;
+
+  sessionStorage.setItem(PUBLISHER_AUTH_KEY, "true");
   return true;
 }
 
@@ -1103,7 +1114,7 @@ function parseDragPayload(value) {
 }
 
 function moveMathPublisher(grade, publisher, targetLane) {
-  if (!confirmUploadPassword()) {
+  if (!confirmPublisherPassword()) {
     showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
     return;
   }
@@ -1120,7 +1131,7 @@ function moveMathPublisher(grade, publisher, targetLane) {
 }
 
 function toggleSubPublisher(grade, publisher, enabled) {
-  if (!confirmUploadPassword()) {
+  if (!confirmPublisherPassword()) {
     showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
     renderMathAnalysis();
     return;
