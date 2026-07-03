@@ -2030,7 +2030,16 @@ async function downloadFilteredWorkbook() {
       sheetsToRemove.push(worksheet.id);
       return;
     }
-    const sheetRows = exportRows.filter((row) => (row.__sourceSheet || row.__sheet) === worksheet.name);
+    const exportSheetName = normalizeSheetName(worksheet.name);
+    const sheetRows = exportRows.filter((row) => (
+      row.__sourceSheet === worksheet.name
+      || row.__sheet === exportSheetName
+    ));
+    if (sheetRows.length === 0) {
+      sheetsToRemove.push(worksheet.id);
+      return;
+    }
+    worksheet.name = exportSheetName;
     normalizeExportOpenDateHeader(worksheet, headers);
     replaceWorksheetData(worksheet, headers, sheetRows);
   });
