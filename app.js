@@ -1103,6 +1103,11 @@ function parseDragPayload(value) {
 }
 
 function moveMathPublisher(grade, publisher, targetLane) {
+  if (!confirmUploadPassword()) {
+    showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
+    return;
+  }
+
   const config = ensureGradePublisherConfig(grade);
   config.main = config.main.filter((item) => item !== publisher);
   config.sub = config.sub.filter((item) => item !== publisher);
@@ -1115,6 +1120,12 @@ function moveMathPublisher(grade, publisher, targetLane) {
 }
 
 function toggleSubPublisher(grade, publisher, enabled) {
+  if (!confirmUploadPassword()) {
+    showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
+    renderMathAnalysis();
+    return;
+  }
+
   const config = ensureGradePublisherConfig(grade);
   if (enabled) {
     config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
