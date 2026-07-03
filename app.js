@@ -1241,9 +1241,13 @@ function isLegacyMathPublisherConfig(config) {
 function mathPublisherConfigForSelectedDate() {
   const date = state.selectedMathAnalysisDate || "__noDate";
   if (!state.mathPublisherConfig[date]) {
-    state.mathPublisherConfig[date] = state.mathPublisherConfig.__legacy
-      ? clonePlainObject(state.mathPublisherConfig.__legacy)
-      : {};
+    if (state.mathPublisherConfig.__legacy) {
+      state.mathPublisherConfig[date] = clonePlainObject(state.mathPublisherConfig.__legacy);
+      delete state.mathPublisherConfig.__legacy;
+      saveMathPublisherConfig();
+    } else {
+      state.mathPublisherConfig[date] = {};
+    }
   }
   return state.mathPublisherConfig[date];
 }
@@ -1735,8 +1739,15 @@ function isSharedMetaKey(key) {
 function sharedTimelinePayload() {
   return {
     ...normalizeTimelineMarks(state.timelineMarks),
-    [SHARED_MATH_PUBLISHER_KEY]: state.mathPublisherConfig,
+    [SHARED_MATH_PUBLISHER_KEY]: mathPublisherConfigPayload(),
   };
+}
+
+function mathPublisherConfigPayload() {
+  const config = clonePlainObject(state.mathPublisherConfig);
+  delete config.__legacy;
+  delete config.__noDate;
+  return config;
 }
 
 function normalizeTimelineMarksForDate(openDate, marks) {
