@@ -2021,26 +2021,14 @@ async function downloadFilteredWorkbook() {
   if (!exportRows.length) return;
 
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(base64ToArrayBuffer(state.workbookBase64));
+  workbook.creator = "5,6개정 실무 관리 툴";
+  workbook.created = new Date();
+  workbook.modified = new Date();
 
-  const sheetsToRemove = [];
-  workbook.eachSheet((worksheet) => {
-    const headers = getHeaders(worksheet);
-    if (!OPEN_DATE_CANDIDATES.some((header) => headers.includes(header))) {
-      sheetsToRemove.push(worksheet.id);
-      return;
-    }
-    const exportSheetName = normalizeSheetName(worksheet.name);
-    const sheetRows = exportRows.filter((row) => row.__sourceSheet === worksheet.name);
-    if (sheetRows.length === 0) {
-      sheetsToRemove.push(worksheet.id);
-      return;
-    }
-    worksheet.name = exportSheetName;
-    normalizeExportOpenDateHeader(worksheet, headers);
-    replaceWorksheetData(worksheet, headers, sheetRows);
+  exportRowGroups(exportRows).forEach((group) => {
+    const worksheet = workbook.addWorksheet(uniqueWorksheetName(workbook, group.sheetName));
+    writeExportWorksheet(worksheet, group.rows);
   });
-  sheetsToRemove.forEach((worksheetId) => workbook.removeWorksheet(worksheetId));
 
   const buffer = await workbook.xlsx.writeBuffer();
   const safeDate = state.selectedDate === ALL_DATES ? "전체" : state.selectedDate.replaceAll("-", "");
@@ -2049,6 +2037,113 @@ async function downloadFilteredWorkbook() {
     `개정_차시별운영계오픈일정_${safeDate}.xlsx`,
   );
   showToast("선택한 오픈날짜 기준으로 엑셀을 저장했습니다.");
+}
+
+function exportRowGroups(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const category = row.__sheet || normalizeSheetName(row.__sourceSheet || "") || "데이터";
+    if (!groups.has(category)) {
+      groups.set(category, {
+        sheetName: category,
+        rows: [],
+      });
+    }
+    groups.get(category).rows.push(row);
+  });
+  return [...groups.values()];
+}
+
+function uniqueWorksheetName(workbook, name) {
+  const base = String(name || "데이터").slice(0, 31);
+  let candidate = base;
+  let index = 2;
+  while (workbook.getWorksheet(candidate)) {
+    const suffix = `(${index})`;
+    candidate = `${base.slice(0, 31 - suffix.length)}${suffix}`;
+    index += 1;
+  }
+  return candidate;
+}
+
+function writeExportWorksheet(worksheet, rows) {
+  const headers = exportHeaders(rows);
+  worksheet.addRow(headers.map((header) => displayHeaderLabel(header, rows[0]?.__sheet || "")));
+  rows.forEach((record) => {
+    worksheet.addRow(headers.map((header) => exportCellValue(record, header)));
+  });
+  styleExportWorksheet(worksheet, headers, rows.length);
+}
+
+function exportHeaders(rows) {
+  const headers = [...(rows[0]?.__headers || MIXED_TABLE_HEADERS)];
+  const openDateIndex = headers.findIndex((header) => OPEN_DATE_CANDIDATES.includes(header));
+  if (openDateIndex !== -1) headers[openDateIndex] = OPEN_DATE_LABEL;
+  return headers;
+}
+
+function exportCellValue(record, header) {
+  const value = isDateHeader(header)
+    ? record[OPEN_DATE] || record[OPEN_DATE_LABEL] || record["개정 오픈일"] || record[header]
+    : record[header];
+  return excelValue(value, header);
+}
+
+function styleExportWorksheet(worksheet, headers, rowCount) {
+  worksheet.views = [{ state: "frozen", ySplit: 1 }];
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: Math.max(rowCount + 1, 1), column: headers.length },
+  };
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 22;
+  headerRow.eachCell((cell) => {
+    cell.font = { name: "맑은 고딕", size: 10, bold: true };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9D9D9" } };
+    cell.border = exportCellBorder();
+  });
+
+  for (let rowNumber = 2; rowNumber <= rowCount + 1; rowNumber += 1) {
+    const row = worksheet.getRow(rowNumber);
+    row.eachCell((cell, colNumber) => {
+      const header = headers[colNumber - 1];
+      cell.font = { name: "맑은 고딕", size: 10 };
+      cell.alignment = {
+        horizontal: ["단원명", "차시명"].includes(header) ? "left" : "center",
+        vertical: "middle",
+        wrapText: ["단원명", "차시명"].includes(header),
+      };
+      if (isDateHeader(header)) cell.numFmt = "yyyy-mm-dd";
+      cell.border = exportCellBorder();
+    });
+  }
+
+  headers.forEach((header, index) => {
+    worksheet.getColumn(index + 1).width = exportColumnWidth(header);
+  });
+}
+
+function exportCellBorder() {
+  return {
+    top: { style: "thin", color: { argb: "FF000000" } },
+    left: { style: "thin", color: { argb: "FF000000" } },
+    bottom: { style: "thin", color: { argb: "FF000000" } },
+    right: { style: "thin", color: { argb: "FF000000" } },
+  };
+}
+
+function exportColumnWidth(header) {
+  if (header === "차시명") return 56;
+  if (header === "단원명") return 34;
+  if (header === "차시고유번호") return 14;
+  if (isDateHeader(header)) return 16;
+  if (header === "과목차시") return 12;
+  if (header === "출판사") return 12;
+  if ([UNIT_ORDER, LESSON_ORDER].includes(header)) return 10;
+  if (["과목", "학년", "학기"].includes(header)) return 9;
+  return Math.max(10, Math.min(22, String(header || "").length + 4));
 }
 
 function getExportRows() {
@@ -2062,47 +2157,6 @@ function getExportRows() {
         : 0;
       return sheetOrder || dateOrder || compareRows(a, b);
     });
-}
-
-function replaceWorksheetData(worksheet, headers, rows) {
-  const styleMap = exportStyleMap(worksheet, headers);
-  const lastRow = Math.max(worksheet.rowCount, worksheet.actualRowCount);
-  if (lastRow > 1) worksheet.spliceRows(2, lastRow - 1);
-
-  rows.forEach((record, index) => {
-    const row = worksheet.getRow(index + 2);
-    headers.forEach((header, colIndex) => {
-      const cell = row.getCell(colIndex + 1);
-      cell.value = excelValue(record[header], header);
-      if (styleMap[header]) cell.style = cloneStyle(styleMap[header]);
-    });
-    row.commit();
-  });
-}
-
-function normalizeExportOpenDateHeader(worksheet, headers) {
-  const openDateIndex = headers.findIndex((header) => OPEN_DATE_CANDIDATES.includes(header));
-  if (openDateIndex === -1) return;
-  headers[openDateIndex] = OPEN_DATE;
-  worksheet.getRow(1).getCell(openDateIndex + 1).value = OPEN_DATE_LABEL;
-}
-
-function exportStyleMap(worksheet, headers) {
-  const sampleRow = worksheet.getRow(2);
-  const lessonIdIndex = headers.indexOf("차시고유번호");
-  const lessonIdStyle = lessonIdIndex === -1 ? null : sampleRow.getCell(lessonIdIndex + 1).style;
-  return Object.fromEntries(headers.map((header, index) => {
-    const style = isDateHeader(header) && lessonIdStyle
-      ? lessonIdStyle
-      : sampleRow.getCell(index + 1).style;
-    const clonedStyle = cloneStyle(style);
-    if (isDateHeader(header)) clonedStyle.numFmt = "yyyy-mm-dd";
-    return [header, clonedStyle];
-  }));
-}
-
-function cloneStyle(style) {
-  return JSON.parse(JSON.stringify(style || {}));
 }
 
 function excelValue(value, header) {
