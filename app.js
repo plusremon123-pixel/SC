@@ -2031,10 +2031,7 @@ async function downloadFilteredWorkbook() {
       return;
     }
     const exportSheetName = normalizeSheetName(worksheet.name);
-    const sheetRows = exportRows.filter((row) => (
-      row.__sourceSheet === worksheet.name
-      || row.__sheet === exportSheetName
-    ));
+    const sheetRows = exportRows.filter((row) => row.__sourceSheet === worksheet.name);
     if (sheetRows.length === 0) {
       sheetsToRemove.push(worksheet.id);
       return;
@@ -2108,7 +2105,7 @@ function cloneStyle(style) {
 
 function excelValue(value, header) {
   if (value == null || value === "") return null;
-  if (isDateHeader(header)) return Number(String(normalizeDate(value) || value).replace(/[^\d]/g, ""));
+  if (isDateHeader(header)) return normalizeDate(value) || value;
   const numberHeaders = [UNIT_ORDER, LESSON_ORDER, "차시고유번호"];
   if (numberHeaders.includes(header) && Number.isFinite(Number(value))) return Number(value);
   return value;
