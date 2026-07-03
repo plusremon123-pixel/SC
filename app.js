@@ -128,14 +128,9 @@ async function init() {
   await loadSharedTimeline();
   await loadSharedMathPublisherConfig();
   await loadOverallSchedule();
-  const hasLocalUpload = state.workbookBase64 && state.sourceName.startsWith("현재 데이터:");
-  if (hasLocalUpload) {
+  const sharedLoaded = await loadSharedWorkbook();
+  if (!sharedLoaded && state.workbookBase64) {
     await loadWorkbook(state.workbookBase64);
-  } else {
-    const sharedLoaded = await loadSharedWorkbook();
-    if (!sharedLoaded && state.workbookBase64) {
-      await loadWorkbook(state.workbookBase64);
-    }
   }
   bindEvents();
   render();
