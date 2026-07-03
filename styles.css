@@ -450,26 +450,26 @@ button:disabled {
 
 .depth-row .tab {
   min-width: 0;
-  min-height: 30px;
-  padding: 4px 8px;
-  font-size: 12px;
-  line-height: 1.15;
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 14px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
 .depth-row .tab .count {
-  margin-left: 3px;
-  font-size: 10px;
+  margin-left: 5px;
+  font-size: 12px;
 }
 
 .depth-row .tab-section {
-  min-height: 68px;
-  padding: 12px 16px 10px;
+  min-height: 78px;
+  padding: 13px 16px 12px;
 }
 
 .depth-row .tabs {
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: 8px;
   overflow: hidden;
 }
 
