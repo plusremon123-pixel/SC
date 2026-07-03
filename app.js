@@ -964,18 +964,19 @@ function renderMathAnalysis() {
   groups.forEach((group) => {
     const tr = document.createElement("tr");
     if (group.publishers.length > 1) tr.classList.add("duplicate");
-    [
-      group.grade,
-      group.unitLabel,
-      group.lessonLabel,
-      group.publishers.join(", "),
-      `${group.publishers.length.toLocaleString("ko-KR")}개`,
-    ].forEach((value, index) => {
+    [group.grade, group.unitLabel, group.lessonLabel].forEach((value, index) => {
       const td = document.createElement("td");
       td.textContent = value;
-      if (index === 0 || index === 4) td.classList.add("center");
+      if (index === 0) td.classList.add("center");
       tr.appendChild(td);
     });
+    const publisherTd = document.createElement("td");
+    publisherTd.innerHTML = mathPublisherListHtml(group.grade, group.publishers);
+    tr.appendChild(publisherTd);
+    const countTd = document.createElement("td");
+    countTd.textContent = `${group.publishers.length.toLocaleString("ko-KR")}개`;
+    countTd.classList.add("center");
+    tr.appendChild(countTd);
     fragment.appendChild(tr);
   });
   els.mathAnalysisTableBody.appendChild(fragment);
@@ -1249,13 +1250,32 @@ function mathLessonGroups(rows) {
   return [...groups.values()]
     .map((group) => ({
       ...group,
-      publishers: group.publishers.sort(localeSort),
+      publishers: sortMathPublishersForGrade(group.grade, group.publishers),
     }))
     .sort((a, b) => gradeNumber(a.grade) - gradeNumber(b.grade)
       || a.unitOrder - b.unitOrder
       || a.unitLabel.localeCompare(b.unitLabel, "ko")
       || a.lessonOrder - b.lessonOrder
       || a.lessonLabel.localeCompare(b.lessonLabel, "ko"));
+}
+
+function sortMathPublishersForGrade(grade, publishers) {
+  const mainPublishers = state.mathPublisherConfig[grade]?.main || [];
+  return [...publishers].sort((a, b) => {
+    const mainOrderA = mainPublishers.includes(a) ? mainPublishers.indexOf(a) : 9999;
+    const mainOrderB = mainPublishers.includes(b) ? mainPublishers.indexOf(b) : 9999;
+    return mainOrderA - mainOrderB || localeSort(a, b);
+  });
+}
+
+function mathPublisherListHtml(grade, publishers) {
+  const mainPublishers = state.mathPublisherConfig[grade]?.main || [];
+  return publishers.map((publisher) => {
+    const escaped = escapeHtml(publisher);
+    return mainPublishers.includes(publisher)
+      ? `<strong class="main-publisher">${escaped}</strong>`
+      : escaped;
+  }).join(", ");
 }
 
 function formatMathUnit(unitOrder, unitName) {

@@ -756,6 +756,11 @@ button:disabled {
   font-weight: 800;
 }
 
+.main-publisher {
+  color: var(--brand-strong);
+  font-weight: 900;
+}
+
 .overall-panel {
   overflow: visible;
 }
