@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>5,6개정 실무 관리 툴</title>
-    <link rel="stylesheet" href="./styles.css?v=20260703-19" />
+    <link rel="stylesheet" href="./styles.css?v=20260703-20" />
   </head>
   <body>
     <main class="app-shell">
@@ -30,6 +30,10 @@
           <button id="downloadButton" type="button" class="primary">차시 엑셀 다운로드</button>
         </section>
 
+        <section class="tab-section">
+          <div id="dateTabs" class="tabs date-tabs"></div>
+        </section>
+
         <section class="controls">
           <label class="search">
             <input id="searchInput" type="search" placeholder="단원명, 차시명, 출판사 검색" />
@@ -40,10 +44,6 @@
               <button id="subjectFirstButton" type="button" data-tab-order="subject-first">과목 먼저</button>
             </div>
           </div>
-        </section>
-
-        <section class="tab-section">
-          <div id="dateTabs" class="tabs date-tabs"></div>
         </section>
 
         <section id="releaseTimelineSection" class="timeline-section" hidden>
@@ -143,7 +143,7 @@
 
     <div id="toast" class="toast" hidden></div>
 
-    <script src="./vendor/exceljs.min.js?v=20260703-28"></script>
-    <script src="./app.js?v=20260703-28"></script>
+    <script src="./vendor/exceljs.min.js?v=20260703-29"></script>
+    <script src="./app.js?v=20260703-29"></script>
   </body>
 </html>
