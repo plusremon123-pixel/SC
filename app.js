@@ -926,9 +926,10 @@ function renderTable() {
 function renderMathAnalysis() {
   const rows = mathSchoolworkRows();
   const dates = unique(rows.map((row) => row.__openDate)).sort();
-  const publishersByGrade = mathPublishersByGrade(rows);
-  ensureMathPublisherConfig(publishersByGrade);
   if (!dates.includes(state.selectedMathAnalysisDate)) state.selectedMathAnalysisDate = dates[0] || "";
+  const rowsForSelectedDate = rows.filter((row) => row.__openDate === state.selectedMathAnalysisDate);
+  const publishersByGrade = mathPublishersByGrade(rowsForSelectedDate);
+  ensureMathPublisherConfig(publishersByGrade);
   renderMathPublisherFilters(publishersByGrade, rows);
   const publisherRows = rows.filter((row) => mathPublisherSelected(row));
 
@@ -1017,7 +1018,7 @@ function mathSelectedCountForGrade(rows, grade) {
 }
 
 function publisherLane(grade, lane, title) {
-  const config = state.mathPublisherConfig[grade] || { main: [], sub: [], disabledSub: [] };
+  const config = mathPublisherConfigForSelectedDate()[grade] || { main: [], sub: [], disabledSub: [] };
   const wrapper = document.createElement("div");
   wrapper.className = `publisher-lane publisher-lane-${lane}`;
   wrapper.dataset.grade = grade;
@@ -1062,7 +1063,7 @@ function publisherLane(grade, lane, title) {
 }
 
 function publisherChip(grade, publisher, lane) {
-  const config = state.mathPublisherConfig[grade] || { disabledSub: [] };
+  const config = mathPublisherConfigForSelectedDate()[grade] || { disabledSub: [] };
   const chip = document.createElement("div");
   chip.className = `publisher-chip publisher-chip-${lane}`;
   chip.draggable = true;
@@ -1136,7 +1137,7 @@ function mathPublishersByGrade(rows) {
 function mathPublisherSelected(row) {
   const grade = row["학년"] || "미분류";
   const publisher = row["출판사"] || "미분류";
-  const config = state.mathPublisherConfig[grade];
+  const config = mathPublisherConfigForDate(row.__openDate)[grade];
   if (!config) return true;
   if ((config.main || []).includes(publisher)) return true;
   if ((config.sub || []).includes(publisher)) return !(config.disabledSub || []).includes(publisher);
@@ -1144,6 +1145,7 @@ function mathPublisherSelected(row) {
 }
 
 function ensureMathPublisherConfig(publishersByGrade) {
+  const dateConfig = mathPublisherConfigForSelectedDate();
   Object.entries(publishersByGrade).forEach(([grade, publishers]) => {
     const normalized = unique(publishers).sort(localeSort);
     const config = ensureGradePublisherConfig(grade);
@@ -1163,26 +1165,27 @@ function ensureMathPublisherConfig(publishersByGrade) {
     config.sub.sort(localeSort);
     config.disabledSub = config.disabledSub.filter((publisher) => config.sub.includes(publisher)).sort(localeSort);
   });
-  Object.keys(state.mathPublisherConfig).forEach((grade) => {
-    if (!publishersByGrade[grade]) delete state.mathPublisherConfig[grade];
+  Object.keys(dateConfig).forEach((grade) => {
+    if (!publishersByGrade[grade]) delete dateConfig[grade];
   });
   saveMathPublisherConfig();
 }
 
 function ensureGradePublisherConfig(grade) {
-  if (!state.mathPublisherConfig[grade]) {
-    state.mathPublisherConfig[grade] = { main: [], sub: [], disabledSub: [] };
+  const dateConfig = mathPublisherConfigForSelectedDate();
+  if (!dateConfig[grade]) {
+    dateConfig[grade] = { main: [], sub: [], disabledSub: [] };
   }
-  state.mathPublisherConfig[grade].main ||= [];
-  state.mathPublisherConfig[grade].sub ||= [];
-  state.mathPublisherConfig[grade].disabledSub ||= [];
-  return state.mathPublisherConfig[grade];
+  dateConfig[grade].main ||= [];
+  dateConfig[grade].sub ||= [];
+  dateConfig[grade].disabledSub ||= [];
+  return dateConfig[grade];
 }
 
 function readMathPublisherConfig() {
   try {
     const parsed = JSON.parse(localStorage.getItem(MATH_PUBLISHER_CONFIG_KEY) || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
+    return normalizeMathPublisherConfig(parsed);
   } catch {
     return {};
   }
@@ -1195,13 +1198,58 @@ async function loadSharedMathPublisherConfig() {
     const value = await response.json();
     const config = value?.[SHARED_MATH_PUBLISHER_KEY];
     if (!config || typeof config !== "object") return false;
-    state.mathPublisherConfig = config;
+    state.mathPublisherConfig = normalizeMathPublisherConfig(config);
     localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
     return true;
   } catch (error) {
     console.warn("공유 출판사 설정을 불러오지 못했습니다.", error);
     return false;
   }
+}
+
+function normalizeMathPublisherConfig(config) {
+  if (!config || typeof config !== "object") return {};
+  if (isLegacyMathPublisherConfig(config)) {
+    return state.selectedMathAnalysisDate
+      ? { [state.selectedMathAnalysisDate]: clonePlainObject(config) }
+      : { __legacy: clonePlainObject(config) };
+  }
+  const normalized = {};
+  Object.entries(config).forEach(([date, value]) => {
+    if (!value || typeof value !== "object") return;
+    normalized[date] = {};
+    Object.entries(value).forEach(([grade, gradeConfig]) => {
+      if (!gradeConfig || typeof gradeConfig !== "object") return;
+      normalized[date][grade] = {
+        main: Array.isArray(gradeConfig.main) ? gradeConfig.main : [],
+        sub: Array.isArray(gradeConfig.sub) ? gradeConfig.sub : [],
+        disabledSub: Array.isArray(gradeConfig.disabledSub) ? gradeConfig.disabledSub : [],
+      };
+    });
+  });
+  return normalized;
+}
+
+function isLegacyMathPublisherConfig(config) {
+  return Object.values(config).some((value) => (
+    value
+    && typeof value === "object"
+    && (Array.isArray(value.main) || Array.isArray(value.sub) || Array.isArray(value.disabledSub))
+  ));
+}
+
+function mathPublisherConfigForSelectedDate() {
+  const date = state.selectedMathAnalysisDate || "__noDate";
+  if (!state.mathPublisherConfig[date]) {
+    state.mathPublisherConfig[date] = state.mathPublisherConfig.__legacy
+      ? clonePlainObject(state.mathPublisherConfig.__legacy)
+      : {};
+  }
+  return state.mathPublisherConfig[date];
+}
+
+function mathPublisherConfigForDate(date) {
+  return state.mathPublisherConfig[date || state.selectedMathAnalysisDate] || {};
 }
 
 function saveMathPublisherConfig(options = {}) {
@@ -1261,7 +1309,7 @@ function mathLessonGroups(rows) {
 }
 
 function sortMathPublishersForGrade(grade, publishers) {
-  const mainPublishers = state.mathPublisherConfig[grade]?.main || [];
+  const mainPublishers = mathPublisherConfigForSelectedDate()[grade]?.main || [];
   return [...publishers].sort((a, b) => {
     const mainOrderA = mainPublishers.includes(a) ? mainPublishers.indexOf(a) : 9999;
     const mainOrderB = mainPublishers.includes(b) ? mainPublishers.indexOf(b) : 9999;
@@ -1270,7 +1318,7 @@ function sortMathPublishersForGrade(grade, publishers) {
 }
 
 function mathPublisherListHtml(grade, publishers) {
-  const mainPublishers = state.mathPublisherConfig[grade]?.main || [];
+  const mainPublishers = mathPublisherConfigForSelectedDate()[grade]?.main || [];
   return publishers.map((publisher) => {
     const escaped = escapeHtml(publisher);
     return mainPublishers.includes(publisher)
