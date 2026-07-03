@@ -6,6 +6,8 @@ const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v1";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
+const ALL_SUBJECTS = "__all_subjects__";
+const ALL_CATEGORIES = "__all_categories__";
 const SUPABASE_URL = "https://vmebzlinboxmgcrrorwv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR";
 const SUPABASE_BUCKET = "schedule-data";
@@ -19,6 +21,7 @@ const OPEN_DATE_CANDIDATES = [OPEN_DATE, "개정 오픈일", OPEN_DATE_LABEL];
 const UNIT_ORDER = "단원순서";
 const LESSON_ORDER = "차시순서";
 const SUBJECT_CANDIDATES = ["진입 과목명", "대표단원(한글/국어)", "과목"];
+const MIXED_TABLE_HEADERS = ["학년", "과목", "구분", "학기", "출판사", UNIT_ORDER, LESSON_ORDER, "단원명", "차시명", "차시고유번호", OPEN_DATE_LABEL];
 const TIMELINE_DAYS = 30;
 const DEFAULT_QA_DAYS = 5;
 const DEFAULT_STAGE_DAYS = 5;
@@ -502,18 +505,18 @@ function ensureSelections() {
 
   if (isCategoryFirst()) {
     const categories = categoriesForDate(state.selectedDate);
-    if (!categories.includes(state.selectedCategory)) state.selectedCategory = categories[0] || "";
+    if (![ALL_CATEGORIES, ...categories].includes(state.selectedCategory)) state.selectedCategory = categories[0] || "";
 
     const subjects = subjectsForDateCategory(state.selectedDate, state.selectedCategory);
-    if (!subjects.includes(state.selectedSubject)) state.selectedSubject = subjects[0] || "";
+    if (![ALL_SUBJECTS, ...subjects].includes(state.selectedSubject)) state.selectedSubject = subjects[0] || "";
     return;
   }
 
   const subjects = subjectsForDate(state.selectedDate);
-  if (!subjects.includes(state.selectedSubject)) state.selectedSubject = subjects[0] || "";
+  if (![ALL_SUBJECTS, ...subjects].includes(state.selectedSubject)) state.selectedSubject = subjects[0] || "";
 
   const categories = categoriesForDateSubject(state.selectedDate, state.selectedSubject);
-  if (!categories.includes(state.selectedCategory)) state.selectedCategory = categories[0] || "";
+  if (![ALL_CATEGORIES, ...categories].includes(state.selectedCategory)) state.selectedCategory = categories[0] || "";
 }
 
 function render() {
@@ -780,10 +783,28 @@ function renderSubjectTabs(level) {
     ? subjectsForDateCategory(state.selectedDate, state.selectedCategory)
     : subjectsForDate(state.selectedDate);
   target.innerHTML = "";
+  const allRows = rowsMatchingSearch().filter((row) => (
+    dateMatches(row, state.selectedDate)
+    && (!isCategoryFirst() || state.selectedCategory === ALL_CATEGORIES || row.__sheet === state.selectedCategory)
+  ));
+  target.appendChild(tabButton("전체", subjects.length, state.selectedSubject === ALL_SUBJECTS, () => {
+    state.selectedSubject = ALL_SUBJECTS;
+    if (level === "primary") {
+      state.selectedCategory = ALL_CATEGORIES;
+      render();
+    } else {
+      renderTable();
+      renderSecondaryTabs();
+    }
+  }, allRows.length, "전체"));
   subjects.forEach((subject) => {
     const count = level === "primary"
       ? categoriesForDateSubject(state.selectedDate, subject).length
-      : rowsMatchingSearch().filter((row) => dateMatches(row, state.selectedDate) && row.__sheet === state.selectedCategory && row.__subject === subject).length;
+      : rowsMatchingSearch().filter((row) => (
+        dateMatches(row, state.selectedDate)
+        && (state.selectedCategory === ALL_CATEGORIES || row.__sheet === state.selectedCategory)
+        && row.__subject === subject
+      )).length;
     const lessonCount = level === "primary"
       ? rowsMatchingSearch().filter((row) => dateMatches(row, state.selectedDate) && row.__subject === subject).length
       : null;
@@ -806,10 +827,28 @@ function renderCategoryTabs(level) {
     ? categoriesForDate(state.selectedDate)
     : categoriesForDateSubject(state.selectedDate, state.selectedSubject);
   target.innerHTML = "";
+  const allRows = rowsMatchingSearch().filter((row) => (
+    dateMatches(row, state.selectedDate)
+    && (!state.selectedSubject || state.selectedSubject === ALL_SUBJECTS || row.__subject === state.selectedSubject)
+  ));
+  target.appendChild(tabButton("전체", categories.length, state.selectedCategory === ALL_CATEGORIES, () => {
+    state.selectedCategory = ALL_CATEGORIES;
+    if (level === "primary") {
+      state.selectedSubject = ALL_SUBJECTS;
+      render();
+    } else {
+      renderTable();
+      renderSecondaryTabs();
+    }
+  }, allRows.length, "전체"));
   categories.forEach((category) => {
     const count = level === "primary"
       ? subjectsForDateCategory(state.selectedDate, category).length
-      : rowsMatchingSearch().filter((row) => dateMatches(row, state.selectedDate) && row.__sheet === category && row.__subject === state.selectedSubject).length;
+      : rowsMatchingSearch().filter((row) => (
+        dateMatches(row, state.selectedDate)
+        && row.__sheet === category
+        && (state.selectedSubject === ALL_SUBJECTS || row.__subject === state.selectedSubject)
+      )).length;
     const lessonCount = level === "primary"
       ? rowsMatchingSearch().filter((row) => dateMatches(row, state.selectedDate) && row.__sheet === category).length
       : null;
@@ -841,12 +880,13 @@ function tabButton(label, count, active, onClick, detailCount = null, dataLabel 
 
 function renderTable() {
   const rows = getVisibleRows();
+  const isMixedTable = state.selectedCategory === ALL_CATEGORIES;
   const sheet = state.sheets.find((item) => item.name === state.selectedCategory);
-  const headers = displayHeaders(sheet?.headers || []);
+  const headers = isMixedTable ? MIXED_TABLE_HEADERS : displayHeaders(sheet?.headers || []);
 
   const tablePath = isCategoryFirst()
-    ? [dateLabel(state.selectedDate), state.selectedCategory, state.selectedSubject]
-    : [dateLabel(state.selectedDate), state.selectedSubject, state.selectedCategory];
+    ? [dateLabel(state.selectedDate), categoryLabel(state.selectedCategory), subjectLabel(state.selectedSubject)]
+    : [dateLabel(state.selectedDate), subjectLabel(state.selectedSubject), categoryLabel(state.selectedCategory)];
   els.tableTitle.textContent = tablePath.filter(Boolean).join(" > ") || "조회 결과";
   els.rowCount.textContent = `${rows.length.toLocaleString("ko-KR")}건`;
   els.downloadButton.disabled = state.rows.length === 0;
@@ -866,7 +906,7 @@ function renderTable() {
     const tr = document.createElement("tr");
     headers.forEach((header) => {
       const td = document.createElement("td");
-      td.textContent = displayValue(row[header], header);
+      td.textContent = tableDisplayValue(row, header);
       if (!["단원명", "차시명"].includes(header)) td.classList.add("center");
       if ([UNIT_ORDER, LESSON_ORDER].includes(header)) td.classList.add("number");
       if (isDateHeader(header)) td.classList.add("date");
@@ -1427,8 +1467,8 @@ function moveAfter(headers, source, target) {
 function getVisibleRows() {
   return rowsMatchingSearch()
     .filter((row) => dateMatches(row, state.selectedDate))
-    .filter((row) => row.__subject === state.selectedSubject)
-    .filter((row) => row.__sheet === state.selectedCategory)
+    .filter((row) => state.selectedSubject === ALL_SUBJECTS || row.__subject === state.selectedSubject)
+    .filter((row) => state.selectedCategory === ALL_CATEGORIES || row.__sheet === state.selectedCategory)
     .sort(compareVisibleRows);
 }
 
@@ -1450,6 +1490,7 @@ function subjectsForDate(date) {
 }
 
 function subjectsForDateCategory(date, category) {
+  if (category === ALL_CATEGORIES) return subjectsForDate(date);
   return unique(
     rowsMatchingSearch()
       .filter((row) => dateMatches(row, date) && row.__sheet === category)
@@ -1458,6 +1499,7 @@ function subjectsForDateCategory(date, category) {
 }
 
 function categoriesForDateSubject(date, subject) {
+  if (subject === ALL_SUBJECTS) return categoriesForDate(date);
   const order = state.sheets.map((sheet) => sheet.name);
   return unique(
     rowsMatchingSearch()
@@ -1472,6 +1514,21 @@ function dateMatches(row, date) {
 
 function dateLabel(date) {
   return date === ALL_DATES ? "전체" : formatDateWithDay(date);
+}
+
+function subjectLabel(subject) {
+  return subject === ALL_SUBJECTS ? "전체" : subject;
+}
+
+function categoryLabel(category) {
+  return category === ALL_CATEGORIES ? "전체" : category;
+}
+
+function tableDisplayValue(row, header) {
+  if (header === "과목") return sortSubject(row);
+  if (header === "구분") return row.__sheet || "";
+  if (header === OPEN_DATE_LABEL) return row.__openDate || "";
+  return displayValue(row[header], header);
 }
 
 function formatDateWithDay(date) {
