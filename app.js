@@ -1138,8 +1138,8 @@ function ensureMathPublisherConfig(publishersByGrade) {
     const normalized = unique(publishers).sort(localeSort);
     const config = ensureGradePublisherConfig(grade);
     if (!config.main.length && !config.sub.length) {
-      config.main = [...normalized];
-      config.sub = [];
+      config.main = [];
+      config.sub = [...normalized];
       config.disabledSub = [];
       return;
     }
@@ -1147,7 +1147,7 @@ function ensureMathPublisherConfig(publishersByGrade) {
     config.sub = config.sub.filter((publisher) => normalized.includes(publisher));
     const assigned = new Set([...config.main, ...config.sub]);
     normalized.forEach((publisher) => {
-      if (!assigned.has(publisher)) config.main.push(publisher);
+      if (!assigned.has(publisher)) config.sub.push(publisher);
     });
     config.main.sort(localeSort);
     config.sub.sort(localeSort);
