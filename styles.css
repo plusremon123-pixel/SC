@@ -152,6 +152,10 @@ button:disabled {
 
 #scheduleCardViewButton {
   margin-left: auto;
+  border-color: #ea7a1a;
+  background: #fff4e8;
+  color: #9a4a00;
+  font-weight: 800;
 }
 
 .view-tabs button.active {
@@ -159,6 +163,12 @@ button:disabled {
   background: #e8f3f6;
   color: var(--brand-strong);
   font-weight: 800;
+}
+
+#scheduleCardViewButton.active {
+  border-color: #d45f00;
+  background: #f97316;
+  color: #fff;
 }
 
 .controls {
