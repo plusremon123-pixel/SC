@@ -64,7 +64,7 @@ const state = {
   selectedCategory: "",
   selectedMathAnalysisDate: "",
   mathPublisherConfig: {},
-  tabOrder: "category-first",
+  tabOrder: "subject-first",
   currentView: "lesson",
   timelineMode: "qa",
   timelineMarks: {},
@@ -122,7 +122,8 @@ init().catch((error) => {
 async function init() {
   state.workbookBase64 = localStorage.getItem(STORAGE_KEY);
   state.sourceName = localStorage.getItem(SOURCE_KEY) || "";
-  state.tabOrder = localStorage.getItem(TAB_ORDER_KEY) || "category-first";
+  state.tabOrder = "subject-first";
+  localStorage.setItem(TAB_ORDER_KEY, state.tabOrder);
   state.timelineMarks = readTimelineMarks();
   state.mathPublisherConfig = readMathPublisherConfig();
   await loadSharedTimeline();
