@@ -14,6 +14,7 @@ const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
+const SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config.json";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -124,6 +125,7 @@ async function init() {
   state.timelineMarks = readTimelineMarks();
   state.mathPublisherConfig = readMathPublisherConfig();
   await loadSharedTimeline();
+  await loadSharedMathPublisherConfig();
   await loadOverallSchedule();
   const hasLocalUpload = state.workbookBase64 && state.sourceName.startsWith("현재 데이터:");
   if (hasLocalUpload) {
@@ -327,8 +329,6 @@ async function loadWorkbook(base64) {
 
   state.sheets = sheets;
   state.rows = rows.filter((row) => row.__openDate);
-  state.mathPublisherConfig = {};
-  localStorage.removeItem(MATH_PUBLISHER_CONFIG_KEY);
   ensureSelections();
 }
 
@@ -1099,7 +1099,7 @@ function moveMathPublisher(grade, publisher, targetLane) {
   if (targetLane === "main") {
     config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
   }
-  saveMathPublisherConfig();
+  saveMathPublisherConfig({ shared: true });
   renderMathAnalysis();
 }
 
@@ -1110,7 +1110,7 @@ function toggleSubPublisher(grade, publisher, enabled) {
   } else {
     config.disabledSub = unique([...config.disabledSub, publisher]).sort(localeSort);
   }
-  saveMathPublisherConfig();
+  saveMathPublisherConfig({ shared: true });
   renderMathAnalysis();
 }
 
@@ -1178,8 +1178,35 @@ function readMathPublisherConfig() {
   }
 }
 
-function saveMathPublisherConfig() {
+async function loadSharedMathPublisherConfig() {
+  try {
+    const response = await fetch(supabasePublicUrl(SUPABASE_MATH_PUBLISHER_PATH), { cache: "no-store" });
+    if (!response.ok) return false;
+    const value = await response.json();
+    if (!value || typeof value !== "object") return false;
+    state.mathPublisherConfig = value;
+    localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
+    return true;
+  } catch (error) {
+    console.warn("공유 출판사 설정을 불러오지 못했습니다.", error);
+    return false;
+  }
+}
+
+function saveMathPublisherConfig(options = {}) {
   localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
+  if (options.shared) {
+    saveMathPublisherConfigToSupabase().catch((error) => {
+      console.error(error);
+      showToast(error.message || "출판사 설정 저장 중 오류가 발생했습니다.");
+    });
+  }
+}
+
+async function saveMathPublisherConfigToSupabase() {
+  const result = await putJsonToSupabase(SUPABASE_MATH_PUBLISHER_PATH, state.mathPublisherConfig);
+  if (!result.ok) throw new Error(result.message);
+  showToast("출판사 설정을 공유 저장했습니다.");
 }
 
 function mathSchoolworkRows() {

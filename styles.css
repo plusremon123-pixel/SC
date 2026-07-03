@@ -689,7 +689,7 @@ button:disabled {
 }
 
 .analysis-kpis {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   padding: 14px 16px;
