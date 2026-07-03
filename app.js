@@ -1429,7 +1429,7 @@ function getVisibleRows() {
     .filter((row) => dateMatches(row, state.selectedDate))
     .filter((row) => row.__subject === state.selectedSubject)
     .filter((row) => row.__sheet === state.selectedCategory)
-    .sort(compareRows);
+    .sort(compareVisibleRows);
 }
 
 function categoriesForDate(date) {
@@ -1715,6 +1715,14 @@ function compareRows(a, b) {
     || String(a["단원명"] || "").localeCompare(String(b["단원명"] || ""), "ko");
 }
 
+function compareVisibleRows(a, b) {
+  if (state.selectedDate === ALL_DATES) {
+    const dateOrder = String(a.__openDate || "").localeCompare(String(b.__openDate || ""));
+    if (dateOrder) return dateOrder;
+  }
+  return compareRows(a, b);
+}
+
 function sortSubject(row) {
   if (usesRepresentativeUnitAsSubject(row.__sheet)) return normalizeSubjectName(row["대표단원(한글/국어)"] || row.__subject || "");
   if (row.__sheet === "성취도평가") return normalizeSubjectName(row["진입 과목명"] || row.__subject || "");
@@ -1763,7 +1771,10 @@ function getExportRows() {
     .sort((a, b) => {
       const sheetOrder = state.sheets.findIndex((sheet) => sheet.name === a.__sheet)
         - state.sheets.findIndex((sheet) => sheet.name === b.__sheet);
-      return sheetOrder || compareRows(a, b);
+      const dateOrder = state.selectedDate === ALL_DATES
+        ? String(a.__openDate || "").localeCompare(String(b.__openDate || ""))
+        : 0;
+      return sheetOrder || dateOrder || compareRows(a, b);
     });
 }
 
