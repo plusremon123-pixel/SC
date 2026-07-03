@@ -1009,7 +1009,10 @@ bulkAnalyzeBtn.addEventListener('click', async function () {
   const apiKey = loadApiKey();
   if (!grade || !currentImageFile) return;
   if (!apiKey) {
-    alert('config.js 파일에 OpenRouter API Key를 입력해 주세요.\n발급: https://openrouter.ai');
+    bulkImageName.textContent = '이미지 준비됨 · 자동 분석 키가 없어 추출 결과를 직접 입력해 주세요.';
+    bulkEditSection.hidden = false;
+    bulkResultSection.hidden = true;
+    requestFrameResize();
     return;
   }
 
@@ -1033,7 +1036,11 @@ bulkAnalyzeBtn.addEventListener('click', async function () {
     bulkResultSection.hidden = true;
     bulkEditSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
-    alert('분석 중 오류가 발생했습니다:\n' + err.message);
+    console.error(err);
+    bulkImageName.textContent = `자동 분석 실패 · 추출 결과를 직접 입력해 주세요. (${err.message})`;
+    bulkEditSection.hidden = false;
+    bulkResultSection.hidden = true;
+    requestFrameResize();
   } finally {
     this.textContent = '분석하기';
     updateBulkBtn();
