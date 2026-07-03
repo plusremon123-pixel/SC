@@ -2171,7 +2171,7 @@ function excelDateValue(value) {
   const normalized = normalizeDate(value);
   if (!normalized) return value;
   const [year, month, day] = normalized.split("-").map(Number);
-  return new Date(year, month - 1, day);
+  return Math.round((Date.UTC(year, month - 1, day) - Date.UTC(1899, 11, 30)) / 86400000);
 }
 
 function displayValue(value, header) {
