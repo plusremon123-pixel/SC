@@ -2025,7 +2025,10 @@ async function downloadFilteredWorkbook() {
 
   workbook.eachSheet((worksheet) => {
     const headers = getHeaders(worksheet);
-    if (!OPEN_DATE_CANDIDATES.some((header) => headers.includes(header))) return;
+    if (!OPEN_DATE_CANDIDATES.some((header) => headers.includes(header))) {
+      worksheet.state = "hidden";
+      return;
+    }
     const sheetRows = exportRows.filter((row) => (row.__sourceSheet || row.__sheet) === worksheet.name);
     normalizeExportOpenDateHeader(worksheet, headers);
     replaceWorksheetData(worksheet, headers, sheetRows);
