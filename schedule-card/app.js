@@ -4,7 +4,6 @@ const LS_KEY_FILES  = 'curriculum_filenames';
 const LS_KEY_APIKEY = 'openrouter_api_key';
 const LS_UPLOAD_MARKER = 'manual-upload-v3';
 const UPLOAD_AUTH_KEY = 'schedule-card-upload-auth-v1';
-const UPLOAD_PASSWORD = '610503';
 const SUPABASE_URL = 'https://vmebzlinboxmgcrrorwv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR';
 const SUPABASE_BUCKET = 'schedule-data';
@@ -489,13 +488,25 @@ async function putJsonToSupabase(path, data) {
 }
 
 function confirmUploadPassword() {
-  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === 'true') return true;
+  const todayPassword = getTodayPassword();
+  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === todayPassword) return true;
   const input = prompt('업로드 비밀번호를 입력해 주세요.');
-  if (input === UPLOAD_PASSWORD) {
-    sessionStorage.setItem(UPLOAD_AUTH_KEY, 'true');
+  if (input === todayPassword) {
+    sessionStorage.setItem(UPLOAD_AUTH_KEY, todayPassword);
     return true;
   }
   return false;
+}
+
+function getTodayPassword() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Seoul',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const month = parts.find(part => part.type === 'month')?.value || '01';
+  const day = parts.find(part => part.type === 'day')?.value || '01';
+  return `${month}${day}`;
 }
 
 // ─── 상세 분석 결과 ──────────────────────────────────────

@@ -5,7 +5,6 @@ const TIMELINE_KEY = "schedule-card-release-timeline-v1";
 const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v3";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const PUBLISHER_AUTH_KEY = "schedule-card-publisher-auth-v1";
-const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
 const ALL_SUBJECTS = "__all_subjects__";
 const ALL_CATEGORIES = "__all_categories__";
@@ -275,23 +274,36 @@ function bindEvents() {
 }
 
 function confirmUploadPassword() {
-  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === "true") return true;
+  const todayPassword = getTodayPassword();
+  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === todayPassword) return true;
 
   const password = window.prompt("수정 비밀번호를 입력해 주세요.");
-  if (password !== UPLOAD_PASSWORD) return false;
+  if (password !== todayPassword) return false;
 
-  sessionStorage.setItem(UPLOAD_AUTH_KEY, "true");
+  sessionStorage.setItem(UPLOAD_AUTH_KEY, todayPassword);
   return true;
 }
 
 function confirmPublisherPassword() {
-  if (sessionStorage.getItem(PUBLISHER_AUTH_KEY) === "true") return true;
+  const todayPassword = getTodayPassword();
+  if (sessionStorage.getItem(PUBLISHER_AUTH_KEY) === todayPassword) return true;
 
   const password = window.prompt("출판사 설정 수정 비밀번호를 입력해 주세요.");
-  if (password !== UPLOAD_PASSWORD) return false;
+  if (password !== todayPassword) return false;
 
-  sessionStorage.setItem(PUBLISHER_AUTH_KEY, "true");
+  sessionStorage.setItem(PUBLISHER_AUTH_KEY, todayPassword);
   return true;
+}
+
+function getTodayPassword() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const month = parts.find((part) => part.type === "month")?.value || "01";
+  const day = parts.find((part) => part.type === "day")?.value || "01";
+  return `${month}${day}`;
 }
 
 async function loadWorkbook(base64) {
