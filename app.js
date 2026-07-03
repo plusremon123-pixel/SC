@@ -2,6 +2,7 @@ const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const TIMELINE_KEY = "schedule-card-release-timeline-v1";
+const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v1";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
@@ -57,8 +58,7 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   selectedMathAnalysisDate: "",
-  selectedMathPublishers: [],
-  mathPublisherFilterInitialized: false,
+  mathPublisherConfig: {},
   tabOrder: "category-first",
   currentView: "lesson",
   timelineMode: "qa",
@@ -119,6 +119,7 @@ async function init() {
   state.sourceName = localStorage.getItem(SOURCE_KEY) || "";
   state.tabOrder = localStorage.getItem(TAB_ORDER_KEY) || "category-first";
   state.timelineMarks = readTimelineMarks();
+  state.mathPublisherConfig = readMathPublisherConfig();
   await loadSharedTimeline();
   await loadOverallSchedule();
   const hasLocalUpload = state.workbookBase64 && state.sourceName.startsWith("현재 데이터:");
@@ -319,7 +320,8 @@ async function loadWorkbook(base64) {
 
   state.sheets = sheets;
   state.rows = rows.filter((row) => row.__openDate);
-  state.mathPublisherFilterInitialized = false;
+  state.mathPublisherConfig = {};
+  localStorage.removeItem(MATH_PUBLISHER_CONFIG_KEY);
   ensureSelections();
 }
 
@@ -880,10 +882,10 @@ function renderTable() {
 function renderMathAnalysis() {
   const rows = mathSchoolworkRows();
   const dates = unique(rows.map((row) => row.__openDate)).sort();
-  const publishers = mathPublishers(rows);
-  ensureMathPublisherSelection(publishers);
+  const publishersByGrade = mathPublishersByGrade(rows);
+  ensureMathPublisherConfig(publishersByGrade);
   if (!dates.includes(state.selectedMathAnalysisDate)) state.selectedMathAnalysisDate = dates[0] || "";
-  renderMathPublisherFilters(publishers);
+  renderMathPublisherFilters(publishersByGrade);
   const publisherRows = rows.filter((row) => mathPublisherSelected(row));
 
   els.mathAnalysisDateTabs.innerHTML = "";
@@ -936,55 +938,204 @@ function renderMathAnalysis() {
   els.mathAnalysisEmptyState.hidden = groups.length > 0;
 }
 
-function renderMathPublisherFilters(publishers) {
+function renderMathPublisherFilters(publishersByGrade) {
   els.mathPublisherFilters.innerHTML = "";
-  if (!publishers.length) return;
+  const grades = Object.keys(publishersByGrade).sort((a, b) => gradeNumber(a) - gradeNumber(b));
+  if (!grades.length) return;
 
-  const allButton = document.createElement("button");
-  allButton.type = "button";
-  allButton.className = "publisher-filter-all";
-  allButton.textContent = state.selectedMathPublishers.length === publishers.length ? "전체 해제" : "전체 선택";
-  allButton.addEventListener("click", () => {
-    state.selectedMathPublishers = state.selectedMathPublishers.length === publishers.length ? [] : [...publishers];
-    renderMathAnalysis();
-  });
-  els.mathPublisherFilters.appendChild(allButton);
+  grades.forEach((grade) => {
+    const panel = document.createElement("section");
+    panel.className = "publisher-grade-panel";
 
-  publishers.forEach((publisher) => {
-    const label = document.createElement("label");
-    label.className = "publisher-filter";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = state.selectedMathPublishers.includes(publisher);
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        state.selectedMathPublishers = unique([...state.selectedMathPublishers, publisher]).sort(localeSort);
-      } else {
-        state.selectedMathPublishers = state.selectedMathPublishers.filter((item) => item !== publisher);
-      }
-      renderMathAnalysis();
-    });
-    label.appendChild(checkbox);
-    label.append(publisher);
-    els.mathPublisherFilters.appendChild(label);
+    const title = document.createElement("div");
+    title.className = "publisher-grade-title";
+    title.textContent = grade;
+    panel.appendChild(title);
+
+    const lanes = document.createElement("div");
+    lanes.className = "publisher-lanes";
+    lanes.appendChild(publisherLane(grade, "main", "메인 출판사"));
+    lanes.appendChild(publisherLane(grade, "sub", "서브 출판사"));
+    panel.appendChild(lanes);
+
+    els.mathPublisherFilters.appendChild(panel);
   });
 }
 
-function mathPublishers(rows) {
-  return unique(rows.map((row) => row["출판사"] || "미분류")).sort(localeSort);
+function publisherLane(grade, lane, title) {
+  const config = state.mathPublisherConfig[grade] || { main: [], sub: [], disabledSub: [] };
+  const wrapper = document.createElement("div");
+  wrapper.className = `publisher-lane publisher-lane-${lane}`;
+  wrapper.dataset.grade = grade;
+  wrapper.dataset.lane = lane;
+
+  const head = document.createElement("div");
+  head.className = "publisher-lane-head";
+  head.textContent = title;
+  wrapper.appendChild(head);
+
+  const list = document.createElement("div");
+  list.className = "publisher-chip-list";
+  list.dataset.grade = grade;
+  list.dataset.lane = lane;
+  list.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    list.classList.add("drag-over");
+  });
+  list.addEventListener("dragleave", () => list.classList.remove("drag-over"));
+  list.addEventListener("drop", (event) => {
+    event.preventDefault();
+    list.classList.remove("drag-over");
+    const payload = parseDragPayload(event.dataTransfer.getData("text/plain"));
+    if (!payload || payload.grade !== grade) return;
+    moveMathPublisher(grade, payload.publisher, lane);
+  });
+
+  const publishers = config[lane] || [];
+  if (!publishers.length) {
+    const empty = document.createElement("span");
+    empty.className = "publisher-empty";
+    empty.textContent = "여기로 드래그";
+    list.appendChild(empty);
+  }
+
+  publishers.forEach((publisher) => {
+    list.appendChild(publisherChip(grade, publisher, lane));
+  });
+
+  wrapper.appendChild(list);
+  return wrapper;
+}
+
+function publisherChip(grade, publisher, lane) {
+  const config = state.mathPublisherConfig[grade] || { disabledSub: [] };
+  const chip = document.createElement("div");
+  chip.className = `publisher-chip publisher-chip-${lane}`;
+  chip.draggable = true;
+  chip.setAttribute("role", "button");
+  chip.setAttribute("tabindex", "0");
+  chip.addEventListener("dragstart", (event) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", JSON.stringify({ grade, publisher, lane }));
+  });
+
+  if (lane === "sub") {
+    chip.classList.toggle("is-disabled", config.disabledSub.includes(publisher));
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = !config.disabledSub.includes(publisher);
+    checkbox.addEventListener("click", (event) => event.stopPropagation());
+    checkbox.addEventListener("change", () => {
+      toggleSubPublisher(grade, publisher, checkbox.checked);
+    });
+    chip.appendChild(checkbox);
+  }
+  const label = document.createElement("span");
+  label.textContent = publisher;
+  chip.appendChild(label);
+
+  return chip;
+}
+
+function parseDragPayload(value) {
+  try {
+    const payload = JSON.parse(value);
+    if (!payload?.grade || !payload?.publisher) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function moveMathPublisher(grade, publisher, targetLane) {
+  const config = ensureGradePublisherConfig(grade);
+  config.main = config.main.filter((item) => item !== publisher);
+  config.sub = config.sub.filter((item) => item !== publisher);
+  config[targetLane] = unique([...(config[targetLane] || []), publisher]).sort(localeSort);
+  if (targetLane === "main") {
+    config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
+  }
+  saveMathPublisherConfig();
+  renderMathAnalysis();
+}
+
+function toggleSubPublisher(grade, publisher, enabled) {
+  const config = ensureGradePublisherConfig(grade);
+  if (enabled) {
+    config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
+  } else {
+    config.disabledSub = unique([...config.disabledSub, publisher]).sort(localeSort);
+  }
+  saveMathPublisherConfig();
+  renderMathAnalysis();
+}
+
+function mathPublishersByGrade(rows) {
+  return rows.reduce((acc, row) => {
+    const grade = row["학년"] || "미분류";
+    if (!acc[grade]) acc[grade] = [];
+    acc[grade].push(row["출판사"] || "미분류");
+    return acc;
+  }, {});
 }
 
 function mathPublisherSelected(row) {
-  return state.selectedMathPublishers.includes(row["출판사"] || "미분류");
+  const grade = row["학년"] || "미분류";
+  const publisher = row["출판사"] || "미분류";
+  const config = state.mathPublisherConfig[grade];
+  if (!config) return true;
+  if ((config.main || []).includes(publisher)) return true;
+  if ((config.sub || []).includes(publisher)) return !(config.disabledSub || []).includes(publisher);
+  return false;
 }
 
-function ensureMathPublisherSelection(publishers) {
-  if (!state.mathPublisherFilterInitialized) {
-    state.selectedMathPublishers = [...publishers];
-    state.mathPublisherFilterInitialized = true;
-    return;
+function ensureMathPublisherConfig(publishersByGrade) {
+  Object.entries(publishersByGrade).forEach(([grade, publishers]) => {
+    const normalized = unique(publishers).sort(localeSort);
+    const config = ensureGradePublisherConfig(grade);
+    if (!config.main.length && !config.sub.length) {
+      config.main = [...normalized];
+      config.sub = [];
+      config.disabledSub = [];
+      return;
+    }
+    config.main = config.main.filter((publisher) => normalized.includes(publisher));
+    config.sub = config.sub.filter((publisher) => normalized.includes(publisher));
+    const assigned = new Set([...config.main, ...config.sub]);
+    normalized.forEach((publisher) => {
+      if (!assigned.has(publisher)) config.main.push(publisher);
+    });
+    config.main.sort(localeSort);
+    config.sub.sort(localeSort);
+    config.disabledSub = config.disabledSub.filter((publisher) => config.sub.includes(publisher)).sort(localeSort);
+  });
+  Object.keys(state.mathPublisherConfig).forEach((grade) => {
+    if (!publishersByGrade[grade]) delete state.mathPublisherConfig[grade];
+  });
+  saveMathPublisherConfig();
+}
+
+function ensureGradePublisherConfig(grade) {
+  if (!state.mathPublisherConfig[grade]) {
+    state.mathPublisherConfig[grade] = { main: [], sub: [], disabledSub: [] };
   }
-  state.selectedMathPublishers = state.selectedMathPublishers.filter((publisher) => publishers.includes(publisher));
+  state.mathPublisherConfig[grade].main ||= [];
+  state.mathPublisherConfig[grade].sub ||= [];
+  state.mathPublisherConfig[grade].disabledSub ||= [];
+  return state.mathPublisherConfig[grade];
+}
+
+function readMathPublisherConfig() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(MATH_PUBLISHER_CONFIG_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMathPublisherConfig() {
+  localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
 }
 
 function mathSchoolworkRows() {

@@ -514,12 +514,117 @@ button:disabled {
 }
 
 .publisher-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line);
   background: #fbfcfe;
+}
+
+.publisher-grade-panel {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.publisher-grade-title {
+  min-width: 48px;
+  font-weight: 800;
+  color: var(--brand-strong);
+  text-align: center;
+}
+
+.publisher-lanes {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.publisher-lane {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 6px;
+}
+
+.publisher-lane-head {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.publisher-chip-list {
+  min-height: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  padding: 8px;
+  border: 1px dashed #c8d4e4;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.publisher-chip-list.drag-over {
+  border-color: var(--brand);
+  background: #e8f3f6;
+}
+
+.publisher-chip {
+  min-height: 30px;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+}
+
+.publisher-chip:active {
+  cursor: grabbing;
+}
+
+.publisher-chip-main {
+  border-color: #9fc4d0;
+  background: #e8f3f6;
+  color: var(--brand-strong);
+}
+
+.publisher-chip-sub {
+  border-color: #d8c7ee;
+  background: #f5efff;
+  color: #5d3a93;
+}
+
+.publisher-chip-sub.is-disabled {
+  border-color: var(--line);
+  background: #f1f3f6;
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.publisher-chip input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+
+.publisher-empty {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .publisher-filter,
