@@ -177,6 +177,8 @@ function bindEvents() {
       return;
     }
     let base64;
+    const previousOpenDates = currentOpenDates();
+    const previousTimelineMarks = clonePlainObject(state.timelineMarks || {});
     try {
       base64 = await fileToBase64(file);
       await loadWorkbook(base64);
@@ -193,14 +195,16 @@ function bindEvents() {
     state.currentView = "lesson";
     state.sourceName = `현재 데이터: ${file.name}`;
     state.currentFileName = file.name;
-    state.timelineMarks = createDefaultTimelineMarks();
+    const timelineMerge = mergeTimelineMarksAfterUpload(previousTimelineMarks, previousOpenDates);
+    state.timelineMarks = timelineMerge.marks;
     localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
     showToast("현재 데이터가 교체 저장되었습니다. Supabase 저장을 진행합니다.");
+    notifyOpenDateChanges(timelineMerge.addedDates, timelineMerge.removedDates, previousOpenDates.length > 0);
     render();
 
     try {
       await saveCurrentWorkbookToSupabase();
-      await saveTimelineToSupabase("기본 체크 일정도 저장했습니다.");
+      await saveTimelineToSupabase("체크 일정을 저장했습니다.");
     } catch (error) {
       console.error(error);
       showToast(error.message ? `화면에는 반영됐지만 공유 저장 실패: ${error.message}` : "화면에는 반영됐지만 공유 저장에 실패했습니다.");
@@ -1641,6 +1645,50 @@ function createDefaultTimelineMarks() {
     marksByOpenDate[openDate] = normalizeTimelineMarksForDate(openDate, marks);
   });
   return marksByOpenDate;
+}
+
+function currentOpenDates() {
+  return unique(state.rows.map((row) => row.__openDate)).sort();
+}
+
+function clonePlainObject(value) {
+  try {
+    return JSON.parse(JSON.stringify(value || {}));
+  } catch {
+    return {};
+  }
+}
+
+function mergeTimelineMarksAfterUpload(previousMarks, previousOpenDates) {
+  const nextOpenDates = currentOpenDates();
+  const defaults = createDefaultTimelineMarks();
+  const previousDateSet = new Set(previousOpenDates);
+  const nextDateSet = new Set(nextOpenDates);
+  const marks = {};
+
+  nextOpenDates.forEach((openDate) => {
+    marks[openDate] = previousMarks?.[openDate]
+      ? normalizeTimelineMarksForDate(openDate, previousMarks[openDate])
+      : defaults[openDate] || {};
+  });
+
+  return {
+    marks,
+    addedDates: nextOpenDates.filter((date) => !previousDateSet.has(date)),
+    removedDates: previousOpenDates.filter((date) => !nextDateSet.has(date)),
+  };
+}
+
+function notifyOpenDateChanges(addedDates, removedDates, shouldNotify) {
+  if (!shouldNotify || (!addedDates.length && !removedDates.length)) return;
+  const lines = ["오픈 날짜 변경이 감지되었습니다."];
+  if (addedDates.length) {
+    lines.push("", "[신규 날짜]", ...addedDates.map((date) => `- ${formatDateWithDay(date)}`));
+  }
+  if (removedDates.length) {
+    lines.push("", "[삭제 날짜]", ...removedDates.map((date) => `- ${formatDateWithDay(date)}`));
+  }
+  window.alert(lines.join("\n"));
 }
 
 function workdaysBefore(openDate, count) {
