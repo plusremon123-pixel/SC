@@ -2023,16 +2023,18 @@ async function downloadFilteredWorkbook() {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(base64ToArrayBuffer(state.workbookBase64));
 
+  const sheetsToRemove = [];
   workbook.eachSheet((worksheet) => {
     const headers = getHeaders(worksheet);
     if (!OPEN_DATE_CANDIDATES.some((header) => headers.includes(header))) {
-      worksheet.state = "hidden";
+      sheetsToRemove.push(worksheet.id);
       return;
     }
     const sheetRows = exportRows.filter((row) => (row.__sourceSheet || row.__sheet) === worksheet.name);
     normalizeExportOpenDateHeader(worksheet, headers);
     replaceWorksheetData(worksheet, headers, sheetRows);
   });
+  sheetsToRemove.forEach((worksheetId) => workbook.removeWorksheet(worksheetId));
 
   const buffer = await workbook.xlsx.writeBuffer();
   const safeDate = state.selectedDate === ALL_DATES ? "전체" : state.selectedDate.replaceAll("-", "");
