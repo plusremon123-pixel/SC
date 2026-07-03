@@ -595,10 +595,16 @@ button:disabled {
   font-size: 12px;
 }
 
+.publisher-grade-title .disabled-count {
+  border-color: #d8dee6;
+  background: #f1f3f6;
+  color: var(--muted);
+}
+
 .publisher-lanes {
   min-width: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 
@@ -663,6 +669,7 @@ button:disabled {
   color: #5d3a93;
 }
 
+.publisher-chip-disabled,
 .publisher-chip-sub.is-disabled {
   border-color: var(--line);
   background: #f1f3f6;
@@ -759,6 +766,10 @@ button:disabled {
 .main-publisher {
   color: #0b63ce;
   font-weight: 900;
+}
+
+.disabled-publisher {
+  color: #8a95a3;
 }
 
 .overall-panel {

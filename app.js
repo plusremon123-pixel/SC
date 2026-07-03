@@ -953,7 +953,11 @@ function renderMathAnalysis() {
     row.__openDate === state.selectedMathAnalysisDate
     && mathPublisherSelected(row)
   ));
-  const groups = mathLessonGroups(selectedRows);
+  const visibleRows = rows.filter((row) => (
+    row.__openDate === state.selectedMathAnalysisDate
+    && (mathPublisherSelected(row) || mathPublisherDisabled(row))
+  ));
+  const groups = mathLessonGroups(visibleRows);
   const duplicateGroups = groups.filter((group) => group.publishers.length > 1);
   const unitCount = unique(selectedRows.map((row) => mathUnitKey(row))).length;
 
@@ -1003,13 +1007,19 @@ function renderMathPublisherFilters(publishersByGrade, rows) {
     const title = document.createElement("div");
     title.className = "publisher-grade-title";
     const selectedCount = mathSelectedCountForGrade(rows, grade);
-    title.innerHTML = `<strong>${escapeHtml(grade)}</strong><span>${selectedCount.toLocaleString("ko-KR")}차시</span>`;
+    const disabledCount = mathDisabledCountForGrade(rows, grade);
+    title.innerHTML = `
+      <strong>${escapeHtml(grade)}</strong>
+      <span>${selectedCount.toLocaleString("ko-KR")}차시</span>
+      <span class="disabled-count">해제 ${disabledCount.toLocaleString("ko-KR")}차시</span>
+    `;
     panel.appendChild(title);
 
     const lanes = document.createElement("div");
     lanes.className = "publisher-lanes";
     lanes.appendChild(publisherLane(grade, "main", "메인 출판사"));
     lanes.appendChild(publisherLane(grade, "sub", "서브 출판사"));
+    lanes.appendChild(publisherLane(grade, "disabled", "해제 출판사"));
     panel.appendChild(lanes);
 
     els.mathPublisherFilters.appendChild(panel);
@@ -1021,6 +1031,14 @@ function mathSelectedCountForGrade(rows, grade) {
     row["학년"] === grade
     && row.__openDate === state.selectedMathAnalysisDate
     && mathPublisherSelected(row)
+  )).length;
+}
+
+function mathDisabledCountForGrade(rows, grade) {
+  return rows.filter((row) => (
+    row["학년"] === grade
+    && row.__openDate === state.selectedMathAnalysisDate
+    && mathPublisherDisabled(row)
   )).length;
 }
 
@@ -1053,11 +1071,11 @@ function publisherLane(grade, lane, title) {
     moveMathPublisher(grade, payload.publisher, lane);
   });
 
-  const publishers = config[lane] || [];
+  const publishers = publishersForLane(config, lane);
   if (!publishers.length) {
     const empty = document.createElement("span");
     empty.className = "publisher-empty";
-    empty.textContent = "여기로 드래그";
+    empty.textContent = lane === "disabled" ? "해제 없음" : "여기로 드래그";
     list.appendChild(empty);
   }
 
@@ -1081,11 +1099,12 @@ function publisherChip(grade, publisher, lane) {
     event.dataTransfer.setData("text/plain", JSON.stringify({ grade, publisher, lane }));
   });
 
-  if (lane === "sub") {
-    chip.classList.toggle("is-disabled", config.disabledSub.includes(publisher));
+  if (lane === "sub" || lane === "disabled") {
+    const isDisabled = config.disabledSub.includes(publisher);
+    chip.classList.toggle("is-disabled", isDisabled);
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.checked = !config.disabledSub.includes(publisher);
+    checkbox.checked = !isDisabled;
     checkbox.addEventListener("click", (event) => event.stopPropagation());
     checkbox.addEventListener("change", () => {
       toggleSubPublisher(grade, publisher, checkbox.checked);
@@ -1097,6 +1116,14 @@ function publisherChip(grade, publisher, lane) {
   chip.appendChild(label);
 
   return chip;
+}
+
+function publishersForLane(config, lane) {
+  if (lane === "main") return config.main || [];
+  if (lane === "disabled") {
+    return (config.sub || []).filter((publisher) => (config.disabledSub || []).includes(publisher));
+  }
+  return (config.sub || []).filter((publisher) => !(config.disabledSub || []).includes(publisher));
 }
 
 function parseDragPayload(value) {
@@ -1118,9 +1145,15 @@ function moveMathPublisher(grade, publisher, targetLane) {
   const config = ensureGradePublisherConfig(grade);
   config.main = config.main.filter((item) => item !== publisher);
   config.sub = config.sub.filter((item) => item !== publisher);
-  config[targetLane] = unique([...(config[targetLane] || []), publisher]).sort(localeSort);
+  config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
+
   if (targetLane === "main") {
-    config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
+    config.main = unique([...config.main, publisher]).sort(localeSort);
+  } else {
+    config.sub = unique([...config.sub, publisher]).sort(localeSort);
+    if (targetLane === "disabled") {
+      config.disabledSub = unique([...config.disabledSub, publisher]).sort(localeSort);
+    }
   }
   saveMathPublisherConfig({ shared: true });
   renderMathAnalysis();
@@ -1160,6 +1193,13 @@ function mathPublisherSelected(row) {
   if ((config.main || []).includes(publisher)) return true;
   if ((config.sub || []).includes(publisher)) return !(config.disabledSub || []).includes(publisher);
   return false;
+}
+
+function mathPublisherDisabled(row) {
+  const grade = row["학년"] || "미분류";
+  const publisher = row["출판사"] || "미분류";
+  const config = mathPublisherConfigForDate(row.__openDate)[grade];
+  return Boolean(config && (config.sub || []).includes(publisher) && (config.disabledSub || []).includes(publisher));
 }
 
 function ensureMathPublisherConfig(publishersByGrade) {
@@ -1321,12 +1361,14 @@ function sortMathPublishersForGrade(grade, publishers) {
 }
 
 function mathPublisherListHtml(grade, publishers) {
-  const mainPublishers = mathPublisherConfigForSelectedDate()[grade]?.main || [];
+  const config = mathPublisherConfigForSelectedDate()[grade] || { main: [], disabledSub: [] };
+  const mainPublishers = config.main || [];
+  const disabledPublishers = config.disabledSub || [];
   return publishers.map((publisher) => {
     const escaped = escapeHtml(publisher);
-    return mainPublishers.includes(publisher)
-      ? `<strong class="main-publisher">${escaped}</strong>`
-      : escaped;
+    if (mainPublishers.includes(publisher)) return `<strong class="main-publisher">${escaped}</strong>`;
+    if (disabledPublishers.includes(publisher)) return `<span class="disabled-publisher">${escaped}</span>`;
+    return escaped;
   }).join(", ");
 }
 
