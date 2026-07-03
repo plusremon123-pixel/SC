@@ -2,7 +2,7 @@ const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const TIMELINE_KEY = "schedule-card-release-timeline-v1";
-const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v2";
+const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v3";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const UPLOAD_PASSWORD = "610503";
 const ALL_DATES = "__all_dates__";
@@ -14,7 +14,7 @@ const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
-const SHARED_MATH_PUBLISHER_KEY = "__mathPublisherConfigByDateV2";
+const SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config-v3.json";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -1193,12 +1193,11 @@ function readMathPublisherConfig() {
 
 async function loadSharedMathPublisherConfig() {
   try {
-    const response = await fetch(supabasePublicUrl(SUPABASE_TIMELINE_PATH), { cache: "no-store" });
+    const response = await fetch(supabasePublicUrl(SUPABASE_MATH_PUBLISHER_PATH), { cache: "no-store" });
     if (!response.ok) return false;
     const value = await response.json();
-    const config = value?.[SHARED_MATH_PUBLISHER_KEY];
-    if (!config || typeof config !== "object") return false;
-    state.mathPublisherConfig = normalizeMathPublisherConfig(config);
+    if (!value || typeof value !== "object") return false;
+    state.mathPublisherConfig = normalizeMathPublisherConfig(value);
     localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
     return true;
   } catch (error) {
@@ -1249,7 +1248,7 @@ function saveMathPublisherConfig(options = {}) {
 }
 
 async function saveMathPublisherConfigToSupabase() {
-  const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, sharedTimelinePayload());
+  const result = await putJsonToSupabase(SUPABASE_MATH_PUBLISHER_PATH, mathPublisherConfigPayload());
   if (!result.ok) throw new Error(result.message);
   showToast("출판사 설정을 공유 저장했습니다.");
 }
@@ -1719,10 +1718,7 @@ function isSharedMetaKey(key) {
 }
 
 function sharedTimelinePayload() {
-  return {
-    ...normalizeTimelineMarks(state.timelineMarks),
-    [SHARED_MATH_PUBLISHER_KEY]: mathPublisherConfigPayload(),
-  };
+  return normalizeTimelineMarks(state.timelineMarks);
 }
 
 function mathPublisherConfigPayload() {
