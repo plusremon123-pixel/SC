@@ -571,9 +571,28 @@ button:disabled {
 
 .publisher-grade-title {
   min-width: 48px;
+  display: grid;
+  gap: 5px;
   font-weight: 800;
   color: var(--brand-strong);
   text-align: center;
+}
+
+.publisher-grade-title strong {
+  font-size: 15px;
+}
+
+.publisher-grade-title span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 3px 7px;
+  border: 1px solid #b8d4df;
+  border-radius: 6px;
+  background: #f0f8fb;
+  color: var(--brand-strong);
+  font-size: 12px;
 }
 
 .publisher-lanes {

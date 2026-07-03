@@ -929,7 +929,7 @@ function renderMathAnalysis() {
   const publishersByGrade = mathPublishersByGrade(rows);
   ensureMathPublisherConfig(publishersByGrade);
   if (!dates.includes(state.selectedMathAnalysisDate)) state.selectedMathAnalysisDate = dates[0] || "";
-  renderMathPublisherFilters(publishersByGrade);
+  renderMathPublisherFilters(publishersByGrade, rows);
   const publisherRows = rows.filter((row) => mathPublisherSelected(row));
 
   els.mathAnalysisDateTabs.innerHTML = "";
@@ -982,7 +982,7 @@ function renderMathAnalysis() {
   els.mathAnalysisEmptyState.hidden = groups.length > 0;
 }
 
-function renderMathPublisherFilters(publishersByGrade) {
+function renderMathPublisherFilters(publishersByGrade, rows) {
   els.mathPublisherFilters.innerHTML = "";
   const grades = Object.keys(publishersByGrade).sort((a, b) => gradeNumber(a) - gradeNumber(b));
   if (!grades.length) return;
@@ -993,7 +993,8 @@ function renderMathPublisherFilters(publishersByGrade) {
 
     const title = document.createElement("div");
     title.className = "publisher-grade-title";
-    title.textContent = grade;
+    const selectedCount = mathSelectedCountForGrade(rows, grade);
+    title.innerHTML = `<strong>${escapeHtml(grade)}</strong><span>${selectedCount.toLocaleString("ko-KR")}차시</span>`;
     panel.appendChild(title);
 
     const lanes = document.createElement("div");
@@ -1004,6 +1005,14 @@ function renderMathPublisherFilters(publishersByGrade) {
 
     els.mathPublisherFilters.appendChild(panel);
   });
+}
+
+function mathSelectedCountForGrade(rows, grade) {
+  return rows.filter((row) => (
+    row["학년"] === grade
+    && row.__openDate === state.selectedMathAnalysisDate
+    && mathPublisherSelected(row)
+  )).length;
 }
 
 function publisherLane(grade, lane, title) {
