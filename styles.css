@@ -150,6 +150,10 @@ button:disabled {
   padding: 10px;
 }
 
+#scheduleCardViewButton {
+  margin-left: auto;
+}
+
 .view-tabs button.active {
   border-color: var(--brand);
   background: #e8f3f6;
