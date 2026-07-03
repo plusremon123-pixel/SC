@@ -757,7 +757,14 @@ button:disabled {
 }
 
 .main-publisher {
-  color: var(--brand-strong);
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 7px;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  background: #fff4d6;
+  color: #b45309;
   font-weight: 900;
 }
 
