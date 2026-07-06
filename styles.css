@@ -889,19 +889,13 @@ button:disabled {
   gap: 8px;
 }
 
-.monthly-open-tools select {
-  height: 38px;
-  min-width: 150px;
-  padding: 0 34px 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--ink);
-  font: inherit;
-}
-
 .monthly-open-list {
   padding: 14px 16px 18px;
+}
+
+.monthly-open-month-tabs {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line);
 }
 
 .monthly-open-table-wrap {
@@ -909,16 +903,15 @@ button:disabled {
 }
 
 .monthly-open-table {
-  min-width: 1180px;
+  min-width: 980px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
 .monthly-open-table th:nth-child(1) { width: 160px; }
 .monthly-open-table th:nth-child(2) { width: 140px; }
-.monthly-open-table th:nth-child(3) { width: 260px; }
+.monthly-open-table th:nth-child(3) { width: auto; }
 .monthly-open-table th:nth-child(4) { width: 110px; }
-.monthly-open-table th:nth-child(5) { width: auto; }
 
 .monthly-open-table th {
   position: static;
@@ -935,6 +928,11 @@ button:disabled {
   padding: 2px 5px;
   background: #dff4ff;
   color: #123047;
+}
+
+.monthly-open-detail {
+  margin-top: 16px;
+  white-space: pre-line;
 }
 
 .table-head span {

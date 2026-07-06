@@ -111,7 +111,7 @@ const els = {
   mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
   mathAnalysisTableBody: document.querySelector("#mathAnalysisTableBody"),
   mathAnalysisEmptyState: document.querySelector("#mathAnalysisEmptyState"),
-  monthlyOpenMonthSelect: document.querySelector("#monthlyOpenMonthSelect"),
+  monthlyOpenMonthTabs: document.querySelector("#monthlyOpenMonthTabs"),
   monthlyOpenCopyButton: document.querySelector("#monthlyOpenCopyButton"),
   monthlyOpenList: document.querySelector("#monthlyOpenList"),
   monthlyOpenEmptyState: document.querySelector("#monthlyOpenEmptyState"),
@@ -283,11 +283,6 @@ function bindEvents() {
       console.error(error);
       showToast("QA 내용을 복사하지 못했습니다.");
     });
-  });
-
-  els.monthlyOpenMonthSelect.addEventListener("change", (event) => {
-    state.selectedMonthlyOpenMonth = event.target.value;
-    renderMonthlyOpenInfo();
   });
 
   els.monthlyOpenCopyButton.addEventListener("click", () => {
@@ -777,7 +772,7 @@ function renderMonthlyOpenInfo() {
   const entries = monthlyOpenEntries();
   const months = unique(entries.map((entry) => entry.month)).sort();
   if (!months.length) {
-    els.monthlyOpenMonthSelect.innerHTML = "";
+    els.monthlyOpenMonthTabs.innerHTML = "";
     els.monthlyOpenCopyButton.disabled = true;
     els.monthlyOpenList.innerHTML = "";
     els.monthlyOpenEmptyState.hidden = false;
@@ -788,9 +783,14 @@ function renderMonthlyOpenInfo() {
     state.selectedMonthlyOpenMonth = months[0];
   }
 
-  els.monthlyOpenMonthSelect.innerHTML = months
-    .map((month) => `<option value="${escapeHtml(month)}"${month === state.selectedMonthlyOpenMonth ? " selected" : ""}>${escapeHtml(formatMonthlyOpenMonth(month))}</option>`)
-    .join("");
+  els.monthlyOpenMonthTabs.innerHTML = "";
+  months.forEach((month) => {
+    const count = entries.filter((entry) => entry.month === month).length;
+    els.monthlyOpenMonthTabs.appendChild(tabButton(formatMonthlyOpenMonth(month), count, month === state.selectedMonthlyOpenMonth, () => {
+      state.selectedMonthlyOpenMonth = month;
+      renderMonthlyOpenInfo();
+    }, null, month));
+  });
   els.monthlyOpenCopyButton.disabled = false;
 
   const monthEntries = entries.filter((entry) => entry.month === state.selectedMonthlyOpenMonth);
@@ -803,7 +803,6 @@ function renderMonthlyOpenInfo() {
             <th>서비스</th>
             <th>오픈 정보</th>
             <th>대상</th>
-            <th>상세내용</th>
           </tr>
         </thead>
         <tbody>
@@ -811,9 +810,11 @@ function renderMonthlyOpenInfo() {
             <tr>
               <td class="date">${escapeHtml(formatKoreanDate(entry.openDate))}</td>
               <td class="center">${escapeHtml(MONTHLY_SERVICE_LABEL)}</td>
-              <td><strong>[${escapeHtml(entry.category)} &gt; ${escapeHtml(entry.title)}]</strong></td>
+              <td>
+                <strong>[${escapeHtml(entry.category)} &gt; ${escapeHtml(entry.title)}]</strong>
+                <div class="monthly-open-detail">${escapeHtml(entry.detail)}</div>
+              </td>
               <td class="center">${escapeHtml(entry.grades)}</td>
-              <td>${escapeHtml(entry.detail)}</td>
             </tr>
           `).join("")}
         </tbody>
@@ -855,9 +856,8 @@ function monthlyOpenHtmlTable(entries) {
     <tr>
       <td>${escapeHtml(formatKoreanDate(entry.openDate))}</td>
       <td>${escapeHtml(MONTHLY_SERVICE_LABEL)}</td>
-      <td><strong>[${escapeHtml(entry.category)} &gt; ${escapeHtml(entry.title)}]</strong></td>
+      <td><strong>[${escapeHtml(entry.category)} &gt; ${escapeHtml(entry.title)}]</strong><br><br>${escapeHtml(entry.detail).replace(/\n/g, "<br>")}</td>
       <td>${escapeHtml(entry.grades)}</td>
-      <td>${escapeHtml(entry.detail).replace(/\n/g, "<br>")}</td>
     </tr>
   `).join("");
   return `
@@ -868,7 +868,6 @@ function monthlyOpenHtmlTable(entries) {
           <th>서비스</th>
           <th>오픈 정보</th>
           <th>대상</th>
-          <th>상세내용</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -878,13 +877,12 @@ function monthlyOpenHtmlTable(entries) {
 
 function monthlyOpenTsv(entries) {
   return [
-    ["오픈일", "서비스", "오픈 정보", "대상", "상세내용"].join("\t"),
+    ["오픈일", "서비스", "오픈 정보", "대상"].join("\t"),
     ...entries.map((entry) => [
       formatKoreanDate(entry.openDate),
       MONTHLY_SERVICE_LABEL,
-      `[${entry.category} > ${entry.title}]`,
+      `[${entry.category} > ${entry.title}]\n\n${entry.detail}`,
       entry.grades,
-      entry.detail.replace(/\n/g, " / "),
     ].join("\t")),
   ].join("\n");
 }
@@ -926,6 +924,7 @@ function monthlyOpenCategory(row) {
 }
 
 function monthlyOpenTitle(row) {
+  if (row.__sheet === "학교시험") return sortGroup(row) || "미분류";
   if (row.__sheet === "수학마스터") {
     return firstMeaningfulValue([
       row["과목"],
@@ -953,6 +952,12 @@ function monthlyOpenDetail(rows) {
 
 function monthlyDetailGroups(rows) {
   const sheet = rows[0]?.__sheet || "";
+  if (sheet === "학교시험") {
+    const grouped = groupBy(rows, (row) => sortSubject(row) || "미분류");
+    return Object.keys(grouped)
+      .sort(compareSubjectOrder)
+      .map((label) => ({ label, rows: grouped[label] }));
+  }
   if (usesRepresentativeUnitAsSubject(sheet) || sheet === "성취도평가") {
     const grouped = groupBy(rows, (row) => sortGroup(row) || "미분류");
     return Object.keys(grouped)
