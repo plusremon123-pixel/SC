@@ -974,8 +974,14 @@ function monthlyScopeText(rows) {
   const units = unique(sortedRows.map((row) => row[UNIT_ORDER]).filter((value) => value !== "")).sort((a, b) => toNumber(a) - toNumber(b));
   const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
   const unitText = monthlyRangeLabel(units, "단원");
-  const lessonText = monthlyLessonRangeText(sortedRows, lessons);
+  const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
   return [grades, terms, unitText, lessonText].filter(Boolean).join(" ");
+}
+
+function monthlyScopeUsesUnitOnly(rows) {
+  const sheet = rows[0]?.__sheet || "";
+  const group = sortGroup(rows[0] || {});
+  return sheet === "학교시험" && ["서술형 트레이닝", "AI 서술형 평가"].includes(group);
 }
 
 function monthlyRangeLabel(values, suffix) {
