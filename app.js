@@ -981,7 +981,15 @@ function monthlyScopeText(rows) {
 function monthlyScopeUsesUnitOnly(rows) {
   const sheet = rows[0]?.__sheet || "";
   const group = sortGroup(rows[0] || {});
-  return sheet === "학교시험" && ["서술형 트레이닝", "AI 서술형 평가"].includes(group);
+  if (sheet === "검정교과서") return true;
+  return sheet === "학교시험" && [
+    "서술형 트레이닝",
+    "AI 서술형 평가",
+    "단원평가",
+    "단원 요점정리",
+    "단원요점정리",
+    "단원핵심특강",
+  ].includes(group);
 }
 
 function monthlyRangeLabel(values, suffix) {
