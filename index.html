@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>5,6개정 실무 관리 툴</title>
-    <link rel="stylesheet" href="./styles.css?v=20260703-21" />
+    <link rel="stylesheet" href="./styles.css?v=20260706-2" />
   </head>
   <body>
     <main class="app-shell">
@@ -18,6 +18,7 @@
         <button id="lessonViewButton" type="button" class="active">차시별 일정</button>
         <button id="overallViewButton" type="button">콘텐츠 오픈 예정일</button>
         <button id="mathAnalysisViewButton" type="button">수학 차시별 분석</button>
+        <button id="monthlyOpenViewButton" type="button">월별 오픈 정보</button>
         <button id="scheduleCardViewButton" type="button">스케쥴 카드</button>
       </nav>
 
@@ -112,6 +113,20 @@
         </section>
       </div>
 
+      <div id="monthlyOpenView" hidden>
+        <section class="monthly-open-panel">
+          <div class="monthly-open-head">
+            <strong>월별 오픈 정보</strong>
+            <div class="monthly-open-tools">
+              <select id="monthlyOpenMonthSelect" aria-label="월 선택"></select>
+              <button id="monthlyOpenCopyButton" type="button">월별 문구 복사</button>
+            </div>
+          </div>
+          <div id="monthlyOpenList" class="monthly-open-list"></div>
+          <div id="monthlyOpenEmptyState" class="empty" hidden>차시별 일정 데이터가 없습니다.</div>
+        </section>
+      </div>
+
       <div id="scheduleCardView" hidden>
         <section class="schedule-card-panel">
           <iframe
@@ -144,6 +159,6 @@
     <div id="toast" class="toast" hidden></div>
 
     <script src="./vendor/exceljs.min.js?v=20260703-39"></script>
-    <script src="./app.js?v=20260703-40"></script>
+    <script src="./app.js?v=20260706-2"></script>
   </body>
 </html>

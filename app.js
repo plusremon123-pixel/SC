@@ -27,6 +27,7 @@ const TIMELINE_DAYS = 30;
 const DEFAULT_QA_DAYS = 5;
 const DEFAULT_STAGE_DAYS = 5;
 const COPY_SUBJECT_ORDER = ["국어", "수학", "과학", "사회", "영어"];
+const MONTHLY_SERVICE_LABEL = "스마트올 초등";
 const KOREA_HOLIDAYS_2026 = new Set([
   "2026-01-01",
   "2026-02-16",
@@ -62,6 +63,7 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   selectedMathAnalysisDate: "",
+  selectedMonthlyOpenMonth: "",
   mathPublisherConfig: {},
   tabOrder: "subject-first",
   currentView: "lesson",
@@ -74,10 +76,12 @@ const state = {
 const els = {
   lessonView: document.querySelector("#lessonView"),
   mathAnalysisView: document.querySelector("#mathAnalysisView"),
+  monthlyOpenView: document.querySelector("#monthlyOpenView"),
   scheduleCardView: document.querySelector("#scheduleCardView"),
   overallView: document.querySelector("#overallView"),
   lessonViewButton: document.querySelector("#lessonViewButton"),
   mathAnalysisViewButton: document.querySelector("#mathAnalysisViewButton"),
+  monthlyOpenViewButton: document.querySelector("#monthlyOpenViewButton"),
   scheduleCardViewButton: document.querySelector("#scheduleCardViewButton"),
   overallViewButton: document.querySelector("#overallViewButton"),
   fileInput: document.querySelector("#fileInput"),
@@ -107,6 +111,10 @@ const els = {
   mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
   mathAnalysisTableBody: document.querySelector("#mathAnalysisTableBody"),
   mathAnalysisEmptyState: document.querySelector("#mathAnalysisEmptyState"),
+  monthlyOpenMonthSelect: document.querySelector("#monthlyOpenMonthSelect"),
+  monthlyOpenCopyButton: document.querySelector("#monthlyOpenCopyButton"),
+  monthlyOpenList: document.querySelector("#monthlyOpenList"),
+  monthlyOpenEmptyState: document.querySelector("#monthlyOpenEmptyState"),
   overallTableHeader: document.querySelector("#overallTableHeader"),
   overallTableBody: document.querySelector("#overallTableBody"),
   overallEmptyState: document.querySelector("#overallEmptyState"),
@@ -158,6 +166,11 @@ function bindEvents() {
 
   els.overallViewButton.addEventListener("click", () => {
     state.currentView = "overall";
+    render();
+  });
+
+  els.monthlyOpenViewButton.addEventListener("click", () => {
+    state.currentView = "monthly-open";
     render();
   });
 
@@ -269,6 +282,18 @@ function bindEvents() {
     copyQaSummary().catch((error) => {
       console.error(error);
       showToast("QA 내용을 복사하지 못했습니다.");
+    });
+  });
+
+  els.monthlyOpenMonthSelect.addEventListener("change", (event) => {
+    state.selectedMonthlyOpenMonth = event.target.value;
+    renderMonthlyOpenInfo();
+  });
+
+  els.monthlyOpenCopyButton.addEventListener("click", () => {
+    copyMonthlyOpenSummary().catch((error) => {
+      console.error(error);
+      showToast("월별 오픈 정보를 복사하지 못했습니다.");
     });
   });
 }
@@ -552,18 +577,22 @@ function render() {
   renderSecondaryTabs();
   renderTable();
   renderOverallSchedule();
+  renderMonthlyOpenInfo();
   renderMathAnalysis();
 }
 
 function renderView() {
   const isOverall = state.currentView === "overall";
+  const isMonthlyOpen = state.currentView === "monthly-open";
   const isMathAnalysis = state.currentView === "math-analysis";
   const isScheduleCard = state.currentView === "schedule-card";
-  els.lessonView.hidden = isOverall || isMathAnalysis || isScheduleCard;
+  els.lessonView.hidden = isOverall || isMonthlyOpen || isMathAnalysis || isScheduleCard;
+  els.monthlyOpenView.hidden = !isMonthlyOpen;
   els.mathAnalysisView.hidden = !isMathAnalysis;
   els.scheduleCardView.hidden = !isScheduleCard;
   els.overallView.hidden = !isOverall;
-  els.lessonViewButton.classList.toggle("active", !isOverall && !isMathAnalysis && !isScheduleCard);
+  els.lessonViewButton.classList.toggle("active", !isOverall && !isMonthlyOpen && !isMathAnalysis && !isScheduleCard);
+  els.monthlyOpenViewButton.classList.toggle("active", isMonthlyOpen);
   els.mathAnalysisViewButton.classList.toggle("active", isMathAnalysis);
   els.scheduleCardViewButton.classList.toggle("active", isScheduleCard);
   els.overallViewButton.classList.toggle("active", isOverall);
@@ -742,6 +771,266 @@ function buildQaSummaryText() {
   ];
 
   return lines.join("\n");
+}
+
+function renderMonthlyOpenInfo() {
+  const entries = monthlyOpenEntries();
+  const months = unique(entries.map((entry) => entry.month)).sort();
+  if (!months.length) {
+    els.monthlyOpenMonthSelect.innerHTML = "";
+    els.monthlyOpenCopyButton.disabled = true;
+    els.monthlyOpenList.innerHTML = "";
+    els.monthlyOpenEmptyState.hidden = false;
+    return;
+  }
+
+  if (!months.includes(state.selectedMonthlyOpenMonth)) {
+    state.selectedMonthlyOpenMonth = months[0];
+  }
+
+  els.monthlyOpenMonthSelect.innerHTML = months
+    .map((month) => `<option value="${escapeHtml(month)}"${month === state.selectedMonthlyOpenMonth ? " selected" : ""}>${escapeHtml(formatMonthlyOpenMonth(month))}</option>`)
+    .join("");
+  els.monthlyOpenCopyButton.disabled = false;
+
+  const monthEntries = entries.filter((entry) => entry.month === state.selectedMonthlyOpenMonth);
+  els.monthlyOpenList.innerHTML = `
+    <div class="monthly-open-table-wrap">
+      <table class="monthly-open-table">
+        <thead>
+          <tr>
+            <th>오픈일</th>
+            <th>서비스</th>
+            <th>오픈 정보</th>
+            <th>대상</th>
+            <th>상세내용</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${monthEntries.map((entry) => `
+            <tr>
+              <td class="date">${escapeHtml(formatKoreanDate(entry.openDate))}</td>
+              <td class="center">${escapeHtml(MONTHLY_SERVICE_LABEL)}</td>
+              <td><strong>[${escapeHtml(entry.category)} &gt; ${escapeHtml(entry.title)}]</strong></td>
+              <td class="center">${escapeHtml(entry.grades)}</td>
+              <td>${escapeHtml(entry.detail)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+  els.monthlyOpenEmptyState.hidden = monthEntries.length > 0;
+}
+
+async function copyMonthlyOpenSummary() {
+  const entries = monthlyOpenEntries().filter((entry) => entry.month === state.selectedMonthlyOpenMonth);
+  if (!entries.length) {
+    showToast("복사할 월별 오픈 정보가 없습니다.");
+    return;
+  }
+  await copyTableToClipboard(monthlyOpenHtmlTable(entries), monthlyOpenTsv(entries));
+  showToast("월별 오픈 정보를 복사했습니다.");
+}
+
+async function copyTableToClipboard(html, text) {
+  if (navigator.clipboard?.write && window.ClipboardItem && window.isSecureContext) {
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([text], { type: "text/plain" }),
+        }),
+      ]);
+      return;
+    } catch {
+      // Fall back to plain text below.
+    }
+  }
+  await copyTextToClipboard(text);
+}
+
+function monthlyOpenHtmlTable(entries) {
+  const rows = entries.map((entry) => `
+    <tr>
+      <td>${escapeHtml(formatKoreanDate(entry.openDate))}</td>
+      <td>${escapeHtml(MONTHLY_SERVICE_LABEL)}</td>
+      <td><strong>[${escapeHtml(entry.category)} &gt; ${escapeHtml(entry.title)}]</strong></td>
+      <td>${escapeHtml(entry.grades)}</td>
+      <td>${escapeHtml(entry.detail).replace(/\n/g, "<br>")}</td>
+    </tr>
+  `).join("");
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>오픈일</th>
+          <th>서비스</th>
+          <th>오픈 정보</th>
+          <th>대상</th>
+          <th>상세내용</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function monthlyOpenTsv(entries) {
+  return [
+    ["오픈일", "서비스", "오픈 정보", "대상", "상세내용"].join("\t"),
+    ...entries.map((entry) => [
+      formatKoreanDate(entry.openDate),
+      MONTHLY_SERVICE_LABEL,
+      `[${entry.category} > ${entry.title}]`,
+      entry.grades,
+      entry.detail.replace(/\n/g, " / "),
+    ].join("\t")),
+  ].join("\n");
+}
+
+function monthlyOpenEntries() {
+  const rows = [...state.rows].filter((row) => row.__openDate);
+  const grouped = groupBy(rows, monthlyOpenGroupKey);
+  return Object.values(grouped)
+    .map(monthlyOpenEntryFromRows)
+    .sort(compareMonthlyOpenEntries);
+}
+
+function monthlyOpenGroupKey(row) {
+  return [
+    row.__openDate,
+    monthlyOpenCategory(row),
+    monthlyOpenTitle(row),
+  ].join("||");
+}
+
+function monthlyOpenEntryFromRows(rows) {
+  const sortedRows = [...rows].sort(compareRows);
+  const first = sortedRows[0];
+  return {
+    openDate: first.__openDate,
+    month: first.__openDate.slice(0, 7),
+    category: monthlyOpenCategory(first),
+    title: monthlyOpenTitle(first),
+    grades: monthlyOpenGrades(sortedRows),
+    detail: monthlyOpenDetail(sortedRows),
+    count: sortedRows.length,
+  };
+}
+
+function monthlyOpenCategory(row) {
+  const sheet = row.__sheet || "기타";
+  if (["학교공부", "학교시험", "수학마스터"].includes(sheet)) return `AI ${sheet}`;
+  return sheet;
+}
+
+function monthlyOpenTitle(row) {
+  if (row.__sheet === "수학마스터") {
+    return firstMeaningfulValue([
+      row["과목"],
+      row["구분"],
+      row["대표단원(한글/국어)"],
+      row["진입 과목명"],
+    ], ["수학", "AI수학", "All수학"]) || "수학";
+  }
+  return sortSubject(row) || "미분류";
+}
+
+function monthlyOpenGrades(rows) {
+  const grades = unique(rows.map((row) => row["학년"]))
+    .sort((a, b) => toNumber(a) - toNumber(b));
+  return compressGradeLabels(grades);
+}
+
+function monthlyOpenDetail(rows) {
+  const detailGroups = monthlyDetailGroups(rows);
+  return detailGroups.map(({ label, rows: groupRows }) => {
+    const scope = monthlyScopeText(groupRows);
+    return label ? `${label} - ${scope}` : scope;
+  }).join("\n");
+}
+
+function monthlyDetailGroups(rows) {
+  const sheet = rows[0]?.__sheet || "";
+  if (usesRepresentativeUnitAsSubject(sheet) || sheet === "성취도평가") {
+    const grouped = groupBy(rows, (row) => sortGroup(row) || "미분류");
+    return Object.keys(grouped)
+      .sort(compareSubjectOrder)
+      .map((label) => ({ label, rows: grouped[label] }));
+  }
+  return [{ label: "", rows }];
+}
+
+function monthlyScopeText(rows) {
+  const sortedRows = [...rows].sort(compareRows);
+  const grades = compressGradeLabels(unique(sortedRows.map((row) => row["학년"])).sort((a, b) => toNumber(a) - toNumber(b)));
+  const terms = unique(sortedRows.map((row) => row["학기"])).sort(localeSort).join(", ");
+  const units = unique(sortedRows.map((row) => row[UNIT_ORDER]).filter((value) => value !== "")).sort((a, b) => toNumber(a) - toNumber(b));
+  const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
+  const unitText = monthlyRangeLabel(units, "단원");
+  const lessonText = monthlyLessonRangeText(sortedRows, lessons);
+  return [grades, terms, unitText, lessonText].filter(Boolean).join(" ");
+}
+
+function monthlyRangeLabel(values, suffix) {
+  if (!values.length) return "";
+  const numbers = values.map(toNumber).filter((value) => value !== 999999);
+  if (numbers.length === values.length) {
+    const min = Math.min(...numbers);
+    const max = Math.max(...numbers);
+    if (min === max) return `${min}${suffix}`;
+    return `${min}~${max}${suffix}`;
+  }
+  if (values.length === 1) return `${values[0]}${suffix}`;
+  return `${values[0]}~${values[values.length - 1]}${suffix}`;
+}
+
+function monthlyLessonRangeText(rows, lessons) {
+  if (!lessons.length) return "";
+  const min = Math.min(...lessons);
+  const max = Math.max(...lessons);
+  const hasUnitEvaluation = rows.some((row) => String(row["차시명"] || "").includes("단원평가"));
+  if (min === max) return `${min}차시`;
+  if (hasUnitEvaluation) return `${min}차시~단원평가`;
+  return `${min}~${max}차시`;
+}
+
+function compareMonthlyOpenEntries(a, b) {
+  return a.openDate.localeCompare(b.openDate)
+    || monthlyCategoryOrder(a.category) - monthlyCategoryOrder(b.category)
+    || compareSubjectOrder(a.title, b.title);
+}
+
+function monthlyCategoryOrder(category) {
+  const order = ["AI 학교공부", "AI 학교시험", "AI 수학마스터", "검정교과서", "성취도평가"];
+  const index = order.indexOf(category);
+  return index === -1 ? order.length : index;
+}
+
+function firstMeaningfulValue(values, excluded = []) {
+  const excludedSet = new Set(excluded.map((value) => String(value).replace(/\s+/g, "").toLowerCase()));
+  return values.map((value) => String(value || "").trim()).find((value) => {
+    if (!value) return false;
+    return !excludedSet.has(value.replace(/\s+/g, "").toLowerCase());
+  }) || "";
+}
+
+function compressGradeLabels(grades) {
+  const numbers = unique(grades.map((grade) => Number((String(grade).match(/\d+/) || [""])[0])).filter(Number.isFinite)).sort((a, b) => a - b);
+  if (!numbers.length) return "";
+  if (numbers.length === 1) return `${numbers[0]}학년`;
+  return `${numbers.join(", ")}학년`;
+}
+
+function formatMonthlyOpenMonth(month) {
+  const [year, monthNumber] = month.split("-");
+  return `${year}년 ${Number(monthNumber)}월`;
+}
+
+function formatKoreanDate(date) {
+  const [year, month, day] = date.split("-").map(Number);
+  return `${year}년 ${month}월 ${day}일`;
 }
 
 function timelineCopyRange(mark) {
@@ -2197,6 +2486,15 @@ function isDateHeader(header) {
 
 function unique(values) {
   return [...new Set(values.filter((value) => value != null && value !== ""))];
+}
+
+function groupBy(values, keyGetter) {
+  return values.reduce((groups, value) => {
+    const key = keyGetter(value);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(value);
+    return groups;
+  }, {});
 }
 
 function localeSort(a, b) {
