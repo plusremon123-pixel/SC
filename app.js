@@ -971,7 +971,7 @@ function monthlyScopeText(rows) {
   const sortedRows = [...rows].sort(compareRows);
   const grades = compressGradeLabels(unique(sortedRows.map((row) => row["학년"])).sort((a, b) => toNumber(a) - toNumber(b)));
   const terms = unique(sortedRows.map((row) => row["학기"])).sort(localeSort).join(", ");
-  const units = unique(sortedRows.map((row) => row[UNIT_ORDER]).filter((value) => value !== "")).sort((a, b) => toNumber(a) - toNumber(b));
+  const units = unique(sortedRows.map(monthlyUnitValue).filter((value) => value !== "")).sort((a, b) => toNumber(a) - toNumber(b));
   const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
   const unitText = monthlyRangeLabel(units, "단원");
   const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
@@ -990,6 +990,21 @@ function monthlyScopeUsesUnitOnly(rows) {
     "단원요점정리",
     "단원핵심특강",
   ].includes(group);
+}
+
+function monthlyUnitValue(row) {
+  if (row.__sheet === "학교공부") {
+    return leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
+  }
+  if (row.__sheet === "학교시험" && sortSubject(row) === "영어") {
+    return leadingNumberText(row["차시명"]) || row[UNIT_ORDER];
+  }
+  return row[UNIT_ORDER];
+}
+
+function leadingNumberText(value) {
+  const match = String(value || "").trim().match(/^['"]?(\d+)/);
+  return match ? match[1] : "";
 }
 
 function monthlyRangeLabel(values, suffix) {
