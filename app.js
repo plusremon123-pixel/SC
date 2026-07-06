@@ -1001,9 +1001,7 @@ function monthlyLessonRangeText(rows, lessons) {
   if (!lessons.length) return "";
   const min = Math.min(...lessons);
   const max = Math.max(...lessons);
-  const hasUnitEvaluation = rows.some((row) => String(row["차시명"] || "").includes("단원평가"));
   if (min === max) return `${min}차시`;
-  if (hasUnitEvaluation) return `${min}차시~단원평가`;
   return `${min}~${max}차시`;
 }
 
