@@ -63,6 +63,7 @@ const state = {
   selectedSubject: "",
   selectedCategory: "",
   selectedTablePublisher: "",
+  selectedTableGroup: "",
   selectedMathAnalysisDate: "",
   selectedMonthlyOpenMonth: "",
   mathPublisherConfig: {},
@@ -620,6 +621,7 @@ function renderDateTabs() {
       state.selectedCategory = "";
       state.selectedSubject = "";
       state.selectedTablePublisher = "";
+      state.selectedTableGroup = "";
       render();
     }));
   }
@@ -630,6 +632,7 @@ function renderDateTabs() {
       state.selectedCategory = "";
       state.selectedSubject = "";
       state.selectedTablePublisher = "";
+      state.selectedTableGroup = "";
       render();
     }, null, date));
   });
@@ -1138,6 +1141,7 @@ function renderSubjectTabs(level) {
   target.appendChild(tabButton("전체", subjects.length, state.selectedSubject === ALL_SUBJECTS, () => {
     state.selectedSubject = ALL_SUBJECTS;
     state.selectedTablePublisher = "";
+    state.selectedTableGroup = "";
     if (level === "primary") {
       state.selectedCategory = ALL_CATEGORIES;
       render();
@@ -1160,6 +1164,7 @@ function renderSubjectTabs(level) {
     target.appendChild(tabButton(subject, count, subject === state.selectedSubject, () => {
       state.selectedSubject = subject;
       state.selectedTablePublisher = "";
+      state.selectedTableGroup = "";
       if (level === "primary") {
         state.selectedCategory = "";
         render();
@@ -1184,6 +1189,7 @@ function renderCategoryTabs(level) {
   target.appendChild(tabButton("전체", categories.length, state.selectedCategory === ALL_CATEGORIES, () => {
     state.selectedCategory = ALL_CATEGORIES;
     state.selectedTablePublisher = "";
+    state.selectedTableGroup = "";
     if (level === "primary") {
       state.selectedSubject = ALL_SUBJECTS;
       render();
@@ -1206,6 +1212,7 @@ function renderCategoryTabs(level) {
     target.appendChild(tabButton(category, count, category === state.selectedCategory, () => {
       state.selectedCategory = category;
       state.selectedTablePublisher = "";
+      state.selectedTableGroup = "";
       if (level === "primary") {
         state.selectedSubject = "";
         render();
@@ -1240,6 +1247,8 @@ function renderTable() {
   const tablePath = isCategoryFirst()
     ? [dateLabel(state.selectedDate), categoryLabel(state.selectedCategory), subjectLabel(state.selectedSubject)]
     : [dateLabel(state.selectedDate), subjectLabel(state.selectedSubject), categoryLabel(state.selectedCategory)];
+  if (state.selectedTableGroup) tablePath.push(state.selectedTableGroup);
+  if (state.selectedTablePublisher) tablePath.push(state.selectedTablePublisher);
   els.tableTitle.textContent = tablePath.filter(Boolean).join(" > ") || "조회 결과";
   els.rowCount.textContent = `${rows.length.toLocaleString("ko-KR")}건`;
   els.downloadButton.disabled = state.rows.length === 0;
@@ -1274,14 +1283,23 @@ function renderTable() {
 
 function renderTablePublisherTabs() {
   const baseRows = getVisibleRows({ includePublisher: false });
-  const shouldShow = baseRows.length > 0 && baseRows.every((row) => sortSubject(row) === "수학");
+  const showGroupTabs = baseRows.length > 0 && baseRows.every((row) => row.__sheet === "학교시험");
+  const showPublisherTabs = !showGroupTabs && baseRows.length > 0 && baseRows.every((row) => sortSubject(row) === "수학");
+  const shouldShow = showPublisherTabs || showGroupTabs;
   els.tablePublisherTabs.hidden = !shouldShow;
   els.tablePublisherTabs.innerHTML = "";
   if (!shouldShow) {
     state.selectedTablePublisher = "";
+    state.selectedTableGroup = "";
     return;
   }
 
+  if (showGroupTabs) {
+    renderTableGroupTabs(baseRows);
+    return;
+  }
+
+  state.selectedTableGroup = "";
   const publishers = unique(baseRows.map((row) => row["출판사"] || "미분류")).sort(compareTablePublisherOrder);
   if (state.selectedTablePublisher && !publishers.includes(state.selectedTablePublisher)) {
     state.selectedTablePublisher = "";
@@ -1296,6 +1314,27 @@ function renderTablePublisherTabs() {
     const count = baseRows.filter((row) => (row["출판사"] || "미분류") === publisher).length;
     els.tablePublisherTabs.appendChild(smallTabButton(publisher, count, state.selectedTablePublisher === publisher, () => {
       state.selectedTablePublisher = publisher;
+      renderTable();
+    }));
+  });
+}
+
+function renderTableGroupTabs(baseRows) {
+  state.selectedTablePublisher = "";
+  const groups = unique(baseRows.map((row) => sortGroup(row) || "미분류")).sort(localeSort);
+  if (state.selectedTableGroup && !groups.includes(state.selectedTableGroup)) {
+    state.selectedTableGroup = "";
+  }
+
+  els.tablePublisherTabs.appendChild(smallTabButton("전체", baseRows.length, state.selectedTableGroup === "", () => {
+    state.selectedTableGroup = "";
+    renderTable();
+  }));
+
+  groups.forEach((group) => {
+    const count = baseRows.filter((row) => (sortGroup(row) || "미분류") === group).length;
+    els.tablePublisherTabs.appendChild(smallTabButton(group, count, state.selectedTableGroup === group, () => {
+      state.selectedTableGroup = group;
       renderTable();
     }));
   });
@@ -2015,6 +2054,7 @@ function getVisibleRows(options = {}) {
     .filter((row) => state.selectedSubject === ALL_SUBJECTS || row.__subject === state.selectedSubject)
     .filter((row) => state.selectedCategory === ALL_CATEGORIES || row.__sheet === state.selectedCategory)
     .filter((row) => !includePublisher || !state.selectedTablePublisher || (row["출판사"] || "미분류") === state.selectedTablePublisher)
+    .filter((row) => !includePublisher || !state.selectedTableGroup || (sortGroup(row) || "미분류") === state.selectedTableGroup)
     .sort(compareVisibleRows);
 }
 
@@ -2071,7 +2111,7 @@ function categoryLabel(category) {
 }
 
 function tableDisplayValue(row, header) {
-  if (header === "과목") return sortSubject(row);
+  if (header === "과목" && state.selectedCategory === ALL_CATEGORIES) return sortSubject(row);
   if (header === "구분") return row.__sheet || "";
   if (header === OPEN_DATE_LABEL) return row.__openDate || "";
   return displayValue(row[header], header);
