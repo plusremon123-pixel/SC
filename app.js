@@ -1282,7 +1282,7 @@ function renderTablePublisherTabs() {
     return;
   }
 
-  const publishers = unique(baseRows.map((row) => row["출판사"] || "미분류")).sort(localeSort);
+  const publishers = unique(baseRows.map((row) => row["출판사"] || "미분류")).sort(compareTablePublisherOrder);
   if (state.selectedTablePublisher && !publishers.includes(state.selectedTablePublisher)) {
     state.selectedTablePublisher = "";
   }
@@ -1308,6 +1308,12 @@ function smallTabButton(label, count, active, onClick) {
   button.innerHTML = `${escapeHtml(label)}<span>${count.toLocaleString("ko-KR")}</span>`;
   button.addEventListener("click", onClick);
   return button;
+}
+
+function compareTablePublisherOrder(a, b) {
+  if (a === "아이스크림" && b !== "아이스크림") return -1;
+  if (b === "아이스크림" && a !== "아이스크림") return 1;
+  return localeSort(a, b);
 }
 
 function renderMathAnalysis() {
