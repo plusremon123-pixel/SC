@@ -367,31 +367,8 @@ body {
   max-width: 260px;
 }
 
-/* 추가 검색 학년 select 폭을 선택 입력 학년과 동일하게 고정 */
 #extra-grade-select {
   width: 100%;
-}
-#grade-select {
-  width: 100%;
-}
-
-/* 과목차시 콤보 (select + text input) */
-.lesson-combo-wrap {
-  flex: 1 1 180px;
-}
-.lesson-combo {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-}
-.lesson-combo select {
-  flex: 0 0 130px;
-  width: 130px;
-  min-width: 0;
-}
-.lesson-combo input[type="text"] {
-  flex: 1 1 auto;
-  min-width: 60px;
 }
 
 /* 빠른 입력 */

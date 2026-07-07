@@ -53,10 +53,6 @@ const csvInput       = document.getElementById('csv-input');
 const clearUploadBtn = document.getElementById('clear-upload-btn');
 const termButtons    = Array.from(document.querySelectorAll('[data-term]'));
 const termSwitchNote = document.getElementById('term-switch-note');
-const gradeSelect    = document.getElementById('grade-select');
-const subjectSelect  = document.getElementById('subject-select');
-const lessonInput        = document.getElementById('lesson-input');
-const lessonSelectHelper = document.getElementById('lesson-select-helper');
 const uniqueidInput    = document.getElementById('uniqueid-input');
 const expdateInput     = document.getElementById('expdate-input');
 const quickSearchInput = document.getElementById('quick-search-input');
@@ -200,14 +196,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ─── 상호 초기화 헬퍼 ────────────────────────────────────
 function clearRow1() { quickSearchInput.value = ''; }
 
-function clearRow2() {
-  gradeSelect.value = '';
-  subjectSelect.innerHTML = '<option value="">-- 과목 선택 --</option>';
-  subjectSelect.disabled = true;
-  lessonSelectHelper.innerHTML = '<option value="">-- 목록에서 선택 --</option>';
-  lessonSelectHelper.disabled = true;
-  lessonInput.value = ''; lessonInput.disabled = true;
-}
+function clearRow2() {}
 
 function clearRow3() {
   extraGradeSelect.value = '';
@@ -229,30 +218,7 @@ function handleQuickSearchChange() {
 quickSearchInput.addEventListener('paste', () => setTimeout(updateAnalyzeBtn, 0));
 quickSearchInput.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeBtn.click(); });
 
-// Row 2: 선택 입력
-gradeSelect.addEventListener('change', function () {
-  if (this.value) { clearRow1(); clearRow3(); }
-  resetSubjectAndBelow();
-  if (this.value) {
-    populateSubjects(this.value);
-    subjectSelect.disabled = false;
-  }
-  updateAnalyzeBtn();
-});
-
-subjectSelect.addEventListener('change', function () {
-  lessonSelectHelper.innerHTML = '<option value="">-- 목록에서 선택 --</option>';
-  lessonSelectHelper.disabled = true;
-  lessonInput.value = ''; lessonInput.disabled = true;
-  if (this.value) {
-    populateLessons(gradeSelect.value, this.value);
-    lessonSelectHelper.disabled = false;
-    lessonInput.disabled = false;
-  }
-  updateAnalyzeBtn();
-});
-
-// Row 3: 추가 검색
+// Row 2: 추가 검색
 extraGradeSelect.addEventListener('change', function () {
   if (this.value) {
     clearRow1(); clearRow2();
@@ -267,23 +233,7 @@ extraGradeSelect.addEventListener('change', function () {
   updateAnalyzeBtn();
 });
 
-// ─── 단일 검색 - 서브 조건 이벤트 ───────────────────────
-// 목록에서 선택 → text input에 자동 반영
-lessonSelectHelper.addEventListener('change', function () {
-  if (this.value) {
-    lessonInput.value = this.value;
-    updateAnalyzeBtn();
-  }
-});
-
-// lesson 직접입력 → row 1·3 초기화
-lessonInput.addEventListener('input', function () {
-  if (this.value.trim()) { clearRow1(); clearRow3(); }
-  updateAnalyzeBtn();
-});
-lessonInput.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeBtn.click(); });
-
-// row 3 text inputs → row 1·2 초기화 + 나머지 row3 입력값 초기화
+// row 2 text inputs → row 1 초기화 + 나머지 row2 입력값 초기화
 [uniqueidInput, expdateInput, unitnameInput].forEach(el => {
   el.addEventListener('input', function () {
     if (this.value.trim()) {
@@ -299,18 +249,14 @@ lessonInput.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeBtn
 
 function updateAnalyzeBtn() {
   const quick      = quickSearchInput.value.trim();
-  const grade      = gradeSelect.value;
-  const subject    = subjectSelect.value;
-  const lesson     = lessonInput.value.trim();
   const extraGrade = extraGradeSelect.value;
   const uniqueId   = uniqueidInput.value.trim();
   const expDate    = expdateInput.value.trim();
   const unitName   = unitnameInput.value.trim();
 
   const mode1ok = !!quick;
-  const mode2ok = !!(grade && subject && lesson);
   const mode3ok = !!(extraGrade && (uniqueId || expDate || unitName));
-  analyzeBtn.disabled = !(mode1ok || mode2ok || mode3ok);
+  analyzeBtn.disabled = !(mode1ok || mode3ok);
 }
 
 // ─── 단일 검색 실행 ──────────────────────────────────────
@@ -320,17 +266,17 @@ analyzeBtn.addEventListener('click', function () {
 
   if (quick) {
     const parsed = parseQuickSearch(quick);
-    grade      = normalizeGrade(parsed.grade || gradeSelect.value.trim() || extraGradeSelect.value.trim() || '');
+    grade      = normalizeGrade(parsed.grade || extraGradeSelect.value.trim() || '');
     subject    = parsed.grade ? resolveSubject(parsed.grade, parsed.subjectHint) : '';
     if (!subject && grade) subject = resolveSubject(grade, parsed.subjectHint);
     lessonCode = (parsed.lesson || '').replace(/'/g, '');
   } else {
-    grade      = normalizeGrade(gradeSelect.value.trim());
-    subject    = subjectSelect.value.trim();
-    lessonCode = lessonInput.value.trim().replace(/'/g, '');
+    grade      = '';
+    subject    = '';
+    lessonCode = '';
   }
 
-  // Row 3이 활성이면 extraGrade를 grade로 사용
+  // 추가 검색이 활성이면 extraGrade를 grade로 사용
   if (!grade) grade = normalizeGrade(extraGradeSelect.value.trim());
 
   const uniqueId = uniqueidInput.value.trim();
@@ -826,55 +772,17 @@ function populateGrades() {
   const grades = [...new Set(rows.map(r => r.학년))].filter(Boolean)
     .sort((a, b) => Number(a) - Number(b));
   const opts = grades.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}학년</option>`).join('');
-  gradeSelect.innerHTML      = '<option value="">-- 학년 선택 --</option>' + opts;
   extraGradeSelect.innerHTML = '<option value="">-- 학년 --</option>' + opts;
   bulkGradeSelect.innerHTML  = '<option value="">-- 학년 선택 --</option>' + opts;
 }
 
-function populateSubjects(grade) {
-  const subjects = [...new Set(rows.filter(r => r.학년 === grade).map(r => r.과목))]
-    .sort((a, b) => a.localeCompare(b, 'ko'));
-  subjectSelect.innerHTML = '<option value="">-- 과목 선택 --</option>' +
-    subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-}
-
-function populateLessons(grade, subject) {
-  const lessons = [...new Set(
-    rows.filter(r => r.학년 === grade && r.과목 === subject).map(r => {
-      return activeTerm === 'vacation' ? getLessonSearchKey(r.과목차시_clean) : r.과목차시_clean;
-    })
-  )].sort((a, b) => {
-    const parse = s => s.split('-').map(p => isNaN(p) ? p : Number(p));
-    const [a1, a2] = parse(a), [b1, b2] = parse(b);
-    if (a1 !== b1) return typeof a1 === typeof b1 ? (a1 > b1 ? 1 : -1) : (typeof a1 === 'number' ? -1 : 1);
-    if (a2 === undefined) return -1;
-    if (b2 === undefined) return 1;
-    return typeof a2 === typeof b2 ? (a2 > b2 ? 1 : -1) : (typeof a2 === 'number' ? -1 : 1);
-  });
-  lessonSelectHelper.innerHTML = '<option value="">-- 목록에서 선택 --</option>' +
-    lessons.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
-}
-
-// ─── UI 상태 헬퍼 ─────────────────────────────────────────
-function resetSubjectAndBelow() {
-  subjectSelect.innerHTML = '<option value="">-- 과목 선택 --</option>';
-  subjectSelect.disabled = true;
-  lessonSelectHelper.innerHTML = '<option value="">-- 목록에서 선택 --</option>';
-  lessonSelectHelper.disabled = true;
-  lessonInput.value = ''; lessonInput.disabled = true;
-  analyzeBtn.disabled = true;
-  resultSection.hidden = true;
-}
-
 function enableBaseControls() {
-  gradeSelect.disabled = false;
   extraGradeSelect.disabled = false;
   bulkGradeSelect.disabled = false;
   quickSearchInput.disabled = false;
 }
 
 function disableBaseControls() {
-  gradeSelect.disabled = true;
   extraGradeSelect.disabled = true;
   bulkGradeSelect.disabled = true;
   quickSearchInput.disabled = true;

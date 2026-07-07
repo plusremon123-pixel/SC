@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>스케쥴 카드</title>
-  <link rel="stylesheet" href="style.css?v=20260703-2" />
+  <link rel="stylesheet" href="style.css?v=20260707-1" />
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
@@ -63,35 +63,7 @@
           </div>
         </div>
 
-        <!-- Row 2: 선택 입력 -->
-        <div class="search-mode-row">
-          <div class="search-mode-label">선택 입력</div>
-          <div class="search-mode-body">
-            <div class="form-group form-group--sm">
-              <label for="grade-select">학년 <span class="required">*</span></label>
-              <select id="grade-select" disabled>
-                <option value="">-- 학년 --</option>
-              </select>
-            </div>
-            <div class="form-group form-group--sm">
-              <label for="subject-select">과목 <span class="required">*</span></label>
-              <select id="subject-select" disabled>
-                <option value="">-- 과목 --</option>
-              </select>
-            </div>
-            <div class="form-group lesson-combo-wrap">
-              <label for="lesson-input">과목차시 <span class="required">*</span></label>
-              <div class="lesson-combo">
-                <select id="lesson-select-helper" disabled>
-                  <option value="">-- 목록에서 선택 --</option>
-                </select>
-                <input type="text" id="lesson-input" placeholder="직접 입력" disabled autocomplete="off" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 3: 추가 검색 -->
+        <!-- Row 2: 추가 검색 -->
         <div class="search-mode-row">
           <div class="search-mode-label">추가 검색</div>
           <div class="search-mode-body">
@@ -222,6 +194,6 @@
 
   <script src="config.js?v=20260703-3"></script>
   <script src="data.js?v=20260703-3"></script>
-  <script src="app.js?v=20260703-4"></script>
+  <script src="app.js?v=20260707-1"></script>
 </body>
 </html>
