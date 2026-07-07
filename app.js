@@ -62,6 +62,7 @@ const state = {
   selectedDate: "",
   selectedSubject: "",
   selectedCategory: "",
+  selectedTablePublisher: "",
   selectedMathAnalysisDate: "",
   selectedMonthlyOpenMonth: "",
   mathPublisherConfig: {},
@@ -103,6 +104,7 @@ const els = {
   tableHeader: document.querySelector("#tableHeader"),
   tableBody: document.querySelector("#tableBody"),
   tableTitle: document.querySelector("#tableTitle"),
+  tablePublisherTabs: document.querySelector("#tablePublisherTabs"),
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
   mathAnalysisDateTabs: document.querySelector("#mathAnalysisDateTabs"),
@@ -617,6 +619,7 @@ function renderDateTabs() {
       state.selectedDate = ALL_DATES;
       state.selectedCategory = "";
       state.selectedSubject = "";
+      state.selectedTablePublisher = "";
       render();
     }));
   }
@@ -626,6 +629,7 @@ function renderDateTabs() {
       state.selectedDate = date;
       state.selectedCategory = "";
       state.selectedSubject = "";
+      state.selectedTablePublisher = "";
       render();
     }, null, date));
   });
@@ -1133,6 +1137,7 @@ function renderSubjectTabs(level) {
   ));
   target.appendChild(tabButton("전체", subjects.length, state.selectedSubject === ALL_SUBJECTS, () => {
     state.selectedSubject = ALL_SUBJECTS;
+    state.selectedTablePublisher = "";
     if (level === "primary") {
       state.selectedCategory = ALL_CATEGORIES;
       render();
@@ -1154,6 +1159,7 @@ function renderSubjectTabs(level) {
       : null;
     target.appendChild(tabButton(subject, count, subject === state.selectedSubject, () => {
       state.selectedSubject = subject;
+      state.selectedTablePublisher = "";
       if (level === "primary") {
         state.selectedCategory = "";
         render();
@@ -1177,6 +1183,7 @@ function renderCategoryTabs(level) {
   ));
   target.appendChild(tabButton("전체", categories.length, state.selectedCategory === ALL_CATEGORIES, () => {
     state.selectedCategory = ALL_CATEGORIES;
+    state.selectedTablePublisher = "";
     if (level === "primary") {
       state.selectedSubject = ALL_SUBJECTS;
       render();
@@ -1198,6 +1205,7 @@ function renderCategoryTabs(level) {
       : null;
     target.appendChild(tabButton(category, count, category === state.selectedCategory, () => {
       state.selectedCategory = category;
+      state.selectedTablePublisher = "";
       if (level === "primary") {
         state.selectedSubject = "";
         render();
@@ -1223,6 +1231,7 @@ function tabButton(label, count, active, onClick, detailCount = null, dataLabel 
 }
 
 function renderTable() {
+  renderTablePublisherTabs();
   const rows = getVisibleRows();
   const isMixedTable = state.selectedCategory === ALL_CATEGORIES;
   const sheet = state.sheets.find((item) => item.name === state.selectedCategory);
@@ -1261,6 +1270,44 @@ function renderTable() {
   els.tableBody.appendChild(fragment);
   els.emptyState.hidden = rows.length > 0;
   els.emptyState.textContent = state.rows.length ? "조건에 맞는 데이터가 없습니다." : "엑셀 파일을 업로드하면 데이터가 표시됩니다.";
+}
+
+function renderTablePublisherTabs() {
+  const baseRows = getVisibleRows({ includePublisher: false });
+  const shouldShow = baseRows.length > 0 && baseRows.every((row) => sortSubject(row) === "수학");
+  els.tablePublisherTabs.hidden = !shouldShow;
+  els.tablePublisherTabs.innerHTML = "";
+  if (!shouldShow) {
+    state.selectedTablePublisher = "";
+    return;
+  }
+
+  const publishers = unique(baseRows.map((row) => row["출판사"] || "미분류")).sort(localeSort);
+  if (state.selectedTablePublisher && !publishers.includes(state.selectedTablePublisher)) {
+    state.selectedTablePublisher = "";
+  }
+
+  els.tablePublisherTabs.appendChild(smallTabButton("전체", baseRows.length, state.selectedTablePublisher === "", () => {
+    state.selectedTablePublisher = "";
+    renderTable();
+  }));
+
+  publishers.forEach((publisher) => {
+    const count = baseRows.filter((row) => (row["출판사"] || "미분류") === publisher).length;
+    els.tablePublisherTabs.appendChild(smallTabButton(publisher, count, state.selectedTablePublisher === publisher, () => {
+      state.selectedTablePublisher = publisher;
+      renderTable();
+    }));
+  });
+}
+
+function smallTabButton(label, count, active, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `mini-tab${active ? " active" : ""}`;
+  button.innerHTML = `${escapeHtml(label)}<span>${count.toLocaleString("ko-KR")}</span>`;
+  button.addEventListener("click", onClick);
+  return button;
 }
 
 function renderMathAnalysis() {
@@ -1955,11 +2002,13 @@ function moveAfter(headers, source, target) {
   return next;
 }
 
-function getVisibleRows() {
+function getVisibleRows(options = {}) {
+  const includePublisher = options.includePublisher !== false;
   return rowsMatchingSearch()
     .filter((row) => dateMatches(row, state.selectedDate))
     .filter((row) => state.selectedSubject === ALL_SUBJECTS || row.__subject === state.selectedSubject)
     .filter((row) => state.selectedCategory === ALL_CATEGORIES || row.__sheet === state.selectedCategory)
+    .filter((row) => !includePublisher || !state.selectedTablePublisher || (row["출판사"] || "미분류") === state.selectedTablePublisher)
     .sort(compareVisibleRows);
 }
 
