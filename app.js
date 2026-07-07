@@ -1283,7 +1283,7 @@ function renderTable() {
 
 function renderTablePublisherTabs() {
   const baseRows = getVisibleRows({ includePublisher: false });
-  const showGroupTabs = baseRows.length > 0 && baseRows.every((row) => row.__sheet === "학교시험");
+  const showGroupTabs = baseRows.length > 0 && baseRows.every(usesTableGroupTabs);
   const showPublisherTabs = !showGroupTabs && baseRows.length > 0 && baseRows.every((row) => sortSubject(row) === "수학");
   const shouldShow = showPublisherTabs || showGroupTabs;
   els.tablePublisherTabs.hidden = !shouldShow;
@@ -1338,6 +1338,10 @@ function renderTableGroupTabs(baseRows) {
       renderTable();
     }));
   });
+}
+
+function usesTableGroupTabs(row) {
+  return row.__sheet === "학교시험" || row.__sheet === "수학마스터";
 }
 
 function smallTabButton(label, count, active, onClick) {
@@ -2434,6 +2438,14 @@ function sortSubject(row) {
 
 function sortGroup(row) {
   if (usesRepresentativeUnitAsSubject(row.__sheet) || row.__sheet === "성취도평가") return String(row["과목"] || "");
+  if (row.__sheet === "수학마스터") {
+    return firstMeaningfulValue([
+      row["과목"],
+      row["구분"],
+      row["대표단원(한글/국어)"],
+      row["진입 과목명"],
+    ], ["수학", "AI수학", "All수학"]) || "수학마스터";
+  }
   return String(row.__sheet || "");
 }
 
