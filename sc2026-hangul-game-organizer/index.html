@@ -295,7 +295,9 @@
     .sort-mark {
       color: var(--accent);
       font-size: 11px;
-      min-width: 12px;
+      width: 34px;
+      min-width: 34px;
+      text-align: right;
     }
 
     .filter-button {
@@ -829,8 +831,9 @@
     }
 
     function sortHeader(field, label) {
-      const mark = sortState.field === field ? (sortState.direction === "asc" ? "▲" : "▼") : "";
-      return `<button type="button" class="sort-button" data-sort-field="${escapeAttr(field)}">
+      const mark = sortState.field === field ? (sortState.direction === "asc" ? "위 ▲" : "아래 ▼") : "";
+      const next = sortState.field !== field ? "아래 정렬" : (sortState.direction === "desc" ? "위 정렬" : "정렬 초기화");
+      return `<button type="button" class="sort-button" data-sort-field="${escapeAttr(field)}" title="${escapeAttr(next)}" aria-label="${escapeAttr(`${label} ${next}`)}">
         <span>${escapeHtml(label)}</span><span class="sort-mark">${mark}</span>
       </button>`;
     }
@@ -841,10 +844,14 @@
     }
 
     function toggleSort(field) {
-      if (sortState.field === field) {
-        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
-      } else {
+      if (sortState.field !== field) {
+        sortState = { field, direction: "desc" };
+      } else if (sortState.direction === "desc") {
         sortState = { field, direction: "asc" };
+      } else {
+        sortState = { field: null, direction: null };
+        applyFilters();
+        return;
       }
       applySort();
       renderTable();
