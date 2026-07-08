@@ -1065,7 +1065,15 @@
         selectRowRange(sourceRow);
         return;
       }
+      selectSingleRow(sourceRow);
       openColorPopover(sourceRow, event.clientX, event.clientY);
+    }
+
+    function selectSingleRow(sourceRow) {
+      selectedRows.clear();
+      selectedRows.add(sourceRow);
+      lastSelectedRow = sourceRow;
+      renderTable(false);
     }
 
     function toggleRowSelection(sourceRow) {
