@@ -242,6 +242,7 @@
 
     table {
       width: 100%;
+      table-layout: fixed;
       border-collapse: separate;
       border-spacing: 0;
       font-size: 13px;
@@ -260,11 +261,18 @@
       white-space: nowrap;
     }
 
+    .header-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .sort-button {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      width: 100%;
+      flex: 1 1 auto;
+      min-width: 0;
       border: 0;
       background: transparent;
       color: inherit;
@@ -272,6 +280,12 @@
       font-weight: 700;
       text-align: left;
       cursor: pointer;
+    }
+
+    .sort-button span:first-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .sort-button:hover {
@@ -284,14 +298,54 @@
       min-width: 12px;
     }
 
-    .column-filter {
-      margin-top: 6px;
-      width: 100%;
-      min-height: 28px;
-      padding: 5px 7px;
-      font-size: 12px;
-      border-color: #cbd5e1;
+    .filter-button {
+      width: 22px;
+      min-width: 22px;
+      height: 22px;
+      padding: 0;
+      border-radius: 5px;
+      color: var(--muted);
       background: #ffffff;
+    }
+
+    .filter-button.active-filter {
+      color: #ffffff;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .filter-popover {
+      position: fixed;
+      z-index: 120;
+      display: none;
+      width: 220px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-popover.open {
+      display: grid;
+      gap: 8px;
+    }
+
+    .filter-popover input {
+      min-height: 32px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    .filter-popover-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .filter-popover-actions button {
+      padding: 5px 8px;
+      font-size: 12px;
     }
 
     tbody td {
@@ -542,6 +596,13 @@
   </div>
 
   <div id="colorPopover" class="color-popover" role="menu" aria-label="행 색상 선택"></div>
+  <div id="filterPopover" class="filter-popover" role="dialog" aria-label="열 필터">
+    <input id="filterPopoverInput" type="search" placeholder="필터 값" />
+    <div class="filter-popover-actions">
+      <button id="filterClearBtn" type="button">지우기</button>
+      <button id="filterApplyBtn" type="button" class="primary">적용</button>
+    </div>
+  </div>
 
   <script>
     const STORE_KEY = "hangul-game-organizer:v2";
@@ -595,7 +656,10 @@
     const tableHead = $("tableHead");
     const tableBody = $("tableBody");
     const colorPopover = $("colorPopover");
+    const filterPopover = $("filterPopover");
+    const filterPopoverInput = $("filterPopoverInput");
     let colorPopoverRow = null;
+    let filterPopoverField = null;
 
     init();
 
@@ -744,24 +808,24 @@
     }
 
     function renderTableHead() {
-      const columnHeaders = getVisibleTableColumns().map(field => `<th>${sortHeader(field, field)}${filterInput(field)}</th>`).join("");
+      const columnHeaders = getVisibleTableColumns().map(field => `<th>${headerCell(field, field)}</th>`).join("");
       tableHead.innerHTML = `<tr>
-        <th>${sortHeader("__row", "행")}${filterInput("__row")}</th>
+        <th>${headerCell("__row", "행")}</th>
         ${columnHeaders}
       </tr>`;
       tableHead.querySelectorAll("button[data-sort-field]").forEach(button => {
         button.addEventListener("click", () => toggleSort(button.dataset.sortField));
       });
-      tableHead.querySelectorAll("input[data-column-filter]").forEach(input => {
-        input.addEventListener("click", event => event.stopPropagation());
-        input.addEventListener("input", event => {
-          const field = event.target.dataset.columnFilter;
-          const value = event.target.value.trim();
-          if (value) columnFilters[field] = value;
-          else delete columnFilters[field];
-          applyFilters(false);
+      tableHead.querySelectorAll("button[data-filter-field]").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          openFilterPopover(button.dataset.filterField, event.clientX, event.clientY);
         });
       });
+    }
+
+    function headerCell(field, label) {
+      return `<div class="header-cell">${sortHeader(field, label)}${filterButton(field)}</div>`;
     }
 
     function sortHeader(field, label) {
@@ -771,8 +835,9 @@
       </button>`;
     }
 
-    function filterInput(field) {
-      return `<input class="column-filter" data-column-filter="${escapeAttr(field)}" value="${escapeAttr(columnFilters[field] || "")}" placeholder="필터" />`;
+    function filterButton(field) {
+      const active = columnFilters[field] ? " active-filter" : "";
+      return `<button type="button" class="filter-button${active}" data-filter-field="${escapeAttr(field)}" title="필터">▾</button>`;
     }
 
     function toggleSort(field) {
@@ -900,19 +965,67 @@
       applyFilters();
     }
 
+    function openFilterPopover(field, x, y) {
+      filterPopoverField = field;
+      filterPopoverInput.value = columnFilters[field] || "";
+      filterPopover.classList.add("open");
+      const margin = 8;
+      const width = filterPopover.offsetWidth || 220;
+      const height = filterPopover.offsetHeight || 82;
+      const left = Math.min(x + margin, window.innerWidth - width - margin);
+      const top = Math.min(y + margin, window.innerHeight - height - margin);
+      filterPopover.style.left = `${Math.max(margin, left)}px`;
+      filterPopover.style.top = `${Math.max(margin, top)}px`;
+      filterPopoverInput.focus();
+      filterPopoverInput.select();
+    }
+
+    function applyFilterPopover() {
+      if (!filterPopoverField) return;
+      const value = filterPopoverInput.value.trim();
+      if (value) columnFilters[filterPopoverField] = value;
+      else delete columnFilters[filterPopoverField];
+      closeFilterPopover();
+      applyFilters();
+    }
+
+    function clearFilterPopover() {
+      if (filterPopoverField) delete columnFilters[filterPopoverField];
+      closeFilterPopover();
+      applyFilters();
+    }
+
+    function closeFilterPopover() {
+      filterPopover.classList.remove("open");
+      filterPopoverField = null;
+    }
+
     function closeColorPopover() {
       colorPopover.classList.remove("open");
       colorPopoverRow = null;
     }
 
+    $("filterApplyBtn").addEventListener("click", applyFilterPopover);
+    $("filterClearBtn").addEventListener("click", clearFilterPopover);
+    filterPopoverInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") applyFilterPopover();
+      if (event.key === "Escape") closeFilterPopover();
+    });
+
     document.addEventListener("click", event => {
-      if (!colorPopover.classList.contains("open")) return;
-      if (colorPopover.contains(event.target) || event.target.closest("tr[data-row]")) return;
-      closeColorPopover();
+      if (colorPopover.classList.contains("open") && !colorPopover.contains(event.target) && !event.target.closest("tr[data-row]")) {
+        closeColorPopover();
+      }
+      if (filterPopover.classList.contains("open") && !filterPopover.contains(event.target) && !event.target.closest("button[data-filter-field]")) {
+        closeFilterPopover();
+      }
     });
 
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape") closeColorPopover();
+      if (event.key === "Escape") {
+        closeColorPopover();
+        closeFilterPopover();
+      }
     });
 
     function tag(value) {
