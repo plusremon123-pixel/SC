@@ -1357,6 +1357,13 @@
       colorPopoverRow = null;
     }
 
+    function clearRowSelection() {
+      if (!selectedRows.size && !lastSelectedRow) return;
+      selectedRows.clear();
+      lastSelectedRow = null;
+      renderTable(false);
+    }
+
     $("filterApplyBtn").addEventListener("click", applyFilterPopover);
     $("filterClearBtn").addEventListener("click", clearFilterPopover);
     filterPopoverInput.addEventListener("keydown", event => {
@@ -1376,6 +1383,7 @@
 
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") {
+        clearRowSelection();
         closeColorPopover();
         closeFilterPopover();
       }
