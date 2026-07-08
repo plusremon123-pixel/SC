@@ -391,6 +391,7 @@
 
     tbody tr.row-gray {
       background: #f3f4f6;
+      color: #94a3b8;
     }
 
     tbody tr.row-yellow {
@@ -414,6 +415,12 @@
 
     tbody tr.row-selected:hover {
       background: #dbeafe;
+    }
+
+    tbody tr.row-gray.row-selected,
+    tbody tr.row-gray.row-selected:hover {
+      background: #e5e7eb;
+      color: #64748b;
     }
 
     tbody tr.row-blue.row-selected,
@@ -755,7 +762,7 @@
     ]);
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
     const SUPABASE_CONFIG = window.SC2026_SUPABASE || {};
-    const COLOR_GROUPS = ["파랑", "회색", "노랑", "초록", "투명or흰색"];
+    const COLOR_GROUPS = ["파랑", "노랑", "초록", "투명or흰색", "회색"];
     const originalRows = sourceData.rows.map(row => ({
       source_row: row.source_row,
       color_group: row.color_group || "투명or흰색",
@@ -967,6 +974,7 @@
         return true;
       });
       applySort();
+      moveGrayRowsLast();
       pruneSelectedRows();
 
       renderStats();
@@ -1082,6 +1090,7 @@
         return;
       }
       applySort();
+      moveGrayRowsLast();
       renderTable();
     }
 
@@ -1089,6 +1098,14 @@
       if (!sortState.field) return;
       const direction = sortState.direction === "asc" ? 1 : -1;
       filteredRows.sort((a, b) => compareRows(a, b, sortState.field) * direction);
+    }
+
+    function moveGrayRowsLast() {
+      filteredRows.sort((a, b) => {
+        const aGray = (a.color_group || "투명or흰색") === "회색";
+        const bGray = (b.color_group || "투명or흰색") === "회색";
+        return Number(aGray) - Number(bGray);
+      });
     }
 
     function passesColumnFilters(row, excludedField = null) {
