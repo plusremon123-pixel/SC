@@ -37,18 +37,21 @@ execute function public.set_sc2026_updated_at();
 
 alter table public.sc2026 enable row level security;
 
+drop policy if exists "Allow anon read sc2026" on public.sc2026;
 create policy "Allow anon read sc2026"
 on public.sc2026
 for select
 to anon
 using (true);
 
+drop policy if exists "Allow anon insert sc2026" on public.sc2026;
 create policy "Allow anon insert sc2026"
 on public.sc2026
 for insert
 to anon
 with check (true);
 
+drop policy if exists "Allow anon update sc2026" on public.sc2026;
 create policy "Allow anon update sc2026"
 on public.sc2026
 for update
@@ -71,18 +74,21 @@ execute function public.set_sc2026_updated_at();
 
 alter table public.sc2026_settings enable row level security;
 
+drop policy if exists "Allow anon read sc2026 settings" on public.sc2026_settings;
 create policy "Allow anon read sc2026 settings"
 on public.sc2026_settings
 for select
 to anon
 using (true);
 
+drop policy if exists "Allow anon insert sc2026 settings" on public.sc2026_settings;
 create policy "Allow anon insert sc2026 settings"
 on public.sc2026_settings
 for insert
 to anon
 with check (true);
 
+drop policy if exists "Allow anon update sc2026 settings" on public.sc2026_settings;
 create policy "Allow anon update sc2026 settings"
 on public.sc2026_settings
 for update
