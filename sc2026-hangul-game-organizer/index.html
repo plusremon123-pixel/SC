@@ -144,6 +144,49 @@
       padding: 14px 20px 0;
     }
 
+    .column-controls {
+      margin: 14px 20px 0;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+    }
+
+    .column-controls-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .column-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .column-checks label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      color: var(--ink);
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 6px 9px;
+      white-space: nowrap;
+    }
+
+    .column-checks input {
+      width: 14px;
+      min-height: 14px;
+    }
+
     .metric {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -189,7 +232,7 @@
       border-collapse: separate;
       border-spacing: 0;
       font-size: 13px;
-      min-width: 1120px;
+      min-width: 1480px;
     }
 
     thead th {
@@ -357,6 +400,7 @@
       header { align-items: flex-start; flex-direction: column; }
       .toolbar { justify-content: flex-start; }
       .filters, .stats { grid-template-columns: 1fr; }
+      .column-controls { margin: 12px; }
       main { padding: 12px; }
       h1 { font-size: 18px; }
     }
@@ -397,24 +441,21 @@
 
     <section class="stats" id="stats"></section>
 
+    <section class="column-controls" aria-label="목록 표시 컬럼 선택">
+      <div class="column-controls-head">
+        <label class="toggle">
+          <input id="columnAll" type="checkbox" checked />
+          전체
+        </label>
+        <span id="columnCount"></span>
+      </div>
+      <div class="column-checks" id="columnChecks"></div>
+    </section>
+
     <main>
       <section class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th><input id="selectAll" type="checkbox" /></th>
-              <th>행</th>
-              <th>옵션</th>
-              <th>과목</th>
-              <th>영역</th>
-              <th>차시명</th>
-              <th>목차명</th>
-              <th>DTL_LIST</th>
-              <th>ZIP</th>
-              <th>차시시스템</th>
-              <th>목차번호</th>
-            </tr>
-          </thead>
+          <thead id="tableHead"></thead>
           <tbody id="tableBody"></tbody>
         </table>
       </section>
@@ -479,6 +520,22 @@
       "옵션값(OPT_CODE)", "전체과목명", "영역명", "차시명", "목차명",
       "DTL_LIST", "코너ZIP파일명", "차시시스템코드", "목차번호", "DTL_LIST.1"
     ];
+    const DEFAULT_TABLE_COLUMNS = [
+      "앱패키지명명",
+      "앱패키지명",
+      "경로",
+      "전체과목명",
+      "영역명",
+      "단원일련번호",
+      "차시일련번호",
+      "학년코드",
+      "학기코드",
+      "단원노출순서",
+      "목차일련번호",
+      "차시명",
+      "차시시스템코드",
+      "목차명"
+    ];
 
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
     const originalRows = sourceData.rows.map(row => ({
@@ -491,8 +548,10 @@
     let filteredRows = [];
     let selectedSourceRow = null;
     let selectedRows = new Set();
+    let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
 
     const $ = id => document.getElementById(id);
+    const tableHead = $("tableHead");
     const tableBody = $("tableBody");
     const detailBody = $("detailBody");
 
@@ -502,6 +561,7 @@
       $("sourceMeta").textContent = `${sourceData.sourceFile || "엑셀"} · ${sourceData.sheetName || "시트"} · ${rows.length.toLocaleString()}행 / ${sourceData.columns.length}열`;
       restoreDbConfig();
       populateFilters();
+      renderColumnControls();
       bindEvents();
       applyFilters();
     }
@@ -523,8 +583,9 @@
       ["searchInput", "subjectFilter", "optFilter", "colorFilter", "systemCodeFilter"].forEach(id => {
         $(id).addEventListener("input", applyFilters);
       });
-      $("selectAll").addEventListener("change", event => {
-        filteredRows.forEach(row => event.target.checked ? selectedRows.add(row.source_row) : selectedRows.delete(row.source_row));
+      $("columnAll").addEventListener("change", event => {
+        visibleColumns = event.target.checked ? new Set(DEFAULT_TABLE_COLUMNS) : new Set();
+        renderColumnControls();
         renderTable();
       });
       $("saveLocalBtn").addEventListener("click", saveLocal);
@@ -554,6 +615,26 @@
     function fillSelect(id, firstLabel, values) {
       const select = $(id);
       select.innerHTML = `<option value="">${firstLabel}</option>` + values.map(value => `<option>${escapeHtml(value)}</option>`).join("");
+    }
+
+    function renderColumnControls() {
+      $("columnChecks").innerHTML = DEFAULT_TABLE_COLUMNS.map(field => `
+        <label>
+          <input type="checkbox" data-column="${escapeAttr(field)}" ${visibleColumns.has(field) ? "checked" : ""} />
+          ${escapeHtml(field)}
+        </label>
+      `).join("");
+      $("columnAll").checked = visibleColumns.size === DEFAULT_TABLE_COLUMNS.length;
+      $("columnAll").indeterminate = visibleColumns.size > 0 && visibleColumns.size < DEFAULT_TABLE_COLUMNS.length;
+      $("columnCount").textContent = `${visibleColumns.size} / ${DEFAULT_TABLE_COLUMNS.length}개 표시`;
+      $("columnChecks").querySelectorAll("input[data-column]").forEach(input => {
+        input.addEventListener("change", event => {
+          const field = event.target.dataset.column;
+          event.target.checked ? visibleColumns.add(field) : visibleColumns.delete(field);
+          renderColumnControls();
+          renderTable();
+        });
+      });
     }
 
     function applyFilters() {
@@ -598,12 +679,12 @@
     }
 
     function renderTable() {
-      $("selectAll").checked = filteredRows.length > 0 && filteredRows.every(row => selectedRows.has(row.source_row));
+      renderTableHead();
       const maxRows = 500;
       const rendered = filteredRows.slice(0, maxRows);
       tableBody.innerHTML = rendered.map(row => rowHtml(row)).join("");
       if (filteredRows.length > maxRows) {
-        tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="12" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
+        tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="${getVisibleTableColumns().length + 2}" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
       }
       tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
         tr.addEventListener("click", event => {
@@ -620,23 +701,39 @@
       });
     }
 
+    function getVisibleTableColumns() {
+      return DEFAULT_TABLE_COLUMNS.filter(field => visibleColumns.has(field));
+    }
+
+    function renderTableHead() {
+      const columnHeaders = getVisibleTableColumns().map(field => `<th>${escapeHtml(field)}</th>`).join("");
+      tableHead.innerHTML = `<tr>
+        <th><input id="selectAll" type="checkbox" ${filteredRows.length > 0 && filteredRows.every(row => selectedRows.has(row.source_row)) ? "checked" : ""} /></th>
+        <th>행</th>
+        ${columnHeaders}
+      </tr>`;
+      $("selectAll").addEventListener("change", event => {
+        filteredRows.forEach(row => event.target.checked ? selectedRows.add(row.source_row) : selectedRows.delete(row.source_row));
+        renderTable();
+      });
+    }
+
     function rowHtml(row) {
       const p = row.payload;
       const active = selectedSourceRow === row.source_row ? "active" : "";
       const colorClass = rowColorClass(row.color_group);
       const colorTitle = row.color_code ? `${row.color_group} · ${row.color_code}` : row.color_group || "투명or흰색";
+      const cells = getVisibleTableColumns().map(field => {
+        const value = cleanText(p[field]);
+        const content = field === "차시명" || field === "목차명" || field === "앱패키지명명" || field === "앱패키지명" || field === "경로"
+          ? `<div class="truncate" title="${escapeAttr(value)}">${escapeHtml(value)}</div>`
+          : escapeHtml(value);
+        return `<td>${content}</td>`;
+      }).join("");
       return `<tr data-row="${row.source_row}" class="${active} ${colorClass}" title="${escapeAttr(colorTitle)}">
         <td><input data-check-row="${row.source_row}" type="checkbox" ${selectedRows.has(row.source_row) ? "checked" : ""}></td>
         <td class="nowrap">${row.source_row}</td>
-        <td>${tag(cleanText(p["옵션값(OPT_CODE)"]))}</td>
-        <td>${escapeHtml(cleanText(p["전체과목명"]))}</td>
-        <td>${escapeHtml(cleanText(p["영역명"]))}</td>
-        <td><div class="truncate" title="${escapeAttr(cleanText(p["차시명"]))}">${escapeHtml(cleanText(p["차시명"]))}</div></td>
-        <td><div class="truncate" title="${escapeAttr(cleanText(p["목차명"]))}">${escapeHtml(cleanText(p["목차명"]))}</div></td>
-        <td>${escapeHtml(cleanText(p["DTL_LIST"]))}</td>
-        <td>${escapeHtml(cleanText(p["코너ZIP파일명"]))}</td>
-        <td>${escapeHtml(cleanText(p["차시시스템코드"]))}</td>
-        <td>${escapeHtml(cleanText(p["목차번호"]))}</td>
+        ${cells}
       </tr>`;
     }
 
