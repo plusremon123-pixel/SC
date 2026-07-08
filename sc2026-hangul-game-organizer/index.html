@@ -1086,9 +1086,10 @@
       const nextSortState = [...sortState];
       const existingIndex = nextSortState.findIndex(sort => sort.field === field);
       if (existingIndex === -1) {
-        nextSortState.push({ field, direction: "desc" });
+        nextSortState.unshift({ field, direction: "desc" });
       } else if (nextSortState[existingIndex].direction === "desc") {
-        nextSortState[existingIndex] = { field, direction: "asc" };
+        nextSortState.splice(existingIndex, 1);
+        nextSortState.unshift({ field, direction: "asc" });
       } else {
         nextSortState.splice(existingIndex, 1);
       }
