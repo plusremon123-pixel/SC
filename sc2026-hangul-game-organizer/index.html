@@ -880,7 +880,10 @@
         tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="${getVisibleTableColumns().length}" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
       }
       tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
-        tr.addEventListener("click", event => openColorPopover(Number(tr.dataset.row), event.clientX, event.clientY));
+        tr.addEventListener("click", event => {
+          if (event.detail > 1 || event.target.closest("input")) return;
+          openColorPopover(Number(tr.dataset.row), event.clientX, event.clientY);
+        });
       });
       tableBody.querySelectorAll("td[data-field]").forEach(td => {
         td.addEventListener("dblclick", event => {
@@ -1021,19 +1024,27 @@
       input.focus();
       input.select();
       let committed = false;
+      const restoreCell = value => {
+        cell.textContent = cleanText(value);
+      };
       const commit = () => {
         if (committed) return;
         committed = true;
         const nextValue = input.value.trim();
-        row.payload[field] = nextValue || null;
-        persistRows();
-        applyFilters();
+        const storedValue = nextValue || null;
+        row.payload[field] = storedValue;
+        restoreCell(storedValue);
+        if (storedValue !== (originalValue || null)) persistRows();
       };
       input.addEventListener("keydown", event => {
-        if (event.key === "Enter") commit();
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
         if (event.key === "Escape") {
+          event.preventDefault();
           committed = true;
-          applyFilters();
+          restoreCell(originalValue);
         }
       });
       input.addEventListener("blur", commit, { once: true });
