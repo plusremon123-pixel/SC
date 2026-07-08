@@ -23,11 +23,16 @@
 
     * { box-sizing: border-box; }
 
+    html {
+      scrollbar-gutter: stable;
+    }
+
     body {
       margin: 0;
       font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
       color: var(--ink);
       background: #eef2f6;
+      overflow-y: scroll;
     }
 
     button, input, select, textarea {
