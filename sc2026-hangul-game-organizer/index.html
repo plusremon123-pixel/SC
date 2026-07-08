@@ -149,9 +149,9 @@
     .column-controls-head {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       color: var(--muted);
       font-size: 12px;
     }
@@ -167,6 +167,32 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 8px;
+    }
+
+    .control-sections {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .check-section {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .check-section.color-section {
+      min-width: 360px;
+      justify-self: end;
+    }
+
+    .check-section-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .column-checks,
@@ -380,6 +406,8 @@
       header { align-items: flex-start; flex-direction: column; }
       .toolbar { justify-content: flex-start; }
       .filters { grid-template-columns: 1fr; }
+      .control-sections { grid-template-columns: 1fr; }
+      .check-section.color-section { min-width: 0; justify-self: stretch; }
       .column-controls { margin: 12px; }
       main { padding: 12px; }
       h1 { font-size: 18px; }
@@ -412,17 +440,30 @@
 
     <section class="column-controls" aria-label="목록 표시 컬럼 선택">
       <div class="column-controls-head">
-        <div class="column-control-group">
-          <label class="toggle">
-            <input id="columnAll" type="checkbox" checked />
-            전체
-          </label>
-          <span id="columnCount"></span>
-        </div>
         <span class="row-summary" id="rowSummary"></span>
       </div>
-      <div class="column-checks" id="columnChecks"></div>
-      <div class="color-checks" id="colorChecks" aria-label="색상 표시 선택"></div>
+      <div class="control-sections">
+        <div class="check-section">
+          <div class="check-section-head">
+            <label class="toggle">
+              <input id="columnAll" type="checkbox" checked />
+              전체
+            </label>
+            <span id="columnCount"></span>
+          </div>
+          <div class="column-checks" id="columnChecks"></div>
+        </div>
+        <div class="check-section color-section" aria-label="색상 표시 선택">
+          <div class="check-section-head">
+            <label class="toggle">
+              <input id="colorAll" type="checkbox" checked />
+              색상 전체
+            </label>
+            <span id="colorCount"></span>
+          </div>
+          <div class="color-checks" id="colorChecks"></div>
+        </div>
+      </div>
     </section>
 
     <main>
@@ -549,12 +590,7 @@
           renderTable();
         });
       });
-      $("colorChecks").innerHTML = `
-        <label>
-          <input id="colorAll" type="checkbox" ${visibleColorGroups.size === COLOR_GROUPS.length ? "checked" : ""} />
-          색상 전체
-        </label>
-      ` + COLOR_GROUPS.map(group => `
+      $("colorChecks").innerHTML = COLOR_GROUPS.map(group => `
         <label>
           <input type="checkbox" data-color-group="${escapeAttr(group)}" ${visibleColorGroups.has(group) ? "checked" : ""} />
           ${escapeHtml(group)}
@@ -562,6 +598,7 @@
       `).join("");
       $("colorAll").checked = visibleColorGroups.size === COLOR_GROUPS.length;
       $("colorAll").indeterminate = visibleColorGroups.size > 0 && visibleColorGroups.size < COLOR_GROUPS.length;
+      $("colorCount").textContent = `${visibleColorGroups.size} / ${COLOR_GROUPS.length}개 표시`;
       $("colorAll").addEventListener("change", event => {
         visibleColorGroups = event.target.checked ? new Set(COLOR_GROUPS) : new Set();
         renderColumnControls();
