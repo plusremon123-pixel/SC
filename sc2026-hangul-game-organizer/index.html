@@ -404,6 +404,16 @@
       background: #eff6ff;
     }
 
+    tbody tr.row-selected {
+      background: #dbeafe;
+      outline: 2px solid #2563eb;
+      outline-offset: -2px;
+    }
+
+    tbody tr.row-selected:hover {
+      background: #dbeafe;
+    }
+
     tbody tr:hover {
       background: #eef6ff;
     }
@@ -429,6 +439,13 @@
       padding: 6px 8px;
       font-size: 12px;
       white-space: nowrap;
+    }
+
+    .color-popover-label {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      padding: 0 4px;
     }
 
     .color-popover button.active-color {
@@ -736,6 +753,8 @@
     let visibleColorGroups = new Set(COLOR_GROUPS);
     let sortState = { field: null, direction: "asc" };
     let columnFilters = {};
+    let selectedRows = new Set();
+    let lastSelectedRow = null;
 
     const $ = id => document.getElementById(id);
     const table = document.querySelector("table");
@@ -865,6 +884,7 @@
         return true;
       });
       applySort();
+      pruneSelectedRows();
 
       renderStats();
       renderTable(renderHead);
@@ -874,6 +894,12 @@
       const total = rows.length;
       const visible = filteredRows.length;
       $("rowSummary").textContent = `전체 행 ${total.toLocaleString()} · 현재 보기 ${visible.toLocaleString()}`;
+    }
+
+    function pruneSelectedRows() {
+      const visibleRowIds = new Set(filteredRows.map(row => row.source_row));
+      selectedRows = new Set([...selectedRows].filter(rowId => visibleRowIds.has(rowId)));
+      if (lastSelectedRow && !visibleRowIds.has(lastSelectedRow)) lastSelectedRow = null;
     }
 
     function renderTable(renderHead = true) {
@@ -887,7 +913,7 @@
       tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
         tr.addEventListener("click", event => {
           if (event.detail > 1 || event.target.closest("input")) return;
-          openColorPopover(Number(tr.dataset.row), event.clientX, event.clientY);
+          handleRowClick(Number(tr.dataset.row), event);
         });
       });
       tableBody.querySelectorAll("td[data-field]").forEach(td => {
@@ -1004,7 +1030,7 @@
 
     function rowHtml(row) {
       const p = row.payload;
-      const colorClass = rowColorClass(row.color_group);
+      const colorClass = [rowColorClass(row.color_group), selectedRows.has(row.source_row) ? "row-selected" : ""].filter(Boolean).join(" ");
       const colorTitle = row.color_code ? `${row.color_group} · ${row.color_code}` : row.color_group || "투명or흰색";
       const cells = getVisibleTableColumns().map(field => {
         const value = cleanText(p[field]);
@@ -1014,6 +1040,42 @@
       return `<tr data-row="${row.source_row}" class="${colorClass}" title="${escapeAttr(colorTitle)}">
         ${cells}
       </tr>`;
+    }
+
+    function handleRowClick(sourceRow, event) {
+      if (event.ctrlKey || event.metaKey) {
+        toggleRowSelection(sourceRow);
+        return;
+      }
+      if (event.shiftKey) {
+        selectRowRange(sourceRow);
+        return;
+      }
+      openColorPopover(sourceRow, event.clientX, event.clientY);
+    }
+
+    function toggleRowSelection(sourceRow) {
+      if (selectedRows.has(sourceRow)) selectedRows.delete(sourceRow);
+      else selectedRows.add(sourceRow);
+      lastSelectedRow = sourceRow;
+      closeColorPopover();
+      renderTable(false);
+    }
+
+    function selectRowRange(sourceRow) {
+      const visibleSourceRows = filteredRows.map(row => row.source_row);
+      const from = lastSelectedRow ?? sourceRow;
+      const fromIndex = visibleSourceRows.indexOf(from);
+      const toIndex = visibleSourceRows.indexOf(sourceRow);
+      if (fromIndex === -1 || toIndex === -1) {
+        selectedRows.add(sourceRow);
+      } else {
+        const [start, end] = fromIndex < toIndex ? [fromIndex, toIndex] : [toIndex, fromIndex];
+        visibleSourceRows.slice(start, end + 1).forEach(rowId => selectedRows.add(rowId));
+      }
+      lastSelectedRow = sourceRow;
+      closeColorPopover();
+      renderTable(false);
     }
 
     function startCellEdit(cell) {
@@ -1091,7 +1153,10 @@
       const row = rows.find(item => item.source_row === sourceRow);
       if (!row) return;
       colorPopoverRow = row;
+      const targetRows = getColorTargetRows();
+      const label = targetRows.length > 1 ? `<div class="color-popover-label">${targetRows.length.toLocaleString()}행 색상 변경</div>` : "";
       colorPopover.innerHTML = COLOR_GROUPS.map(group => `
+        ${label && group === COLOR_GROUPS[0] ? label : ""}
         <button type="button" data-color-choice="${escapeAttr(group)}" class="${row.color_group === group ? "active-color" : ""}">
           ${escapeHtml(group)}
         </button>
@@ -1114,11 +1179,20 @@
 
     function setRowColor(group) {
       if (!colorPopoverRow) return;
-      colorPopoverRow.color_group = group;
-      colorPopoverRow.color_code = `manual:${group}`;
+      getColorTargetRows().forEach(row => {
+        row.color_group = group;
+        row.color_code = `manual:${group}`;
+      });
+      selectedRows.clear();
+      lastSelectedRow = null;
       persistRows();
       closeColorPopover();
       applyFilters();
+    }
+
+    function getColorTargetRows() {
+      const selected = rows.filter(row => selectedRows.has(row.source_row));
+      return selected.length ? selected : [colorPopoverRow].filter(Boolean);
     }
 
     function openFilterPopover(field, x, y) {
