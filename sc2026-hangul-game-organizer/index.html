@@ -400,6 +400,10 @@
       background: #f0fdf4;
     }
 
+    tbody tr.row-blue {
+      background: #eff6ff;
+    }
+
     tbody tr:hover {
       background: #eef6ff;
     }
@@ -718,7 +722,8 @@
       "검증 등록일"
     ]);
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
-    const COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
+    const BASE_COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
+    const COLOR_GROUPS = [...new Set([...BASE_COLOR_GROUPS.filter(group => group !== "투명or흰색"), "파랑", "투명or흰색"])];
     const originalRows = sourceData.rows.map(row => ({
       source_row: row.source_row,
       color_group: row.color_group || "투명or흰색",
@@ -1078,6 +1083,7 @@
       if (group === "회색") return "row-gray";
       if (group === "노랑") return "row-yellow";
       if (group === "초록") return "row-green";
+      if (group === "파랑") return "row-blue";
       return "";
     }
 
