@@ -269,6 +269,7 @@
 
     tbody tr {
       background: white;
+      cursor: pointer;
     }
 
     tbody tr.row-gray {
@@ -285,6 +286,35 @@
 
     tbody tr:hover {
       background: #eef6ff;
+    }
+
+    .color-popover {
+      position: fixed;
+      z-index: 100;
+      display: none;
+      gap: 6px;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: var(--shadow);
+    }
+
+    .color-popover.open {
+      display: inline-flex;
+    }
+
+    .color-popover button {
+      padding: 6px 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .color-popover button.active-color {
+      border-color: var(--accent);
+      color: var(--accent-dark);
+      font-weight: 700;
     }
 
     .cell-muted { color: var(--muted); }
@@ -477,6 +507,8 @@
     </main>
   </div>
 
+  <div id="colorPopover" class="color-popover" role="menu" aria-label="행 색상 선택"></div>
+
   <script>
     const STORE_KEY = "hangul-game-organizer:v2";
     const TABLE_NAME = "sc2026";
@@ -523,6 +555,8 @@
     const $ = id => document.getElementById(id);
     const tableHead = $("tableHead");
     const tableBody = $("tableBody");
+    const colorPopover = $("colorPopover");
+    let colorPopoverRow = null;
 
     init();
 
@@ -651,6 +685,9 @@
       if (filteredRows.length > maxRows) {
         tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="${getVisibleTableColumns().length + 1}" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
       }
+      tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
+        tr.addEventListener("click", event => openColorPopover(Number(tr.dataset.row), event.clientX, event.clientY));
+      });
     }
 
     function getVisibleTableColumns() {
@@ -716,6 +753,54 @@
       if (group === "초록") return "row-green";
       return "";
     }
+
+    function openColorPopover(sourceRow, x, y) {
+      const row = rows.find(item => item.source_row === sourceRow);
+      if (!row) return;
+      colorPopoverRow = row;
+      colorPopover.innerHTML = COLOR_GROUPS.map(group => `
+        <button type="button" data-color-choice="${escapeAttr(group)}" class="${row.color_group === group ? "active-color" : ""}">
+          ${escapeHtml(group)}
+        </button>
+      `).join("");
+      colorPopover.querySelectorAll("button[data-color-choice]").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          setRowColor(button.dataset.colorChoice);
+        });
+      });
+      colorPopover.classList.add("open");
+      const margin = 8;
+      const width = colorPopover.offsetWidth || 320;
+      const height = colorPopover.offsetHeight || 44;
+      const left = Math.min(x + margin, window.innerWidth - width - margin);
+      const top = Math.min(y + margin, window.innerHeight - height - margin);
+      colorPopover.style.left = `${Math.max(margin, left)}px`;
+      colorPopover.style.top = `${Math.max(margin, top)}px`;
+    }
+
+    function setRowColor(group) {
+      if (!colorPopoverRow) return;
+      colorPopoverRow.color_group = group;
+      colorPopoverRow.color_code = `manual:${group}`;
+      closeColorPopover();
+      applyFilters();
+    }
+
+    function closeColorPopover() {
+      colorPopover.classList.remove("open");
+      colorPopoverRow = null;
+    }
+
+    document.addEventListener("click", event => {
+      if (!colorPopover.classList.contains("open")) return;
+      if (colorPopover.contains(event.target) || event.target.closest("tr[data-row]")) return;
+      closeColorPopover();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeColorPopover();
+    });
 
     function tag(value) {
       return value ? `<span class="flag">${escapeHtml(value)}</span>` : `<span class="cell-muted">-</span>`;
