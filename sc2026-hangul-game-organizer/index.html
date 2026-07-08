@@ -782,6 +782,8 @@
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
     const SUPABASE_CONFIG = window.SC2026_SUPABASE || {};
     const COLOR_GROUPS = ["파랑", "노랑", "초록", "투명or흰색", "회색"];
+    const EMPTY_FILTER_TOKEN = "__SC2026_EMPTY_FILTER__";
+    const EMPTY_FILTER_LABEL = "(빈값)";
     const originalRows = sourceData.rows.map(row => ({
       source_row: row.source_row,
       color_group: row.color_group || "투명or흰색",
@@ -1268,6 +1270,7 @@
       return Object.entries(columnFilters).every(([field, filter]) => {
         if (field === excludedField) return true;
         const value = field === "__row" ? row.source_row : row.payload[field];
+        if (filter === EMPTY_FILTER_TOKEN) return cleanText(value) === "";
         return cleanText(value).toLowerCase().includes(filter.toLowerCase());
       });
     }
@@ -1552,7 +1555,7 @@
 
     function openFilterPopover(field, x, y) {
       filterPopoverField = field;
-      filterPopoverInput.value = columnFilters[field] || "";
+      filterPopoverInput.value = columnFilters[field] === EMPTY_FILTER_TOKEN ? "" : columnFilters[field] || "";
       renderFilterValueList();
       filterPopover.classList.add("open");
       const margin = 8;
@@ -1570,18 +1573,25 @@
       if (!filterPopoverField) return;
       const typed = filterPopoverInput.value.trim().toLowerCase();
       const values = getFilterValues(filterPopoverField)
-        .filter(value => !typed || value.toLowerCase().includes(typed))
+        .filter(value => !typed || filterValueLabel(value).toLowerCase().includes(typed))
         .slice(0, 80);
       if (!values.length) {
         filterValueList.innerHTML = `<div class="empty">선택 가능한 값 없음</div>`;
         return;
       }
       filterValueList.innerHTML = values.map(value => `
-        <button type="button" data-filter-value="${escapeAttr(value)}" title="${escapeAttr(value)}">${escapeHtml(value)}</button>
+        <button type="button" data-filter-value="${escapeAttr(value)}" title="${escapeAttr(filterValueLabel(value))}">${escapeHtml(filterValueLabel(value))}</button>
       `).join("");
       filterValueList.querySelectorAll("button[data-filter-value]").forEach(button => {
         button.addEventListener("click", () => {
-          filterPopoverInput.value = button.dataset.filterValue || "";
+          const value = button.dataset.filterValue || "";
+          if (value === "") {
+            columnFilters[filterPopoverField] = EMPTY_FILTER_TOKEN;
+            closeFilterPopover();
+            applyFilters();
+            return;
+          }
+          filterPopoverInput.value = value;
           applyFilterPopover();
         });
       });
@@ -1590,9 +1600,16 @@
     function getFilterValues(field) {
       return [...new Set(rows
         .filter(row => rowPassesFiltersExcept(row, field))
-        .map(row => cleanText(field === "__row" ? row.source_row : row.payload[field]))
-        .filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, "ko", { numeric: true }));
+        .map(row => cleanText(field === "__row" ? row.source_row : row.payload[field])))]
+        .sort((a, b) => {
+          if (a === "") return -1;
+          if (b === "") return 1;
+          return a.localeCompare(b, "ko", { numeric: true });
+        });
+    }
+
+    function filterValueLabel(value) {
+      return value === "" ? EMPTY_FILTER_LABEL : value;
     }
 
     function rowPassesFiltersExcept(row, excludedField) {
@@ -1615,7 +1632,8 @@
     function applyFilterPopover() {
       if (!filterPopoverField || !FILTERABLE_FIELDS.has(filterPopoverField)) return;
       const value = filterPopoverInput.value.trim();
-      if (value) columnFilters[filterPopoverField] = value;
+      if (value === EMPTY_FILTER_LABEL || value === "빈값") columnFilters[filterPopoverField] = EMPTY_FILTER_TOKEN;
+      else if (value) columnFilters[filterPopoverField] = value;
       else delete columnFilters[filterPopoverField];
       closeFilterPopover();
       applyFilters();
