@@ -7,6 +7,7 @@
   <script src="./hangul-game-data.js"></script>
   <script src="./supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --ink: #17202a;
@@ -1436,25 +1437,44 @@
     }
 
     function exportAllCsv() {
-      exportCsv(rows, sourceData.columns, "전체");
+      exportXlsx(rows, sourceData.columns, "전체");
     }
 
     function exportVisibleCsv() {
-      exportCsv([...filteredRows], getVisibleTableColumns(), "표시");
+      exportXlsx([...filteredRows], getVisibleTableColumns(), "표시");
     }
 
-    function exportCsv(targetRows, fields, scope) {
+    function exportXlsx(targetRows, fields, scope) {
       const headers = fields.map(getColumnLabel);
-      const lines = [headers.map(csvCell).join(",")];
-      targetRows.forEach(row => {
-        lines.push(fields.map(field => row.payload[field]).map(csvCell).join(","));
-      });
-      download(`sc2026-${scope}-${today()}.csv`, `\ufeff${lines.join("\n")}`, "text/csv;charset=utf-8");
+      const data = [
+        headers,
+        ...targetRows.map(row => fields.map(field => normalizeExcelCell(row.payload[field])))
+      ];
+      if (!window.XLSX) {
+        exportTsvFallback(data, scope);
+        return;
+      }
+      const worksheet = XLSX.utils.aoa_to_sheet(data);
+      worksheet["!cols"] = fields.map((field, index) => ({
+        wch: Math.min(Math.max(headers[index].length + 2, ...targetRows.slice(0, 500).map(row => cleanText(row.payload[field]).length + 2)), 60)
+      }));
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, scope === "전체" ? "전체 데이터" : "표시 데이터");
+      XLSX.writeFile(workbook, `sc2026-${scope}-${today()}.xlsx`, { compression: true });
     }
 
-    function csvCell(value) {
-      const text = cleanText(value).replace(/"/g, '""');
-      return `"${text}"`;
+    function normalizeExcelCell(value) {
+      if (value === null || value === undefined) return "";
+      return value;
+    }
+
+    function exportTsvFallback(data, scope) {
+      const lines = data.map(row => row.map(tsvCell).join("\t"));
+      download(`sc2026-${scope}-${today()}.xls`, `\ufeff${lines.join("\n")}`, "application/vnd.ms-excel;charset=utf-8");
+    }
+
+    function tsvCell(value) {
+      return cleanText(value).replace(/\t/g, " ").replace(/\r?\n/g, " ");
     }
 
     function download(filename, content, type) {
