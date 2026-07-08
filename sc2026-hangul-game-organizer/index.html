@@ -222,6 +222,22 @@
       white-space: nowrap;
     }
 
+    .column-checks label {
+      cursor: grab;
+      user-select: none;
+    }
+
+    .column-checks label.dragging {
+      opacity: .45;
+      border-color: var(--accent);
+      cursor: grabbing;
+    }
+
+    .column-checks label.drag-over {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
     .column-checks input,
     .color-checks input {
       width: 14px;
@@ -771,6 +787,7 @@
     }));
     let rows = cloneOriginalRows();
     let filteredRows = [];
+    let columnOrder = [...DEFAULT_TABLE_COLUMNS];
     let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
     let visibleColorGroups = new Set(COLOR_GROUPS);
     let sortState = [];
@@ -780,6 +797,9 @@
     let supabaseClient = null;
     let settingsSaveTimer = null;
     let displaySettingsTouched = false;
+    let columnDragField = null;
+    let columnDragActive = false;
+    let columnDragDocumentBound = false;
     const supabaseSaveQueue = new Map();
     const dirtyCells = new Set();
 
@@ -864,7 +884,7 @@
         $(id).addEventListener("input", applyFilters);
       });
       $("columnAll").addEventListener("change", event => {
-        visibleColumns = event.target.checked ? new Set(DEFAULT_TABLE_COLUMNS) : new Set();
+        visibleColumns = event.target.checked ? new Set(columnOrder) : new Set();
         pruneColumnFilters();
         renderColumnControls();
         applyFilters();
@@ -890,8 +910,8 @@
     }
 
     function renderColumnControls() {
-      $("columnChecks").innerHTML = DEFAULT_TABLE_COLUMNS.map(field => `
-        <label>
+      $("columnChecks").innerHTML = columnOrder.map(field => `
+        <label draggable="true" data-column-item="${escapeAttr(field)}" title="드래그해서 열 순서 변경">
           <input type="checkbox" data-column="${escapeAttr(field)}" ${visibleColumns.has(field) ? "checked" : ""} />
           ${escapeHtml(getColumnLabel(field))}
         </label>
@@ -909,6 +929,7 @@
           queueSharedDisplaySettingsSave();
         });
       });
+      bindColumnDragControls();
       $("colorChecks").innerHTML = COLOR_GROUPS.map(group => `
         <label>
           <input type="checkbox" data-color-group="${escapeAttr(group)}" ${visibleColorGroups.has(group) ? "checked" : ""} />
@@ -935,6 +956,83 @@
       });
     }
 
+    function bindColumnDragControls() {
+      let draggedField = null;
+      bindColumnDragDocumentEvents();
+      $("columnChecks").querySelectorAll("label[data-column-item]").forEach(label => {
+        label.addEventListener("dragstart", event => {
+          draggedField = label.dataset.columnItem;
+          label.classList.add("dragging");
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", draggedField);
+        });
+        label.addEventListener("dragend", () => {
+          label.classList.remove("dragging");
+          draggedField = null;
+        });
+        label.addEventListener("dragover", event => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        });
+        label.addEventListener("drop", event => {
+          event.preventDefault();
+          const targetField = label.dataset.columnItem;
+          moveColumn(draggedField || event.dataTransfer.getData("text/plain"), targetField);
+        });
+        label.addEventListener("mousedown", event => {
+          if (event.button !== 0 || event.target.closest("input")) return;
+          columnDragField = label.dataset.columnItem;
+          columnDragActive = true;
+          label.classList.add("dragging");
+          event.preventDefault();
+        });
+      });
+    }
+
+    function bindColumnDragDocumentEvents() {
+      if (columnDragDocumentBound) return;
+      columnDragDocumentBound = true;
+      document.addEventListener("mousemove", event => {
+        if (!columnDragActive) return;
+        clearColumnDragOver();
+        const targetLabel = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("label[data-column-item]");
+        if (targetLabel && targetLabel.dataset.columnItem !== columnDragField) {
+          targetLabel.classList.add("drag-over");
+        }
+      });
+      document.addEventListener("mouseup", event => {
+        if (!columnDragActive) return;
+        const sourceField = columnDragField;
+        const targetField = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("label[data-column-item]")?.dataset.columnItem;
+        columnDragActive = false;
+        columnDragField = null;
+        $("columnChecks").querySelectorAll(".dragging").forEach(item => item.classList.remove("dragging"));
+        clearColumnDragOver();
+        moveColumn(sourceField, targetField);
+      });
+    }
+
+    function clearColumnDragOver() {
+      $("columnChecks").querySelectorAll(".drag-over").forEach(item => item.classList.remove("drag-over"));
+    }
+
+    function moveColumn(sourceField, targetField) {
+      if (!sourceField || !targetField || sourceField === targetField) return;
+      const nextOrder = columnOrder.filter(field => field !== sourceField);
+      const targetIndex = nextOrder.indexOf(targetField);
+      if (targetIndex === -1) return;
+      nextOrder.splice(targetIndex, 0, sourceField);
+      columnOrder = normalizeColumnOrder(nextOrder);
+      renderColumnControls();
+      applyFilters();
+      queueSharedDisplaySettingsSave();
+    }
+
+    function normalizeColumnOrder(order) {
+      const valid = order.filter(field => DEFAULT_TABLE_COLUMNS.includes(field));
+      return [...valid, ...DEFAULT_TABLE_COLUMNS.filter(field => !valid.includes(field))];
+    }
+
     async function loadSharedDisplaySettings() {
       if (!supabaseClient) return;
       try {
@@ -956,6 +1054,10 @@
       if (!settings || typeof settings !== "object") return false;
       if (Array.isArray(settings.visibleColumns)) {
         visibleColumns = new Set(settings.visibleColumns.filter(field => DEFAULT_TABLE_COLUMNS.includes(field)));
+      }
+      if (Array.isArray(settings.columnOrder)) {
+        columnOrder = normalizeColumnOrder(settings.columnOrder);
+        visibleColumns = new Set([...visibleColumns].filter(field => columnOrder.includes(field)));
       }
       if (Array.isArray(settings.visibleColorGroups)) {
         visibleColorGroups = new Set(settings.visibleColorGroups.filter(group => COLOR_GROUPS.includes(group)));
@@ -980,6 +1082,7 @@
           .upsert({
             key: DISPLAY_SETTINGS_KEY,
             value: {
+              columnOrder,
               visibleColumns: [...visibleColumns],
               visibleColorGroups: [...visibleColorGroups]
             }
@@ -1056,7 +1159,7 @@
     }
 
     function getVisibleTableColumns() {
-      return DEFAULT_TABLE_COLUMNS.filter(field => visibleColumns.has(field));
+      return columnOrder.filter(field => visibleColumns.has(field));
     }
 
     function pruneColumnFilters() {
