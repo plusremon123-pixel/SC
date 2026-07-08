@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>한깨 재미재미 한글게임 정리</title>
   <script src="./hangul-game-data.js"></script>
+  <script src="./supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -738,6 +739,7 @@
       "검증 등록일"
     ]);
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
+    const SUPABASE_CONFIG = window.SC2026_SUPABASE || {};
     const BASE_COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
     const COLOR_GROUPS = [...new Set([...BASE_COLOR_GROUPS.filter(group => group !== "투명or흰색"), "파랑", "투명or흰색"])];
     const originalRows = sourceData.rows.map(row => ({
@@ -754,6 +756,9 @@
     let columnFilters = {};
     let selectedRows = new Set();
     let lastSelectedRow = null;
+    let supabaseClient = null;
+    let supabaseSaveTimer = null;
+    const supabaseSaveQueue = new Map();
 
     const $ = id => document.getElementById(id);
     const table = document.querySelector("table");
@@ -770,10 +775,18 @@
     init();
 
     function init() {
+      initSupabase();
       populateFilters();
       renderColumnControls();
       bindEvents();
       applyFilters();
+    }
+
+    function initSupabase() {
+      const url = SUPABASE_CONFIG.url || SUPABASE_CONFIG.projectUrl || "";
+      const anonKey = SUPABASE_CONFIG.anonKey || SUPABASE_CONFIG.key || "";
+      if (!url || !anonKey || !window.supabase?.createClient) return;
+      supabaseClient = window.supabase.createClient(url, anonKey);
     }
 
     function cloneOriginalRows() {
@@ -797,6 +810,7 @@
       });
       $("exportAllBtn").addEventListener("click", () => exportCsv(rows, sourceData.columns, "전체"));
       $("exportVisibleBtn").addEventListener("click", () => exportCsv(filteredRows, getVisibleTableColumns(), "표시"));
+      window.addEventListener("beforeunload", flushSupabaseQueue);
     }
 
     function populateFilters() {
@@ -1092,6 +1106,7 @@
         const storedValue = nextValue || null;
         row.payload[field] = storedValue;
         restoreCell(storedValue);
+        if (storedValue !== (originalValue || null)) queueSupabaseSave(row);
       };
       input.addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -1172,6 +1187,7 @@
       getColorTargetRows().forEach(row => {
         row.color_group = group;
         row.color_code = `manual:${group}`;
+        queueSupabaseSave(row);
       });
       selectedRows.clear();
       lastSelectedRow = null;
@@ -1182,6 +1198,39 @@
     function getColorTargetRows() {
       const selected = rows.filter(row => selectedRows.has(row.source_row));
       return selected.length ? selected : [colorPopoverRow].filter(Boolean);
+    }
+
+    function queueSupabaseSave(row) {
+      if (!supabaseClient) return;
+      supabaseSaveQueue.set(row.source_row, toSupabaseRow(row));
+      if (supabaseSaveTimer) clearTimeout(supabaseSaveTimer);
+      supabaseSaveTimer = setTimeout(flushSupabaseQueue, 1200);
+    }
+
+    async function flushSupabaseQueue() {
+      if (!supabaseClient || !supabaseSaveQueue.size) return;
+      if (supabaseSaveTimer) clearTimeout(supabaseSaveTimer);
+      supabaseSaveTimer = null;
+      const payload = [...supabaseSaveQueue.values()];
+      supabaseSaveQueue.clear();
+      try {
+        const { error } = await supabaseClient
+          .from(TABLE_NAME)
+          .upsert(payload, { onConflict: "source_row" });
+        if (error) throw error;
+      } catch (error) {
+        console.warn("Supabase save failed", error);
+        payload.forEach(row => supabaseSaveQueue.set(row.source_row, row));
+      }
+    }
+
+    function toSupabaseRow(row) {
+      return {
+        source_row: row.source_row,
+        color_group: row.color_group || "투명or흰색",
+        color_code: row.color_code || null,
+        payload: row.payload || {}
+      };
     }
 
     function openFilterPopover(field, x, y) {
