@@ -674,6 +674,7 @@
       "개정년도",
       "개정여부",
       "차시시스템코드",
+      "학년코드",
       "학기코드",
       "단원노출순서",
       "단원일련번호",
@@ -685,7 +686,6 @@
       "검증 등록일"
     ];
     const COLUMN_WIDTHS = {
-      "__row": 56,
       "전체과목명": 170,
       "차시명": 230,
       "목차명": 230,
@@ -693,15 +693,19 @@
       "개정년도": 76,
       "개정여부": 80,
       "차시시스템코드": 110,
+      "학년코드": 72,
       "학기코드": 72,
-      "단원노출순서": 94,
+      "단원노출순서": 84,
       "단원일련번호": 112,
       "차시일련번호": 112,
       "목차일련번호": 112,
       "코너일련번호": 112,
-      "코너ZIP파일경로": 260,
+      "코너ZIP파일경로": 310,
       "코너ZIP파일명": 128,
       "검증 등록일": 112
+    };
+    const COLUMN_LABELS = {
+      "단원노출순서": "단원순서"
     };
     const LONG_TEXT_FIELDS = new Set(["전체과목명", "차시명", "목차명"]);
     const FILTERABLE_FIELDS = new Set([
@@ -798,7 +802,7 @@
       $("columnChecks").innerHTML = DEFAULT_TABLE_COLUMNS.map(field => `
         <label>
           <input type="checkbox" data-column="${escapeAttr(field)}" ${visibleColumns.has(field) ? "checked" : ""} />
-          ${escapeHtml(field)}
+          ${escapeHtml(getColumnLabel(field))}
         </label>
       `).join("");
       $("columnAll").checked = visibleColumns.size === DEFAULT_TABLE_COLUMNS.length;
@@ -873,7 +877,7 @@
       const rendered = filteredRows.slice(0, maxRows);
       tableBody.innerHTML = rendered.map(row => rowHtml(row)).join("");
       if (filteredRows.length > maxRows) {
-        tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="${getVisibleTableColumns().length + 1}" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
+        tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="${getVisibleTableColumns().length}" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
       }
       tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
         tr.addEventListener("click", event => openColorPopover(Number(tr.dataset.row), event.clientX, event.clientY));
@@ -898,9 +902,8 @@
 
     function renderTableHead() {
       renderTableColumns();
-      const columnHeaders = getVisibleTableColumns().map(field => `<th>${headerCell(field, field)}</th>`).join("");
+      const columnHeaders = getVisibleTableColumns().map(field => `<th>${headerCell(field, getColumnLabel(field))}</th>`).join("");
       tableHead.innerHTML = `<tr>
-        <th>${headerCell("__row", "행")}</th>
         ${columnHeaders}
       </tr>`;
       tableHead.querySelectorAll("button[data-sort-field]").forEach(button => {
@@ -915,7 +918,7 @@
     }
 
     function renderTableColumns() {
-      const fields = ["__row", ...getVisibleTableColumns()];
+      const fields = getVisibleTableColumns();
       tableCols.innerHTML = fields.map(field => `<col style="width: ${getColumnWidth(field)}px" />`).join("");
       const totalWidth = fields.reduce((sum, field) => sum + getColumnWidth(field), 0);
       table.style.minWidth = `${Math.max(1200, totalWidth)}px`;
@@ -923,6 +926,10 @@
 
     function getColumnWidth(field) {
       return COLUMN_WIDTHS[field] || 120;
+    }
+
+    function getColumnLabel(field) {
+      return COLUMN_LABELS[field] || field;
     }
 
     function headerCell(field, label) {
@@ -997,7 +1004,6 @@
         return `<td class="${cellClass}" data-field="${escapeAttr(field)}">${escapeHtml(value)}</td>`;
       }).join("");
       return `<tr data-row="${row.source_row}" class="${colorClass}" title="${escapeAttr(colorTitle)}">
-        <td class="nowrap">${row.source_row}</td>
         ${cells}
       </tr>`;
     }
