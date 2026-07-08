@@ -92,7 +92,7 @@
     .filters {
       padding: 14px 20px;
       display: grid;
-      grid-template-columns: minmax(220px, 1.8fr) repeat(4, minmax(140px, 1fr)) auto;
+      grid-template-columns: minmax(260px, 1.8fr) repeat(2, minmax(160px, 1fr));
       gap: 10px;
       align-items: end;
       background: #f8fafc;
@@ -139,7 +139,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: repeat(2, minmax(120px, 180px));
       gap: 10px;
       padding: 14px 20px 0;
     }
@@ -163,13 +163,22 @@
       font-size: 12px;
     }
 
-    .column-checks {
+    .column-control-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .column-checks,
+    .color-checks {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
 
-    .column-checks label {
+    .column-checks label,
+    .color-checks label {
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -182,7 +191,8 @@
       white-space: nowrap;
     }
 
-    .column-checks input {
+    .column-checks input,
+    .color-checks input {
       width: 14px;
       min-height: 14px;
     }
@@ -417,17 +427,8 @@
       <label>전체과목
         <select id="subjectFilter"></select>
       </label>
-      <label>옵션값
-        <select id="optFilter"></select>
-      </label>
       <label>목차명
         <select id="menuFilter"></select>
-      </label>
-      <label>색상구분
-        <select id="colorFilter"></select>
-      </label>
-      <label>차시시스템코드
-        <input id="systemCodeFilter" placeholder="예: NY05" />
       </label>
     </section>
 
@@ -435,11 +436,20 @@
 
     <section class="column-controls" aria-label="목록 표시 컬럼 선택">
       <div class="column-controls-head">
-        <label class="toggle">
-          <input id="columnAll" type="checkbox" checked />
-          전체
-        </label>
-        <span id="columnCount"></span>
+        <div class="column-control-group">
+          <label class="toggle">
+            <input id="columnAll" type="checkbox" checked />
+            전체
+          </label>
+          <span id="columnCount"></span>
+        </div>
+        <div class="column-control-group" aria-label="색상 표시 선택">
+          <label class="toggle">
+            <input id="colorAll" type="checkbox" checked />
+            색상 전체
+          </label>
+          <div class="color-checks" id="colorChecks"></div>
+        </div>
       </div>
       <div class="column-checks" id="columnChecks"></div>
     </section>
@@ -484,8 +494,8 @@
       "차시시스템코드",
       "목차명"
     ];
-
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
+    const COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
     const originalRows = sourceData.rows.map(row => ({
       source_row: row.source_row,
       color_group: row.color_group || "투명or흰색",
@@ -495,6 +505,7 @@
     let rows = loadRows();
     let filteredRows = [];
     let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
+    let visibleColorGroups = new Set(COLOR_GROUPS);
 
     const $ = id => document.getElementById(id);
     const tableHead = $("tableHead");
@@ -524,7 +535,7 @@
     }
 
     function bindEvents() {
-      ["searchInput", "subjectFilter", "optFilter", "menuFilter", "colorFilter", "systemCodeFilter"].forEach(id => {
+      ["searchInput", "subjectFilter", "menuFilter"].forEach(id => {
         $(id).addEventListener("input", applyFilters);
       });
       $("columnAll").addEventListener("change", event => {
@@ -532,15 +543,18 @@
         renderColumnControls();
         renderTable();
       });
+      $("colorAll").addEventListener("change", event => {
+        visibleColorGroups = event.target.checked ? new Set(COLOR_GROUPS) : new Set();
+        renderColumnControls();
+        applyFilters();
+      });
       $("exportCsvBtn").addEventListener("click", exportCsv);
       $("exportJsonBtn").addEventListener("click", exportJson);
     }
 
     function populateFilters() {
       fillSelect("subjectFilter", "전체", uniqueValues("전체과목명"));
-      fillSelect("optFilter", "전체", uniqueValues("옵션값(OPT_CODE)"));
       fillSelect("menuFilter", "전체", uniqueValues("목차명"));
-      fillSelect("colorFilter", "전체", sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"]);
     }
 
     function uniqueValues(field) {
@@ -570,23 +584,34 @@
           renderTable();
         });
       });
+      $("colorChecks").innerHTML = COLOR_GROUPS.map(group => `
+        <label>
+          <input type="checkbox" data-color-group="${escapeAttr(group)}" ${visibleColorGroups.has(group) ? "checked" : ""} />
+          ${escapeHtml(group)}
+        </label>
+      `).join("");
+      $("colorAll").checked = visibleColorGroups.size === COLOR_GROUPS.length;
+      $("colorAll").indeterminate = visibleColorGroups.size > 0 && visibleColorGroups.size < COLOR_GROUPS.length;
+      $("colorChecks").querySelectorAll("input[data-color-group]").forEach(input => {
+        input.addEventListener("change", event => {
+          const group = event.target.dataset.colorGroup;
+          event.target.checked ? visibleColorGroups.add(group) : visibleColorGroups.delete(group);
+          renderColumnControls();
+          applyFilters();
+        });
+      });
     }
 
     function applyFilters() {
       const term = $("searchInput").value.trim().toLowerCase();
       const subject = $("subjectFilter").value;
-      const opt = $("optFilter").value;
       const menu = $("menuFilter").value;
-      const color = $("colorFilter").value;
-      const systemCode = $("systemCodeFilter").value.trim().toLowerCase();
 
       filteredRows = rows.filter(row => {
         const p = row.payload;
         if (subject && cleanText(p["전체과목명"]) !== subject) return false;
-        if (opt && cleanText(p["옵션값(OPT_CODE)"]) !== opt) return false;
         if (menu && cleanText(p["목차명"]) !== menu) return false;
-        if (color && row.color_group !== color) return false;
-        if (systemCode && !cleanText(p["차시시스템코드"]).toLowerCase().includes(systemCode)) return false;
+        if (!visibleColorGroups.has(row.color_group || "투명or흰색")) return false;
         if (term) {
           const haystack = TABLE_FIELDS.concat(["코너ZIP파일경로", "전체과목코드", "경로", "학년코드", "학기코드"])
             .map(field => cleanText(p[field]).toLowerCase()).join(" ");
@@ -602,12 +627,8 @@
     function renderStats() {
       const total = rows.length;
       const visible = filteredRows.length;
-      const gray = rows.filter(row => row.color_group === "회색").length;
-      const yellow = rows.filter(row => row.color_group === "노랑").length;
-      const green = rows.filter(row => row.color_group === "초록").length;
       const metrics = [
-        ["전체 행", total], ["현재 보기", visible],
-        ["회색", gray], ["노랑", yellow], ["초록", green]
+        ["전체 행", total], ["현재 보기", visible]
       ];
       $("stats").innerHTML = metrics.map(([label, value]) => (
         `<div class="metric"><span>${label}</span><strong>${Number(value).toLocaleString()}</strong></div>`
