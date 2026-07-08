@@ -59,6 +59,13 @@ to anon
 using (true)
 with check (true);
 
+drop policy if exists "Allow anon delete sc2026" on public.sc2026;
+create policy "Allow anon delete sc2026"
+on public.sc2026
+for delete
+to anon
+using (true);
+
 create table if not exists public.sc2026_settings (
   key text primary key,
   value jsonb not null default '{}'::jsonb,

@@ -643,6 +643,8 @@
         <h1>한깨 재미재미 한글게임 정리</h1>
       </div>
       <div class="toolbar">
+        <input id="excelUploadInput" type="file" accept=".xlsx,.xls" hidden />
+        <button id="excelUploadBtn">엑셀 업로드</button>
         <button id="saveSupabaseBtn">수정사항 저장</button>
         <button id="exportAllBtn">전체 데이터 다운로드</button>
         <button id="exportVisibleBtn">표시 데이터 다운로드</button>
@@ -785,7 +787,9 @@
     const COLOR_GROUPS = ["파랑", "노랑", "초록", "투명or흰색", "회색"];
     const EMPTY_FILTER_TOKEN = "__SC2026_EMPTY_FILTER__";
     const EMPTY_FILTER_LABEL = "(빈값)";
-    const originalRows = sourceData.rows.map(row => ({
+    let tableColumns = [...new Set(sourceData.columns || [])];
+    let availableColorGroups = getAvailableColorGroups(sourceData.rows || []);
+    let originalRows = sourceData.rows.map(row => ({
       source_row: row.source_row,
       color_group: row.color_group || "투명or흰색",
       color_code: row.color_code || "",
@@ -793,9 +797,9 @@
     }));
     let rows = cloneOriginalRows();
     let filteredRows = [];
-    let columnOrder = [...DEFAULT_TABLE_COLUMNS];
-    let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
-    let visibleColorGroups = new Set(COLOR_GROUPS);
+    let columnOrder = [...tableColumns];
+    let visibleColumns = new Set(tableColumns);
+    let visibleColorGroups = new Set(availableColorGroups);
     let sortState = [];
     let columnFilters = {};
     let selectedRows = new Set();
@@ -867,7 +871,22 @@
           dbRows.push(...(data || []));
           if (!data || data.length < pageSize) break;
         }
-        mergeSupabaseRows(dbRows);
+        if (dbRows.length) {
+          rows = dbRows.map(dbRow => ({
+            source_row: Number(dbRow.source_row),
+            color_group: dbRow.color_group || "투명or흰색",
+            color_code: dbRow.color_code || "",
+            payload: { ...(dbRow.payload || {}) }
+          }));
+          originalRows = cloneRows(rows);
+          tableColumns = inferColumnsFromRows(rows);
+          columnOrder = normalizeColumnOrder(columnOrder);
+          visibleColumns = new Set([...visibleColumns].filter(field => tableColumns.includes(field)));
+          if (!visibleColumns.size) visibleColumns = new Set(tableColumns);
+          availableColorGroups = getAvailableColorGroups(rows);
+          visibleColorGroups = new Set([...visibleColorGroups].filter(group => availableColorGroups.includes(group)));
+          if (!visibleColorGroups.size) visibleColorGroups = new Set(availableColorGroups);
+        }
       } catch (error) {
         console.warn("Supabase row load failed", error);
       }
@@ -885,6 +904,34 @@
       });
     }
 
+    function cloneRows(sourceRows) {
+      return sourceRows.map(row => ({
+        source_row: row.source_row,
+        color_group: row.color_group || "투명or흰색",
+        color_code: row.color_code || "",
+        payload: { ...(row.payload || {}) }
+      }));
+    }
+
+    function inferColumnsFromRows(sourceRows) {
+      const columns = [];
+      sourceRows.forEach(row => {
+        Object.keys(row.payload || {}).forEach(field => {
+          if (!columns.includes(field)) columns.push(field);
+        });
+      });
+      return columns;
+    }
+
+    function getAvailableColorGroups(sourceRows) {
+      const found = new Set((sourceRows || []).map(row => row.color_group || "투명or흰색"));
+      const ordered = COLOR_GROUPS.filter(group => found.has(group));
+      [...found].forEach(group => {
+        if (!ordered.includes(group)) ordered.push(group);
+      });
+      return ordered.length ? ordered : ["투명or흰색"];
+    }
+
     function bindEvents() {
       ["searchInput", "subjectFilter", "menuFilter"].forEach(id => {
         $(id).addEventListener("input", applyFilters);
@@ -896,9 +943,164 @@
         applyFilters();
         queueSharedDisplaySettingsSave();
       });
+      $("excelUploadBtn").addEventListener("click", () => $("excelUploadInput").click());
+      $("excelUploadInput").addEventListener("change", handleExcelUpload);
       $("saveSupabaseBtn").addEventListener("click", flushSupabaseQueue);
       $("exportAllBtn").addEventListener("click", () => exportAllCsv());
       $("exportVisibleBtn").addEventListener("click", () => exportVisibleCsv());
+    }
+
+    async function handleExcelUpload(event) {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+      if (!supabaseClient) {
+        alert("DB 연결이 없어 업로드할 수 없습니다.");
+        return;
+      }
+      if (!window.XLSX) {
+        alert("엑셀 처리 라이브러리를 불러오지 못했습니다. 네트워크를 확인해주세요.");
+        return;
+      }
+      const confirmed = confirm("엑셀을 업로드하면 DB의 이전 데이터가 삭제되고 새 데이터로 저장됩니다. 계속할까요?");
+      if (!confirmed) return;
+      const button = $("excelUploadBtn");
+      button.disabled = true;
+      button.textContent = "업로드 중...";
+      try {
+        const parsed = await parseExcelFile(file);
+        await replaceSupabaseRows(parsed.rows);
+        tableColumns = parsed.columns;
+        rows = cloneRows(parsed.rows);
+        originalRows = cloneRows(parsed.rows);
+        availableColorGroups = getAvailableColorGroups(rows);
+        columnOrder = [...tableColumns];
+        visibleColumns = new Set(tableColumns);
+        visibleColorGroups = new Set(availableColorGroups);
+        sortState = [];
+        columnFilters = {};
+        selectedRows.clear();
+        lastSelectedRow = null;
+        dirtyCells.clear();
+        supabaseSaveQueue.clear();
+        await saveSharedDisplaySettings();
+        populateFilters();
+        renderColumnControls();
+        applyFilters();
+        updateSaveButton();
+        alert(`${file.name} 업로드 완료: ${rows.length.toLocaleString()}행, ${tableColumns.length.toLocaleString()}개 열`);
+      } catch (error) {
+        console.warn("Excel upload failed", error);
+        alert(`업로드 실패: ${error.message || error}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = "엑셀 업로드";
+      }
+    }
+
+    async function parseExcelFile(file) {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array", cellStyles: true, cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const matrix = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null, blankrows: false, raw: false });
+      const headerIndex = findHeaderRowIndex(matrix);
+      if (headerIndex === -1) throw new Error("헤더 행을 찾지 못했습니다.");
+      const columns = makeUniqueColumns(matrix[headerIndex]);
+      const rowsFromExcel = [];
+      for (let rowIndex = headerIndex + 1; rowIndex < matrix.length; rowIndex += 1) {
+        const values = matrix[rowIndex] || [];
+        if (!values.some(value => cleanText(value))) continue;
+        const payload = {};
+        columns.forEach((field, columnIndex) => {
+          payload[field] = normalizeExcelValue(values[columnIndex]);
+        });
+        const excelRowNumber = rowIndex + 1;
+        const firstCell = worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })];
+        const color_code = getExcelCellColorCode(firstCell);
+        rowsFromExcel.push({
+          source_row: excelRowNumber,
+          color_group: getColorGroupFromCode(color_code),
+          color_code,
+          payload
+        });
+      }
+      if (!rowsFromExcel.length) throw new Error("저장할 데이터 행이 없습니다.");
+      return { columns, rows: rowsFromExcel, sheetName };
+    }
+
+    function findHeaderRowIndex(matrix) {
+      const exact = matrix.findIndex(row => (row || []).some(value => cleanText(value) === "앱패키지명명"));
+      if (exact !== -1) return exact;
+      let bestIndex = -1;
+      let bestCount = 0;
+      matrix.slice(0, 20).forEach((row, index) => {
+        const count = (row || []).filter(value => cleanText(value)).length;
+        if (count > bestCount) {
+          bestCount = count;
+          bestIndex = index;
+        }
+      });
+      return bestCount ? bestIndex : -1;
+    }
+
+    function makeUniqueColumns(headerRow) {
+      const used = new Map();
+      return (headerRow || []).map((value, index) => {
+        const base = cleanText(value) || `열${index + 1}`;
+        const count = used.get(base) || 0;
+        used.set(base, count + 1);
+        return count ? `${base}.${count}` : base;
+      });
+    }
+
+    function normalizeExcelValue(value) {
+      if (value === null || value === undefined) return null;
+      if (value instanceof Date) return formatDateValue(value);
+      const text = typeof value === "string" ? value.trim() : value;
+      return text === "" ? null : text;
+    }
+
+    function formatDateValue(value) {
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, "0");
+      const day = String(value.getDate()).padStart(2, "0");
+      return `${year}.${month}.${day}`;
+    }
+
+    function getExcelCellColorCode(cell) {
+      const color = cell?.s?.fill?.fgColor || cell?.s?.fill?.bgColor;
+      if (!color) return "";
+      if (color.rgb) return `rgb:${color.rgb}`;
+      if (color.theme !== undefined) return `theme:${color.theme}:${color.tint || 0}`;
+      if (color.indexed !== undefined) return `indexed:${color.indexed}`;
+      return "";
+    }
+
+    function getColorGroupFromCode(code) {
+      if (!code || code === "rgb:00000000" || code === "rgb:FFFFFFFF") return "투명or흰색";
+      if (code.startsWith("theme:2") || code.includes("FFD9D9D9") || code.includes("FFBFBFBF")) return "회색";
+      if (code.startsWith("theme:7") || code.includes("FFFFC000") || code.includes("FFFFFF00")) return "노랑";
+      if (code.startsWith("theme:9") || code.includes("FF92D050") || code.includes("FF00B050") || code.includes("FFC6EFCE")) return "초록";
+      if (code.startsWith("theme:4") || code.startsWith("theme:8") || code.includes("FF9DC3E6") || code.includes("FFBDD7EE")) return "파랑";
+      return "투명or흰색";
+    }
+
+    async function replaceSupabaseRows(nextRows) {
+      const { error: deleteError } = await supabaseClient
+        .from(TABLE_NAME)
+        .delete()
+        .gte("source_row", 0);
+      if (deleteError) {
+        throw new Error(`기존 데이터 삭제 실패: ${deleteError.message}. supabase-sc2026.sql의 delete 정책을 먼저 실행해야 합니다.`);
+      }
+      for (let index = 0; index < nextRows.length; index += 200) {
+        const batch = nextRows.slice(index, index + 200).map(toSupabaseRow);
+        const { error } = await supabaseClient
+          .from(TABLE_NAME)
+          .upsert(batch, { onConflict: "source_row" });
+        if (error) throw error;
+      }
     }
 
     function populateFilters() {
@@ -922,9 +1124,9 @@
           ${escapeHtml(getColumnLabel(field))}
         </label>
       `).join("");
-      $("columnAll").checked = visibleColumns.size === DEFAULT_TABLE_COLUMNS.length;
-      $("columnAll").indeterminate = visibleColumns.size > 0 && visibleColumns.size < DEFAULT_TABLE_COLUMNS.length;
-      $("columnCount").textContent = `${visibleColumns.size} / ${DEFAULT_TABLE_COLUMNS.length}개 표시`;
+      $("columnAll").checked = visibleColumns.size === tableColumns.length;
+      $("columnAll").indeterminate = visibleColumns.size > 0 && visibleColumns.size < tableColumns.length;
+      $("columnCount").textContent = `${visibleColumns.size} / ${tableColumns.length}개 표시`;
       $("columnChecks").querySelectorAll("input[data-column]").forEach(input => {
         input.addEventListener("change", event => {
           const field = event.target.dataset.column;
@@ -936,17 +1138,17 @@
         });
       });
       bindColumnDragControls();
-      $("colorChecks").innerHTML = COLOR_GROUPS.map(group => `
+      $("colorChecks").innerHTML = availableColorGroups.map(group => `
         <label>
           <input type="checkbox" data-color-group="${escapeAttr(group)}" ${visibleColorGroups.has(group) ? "checked" : ""} />
           ${escapeHtml(group)}
         </label>
       `).join("");
-      $("colorAll").checked = visibleColorGroups.size === COLOR_GROUPS.length;
-      $("colorAll").indeterminate = visibleColorGroups.size > 0 && visibleColorGroups.size < COLOR_GROUPS.length;
-      $("colorCount").textContent = `${visibleColorGroups.size} / ${COLOR_GROUPS.length}개 표시`;
+      $("colorAll").checked = visibleColorGroups.size === availableColorGroups.length;
+      $("colorAll").indeterminate = visibleColorGroups.size > 0 && visibleColorGroups.size < availableColorGroups.length;
+      $("colorCount").textContent = `${visibleColorGroups.size} / ${availableColorGroups.length}개 표시`;
       $("colorAll").onchange = event => {
-        visibleColorGroups = event.target.checked ? new Set(COLOR_GROUPS) : new Set();
+        visibleColorGroups = event.target.checked ? new Set(availableColorGroups) : new Set();
         renderColumnControls();
         applyFilters();
         queueSharedDisplaySettingsSave();
@@ -1035,8 +1237,8 @@
     }
 
     function normalizeColumnOrder(order) {
-      const valid = order.filter(field => DEFAULT_TABLE_COLUMNS.includes(field));
-      return [...valid, ...DEFAULT_TABLE_COLUMNS.filter(field => !valid.includes(field))];
+      const valid = order.filter(field => tableColumns.includes(field));
+      return [...valid, ...tableColumns.filter(field => !valid.includes(field))];
     }
 
     async function loadSharedDisplaySettings() {
@@ -1058,15 +1260,18 @@
 
     function applySharedDisplaySettings(settings) {
       if (!settings || typeof settings !== "object") return false;
+      if (Array.isArray(settings.columns) && settings.columns.length) {
+        tableColumns = settings.columns.filter(Boolean);
+      }
       if (Array.isArray(settings.visibleColumns)) {
-        visibleColumns = new Set(settings.visibleColumns.filter(field => DEFAULT_TABLE_COLUMNS.includes(field)));
+        visibleColumns = new Set(settings.visibleColumns.filter(field => tableColumns.includes(field)));
       }
       if (Array.isArray(settings.columnOrder)) {
         columnOrder = normalizeColumnOrder(settings.columnOrder);
         visibleColumns = new Set([...visibleColumns].filter(field => columnOrder.includes(field)));
       }
       if (Array.isArray(settings.visibleColorGroups)) {
-        visibleColorGroups = new Set(settings.visibleColorGroups.filter(group => COLOR_GROUPS.includes(group)));
+        visibleColorGroups = new Set(settings.visibleColorGroups.filter(group => availableColorGroups.includes(group)));
       }
       if (Array.isArray(settings.sortState)) {
         sortState = normalizeSortState(settings.sortState);
@@ -1092,6 +1297,7 @@
             key: DISPLAY_SETTINGS_KEY,
             value: {
               columnOrder,
+              columns: tableColumns,
               visibleColumns: [...visibleColumns],
               visibleColorGroups: [...visibleColorGroups],
               sortState: normalizeSortState(sortState)
@@ -1115,7 +1321,7 @@
         if (!visibleColorGroups.has(row.color_group || "투명or흰색")) return false;
         if (!passesColumnFilters(row)) return false;
         if (term) {
-          const haystack = TABLE_FIELDS.concat(["코너ZIP파일경로", "전체과목코드", "경로", "학년코드", "학기코드"])
+          const haystack = tableColumns
             .map(field => cleanText(p[field]).toLowerCase()).join(" ");
           if (!haystack.includes(term)) return false;
         }
@@ -1174,7 +1380,7 @@
 
     function pruneColumnFilters() {
       columnFilters = Object.fromEntries(
-        Object.entries(columnFilters).filter(([field]) => FILTERABLE_FIELDS.has(field) && visibleColumns.has(field))
+        Object.entries(columnFilters).filter(([field]) => tableColumns.includes(field) && visibleColumns.has(field))
       );
       sortState = normalizeSortState(sortState).filter(sort => visibleColumns.has(sort.field));
     }
@@ -1183,7 +1389,7 @@
       if (!Array.isArray(value)) return [];
       const seen = new Set();
       return value
-        .filter(sort => sort && DEFAULT_TABLE_COLUMNS.includes(sort.field) && ["asc", "desc"].includes(sort.direction))
+        .filter(sort => sort && tableColumns.includes(sort.field) && ["asc", "desc"].includes(sort.direction))
         .filter(sort => {
           if (seen.has(sort.field)) return false;
           seen.add(sort.field);
@@ -1238,7 +1444,7 @@
     }
 
     function filterButton(field) {
-      if (!FILTERABLE_FIELDS.has(field)) return "";
+      if (!tableColumns.includes(field)) return "";
       const active = columnFilters[field] ? " active-filter" : "";
       return `<button type="button" class="filter-button${active}" data-filter-field="${escapeAttr(field)}" title="필터">▾</button>`;
     }
@@ -1437,7 +1643,7 @@
     }
 
     function exportAllCsv() {
-      exportXlsx(rows, sourceData.columns, "전체");
+      exportXlsx(rows, tableColumns, "전체");
     }
 
     function exportVisibleCsv() {
@@ -1501,8 +1707,8 @@
       colorPopoverRow = row;
       const targetRows = getColorTargetRows();
       const label = targetRows.length > 1 ? `<div class="color-popover-label">${targetRows.length.toLocaleString()}행 색상 변경</div>` : "";
-      colorPopover.innerHTML = COLOR_GROUPS.map(group => `
-        ${label && group === COLOR_GROUPS[0] ? label : ""}
+      colorPopover.innerHTML = availableColorGroups.map(group => `
+        ${label && group === availableColorGroups[0] ? label : ""}
         <button type="button" data-color-choice="${escapeAttr(group)}" class="${row.color_group === group ? "active-color" : ""}">
           ${escapeHtml(group)}
         </button>
@@ -1668,7 +1874,7 @@
       if (!visibleColorGroups.has(row.color_group || "투명or흰색")) return false;
       if (!passesColumnFilters(row, excludedField)) return false;
       if (term) {
-        const haystack = TABLE_FIELDS.concat(["코너ZIP파일경로", "전체과목코드", "경로", "학년코드", "학기코드"])
+        const haystack = tableColumns
           .map(fieldName => cleanText(p[fieldName]).toLowerCase()).join(" ");
         if (!haystack.includes(term)) return false;
       }
@@ -1676,7 +1882,7 @@
     }
 
     function applyFilterPopover() {
-      if (!filterPopoverField || !FILTERABLE_FIELDS.has(filterPopoverField)) return;
+      if (!filterPopoverField || !tableColumns.includes(filterPopoverField)) return;
       const value = filterPopoverInput.value.trim();
       if (value === EMPTY_FILTER_LABEL || value === "빈값") columnFilters[filterPopoverField] = EMPTY_FILTER_TOKEN;
       else if (value) columnFilters[filterPopoverField] = value;
@@ -1762,3 +1968,4 @@
   </script>
 </body>
 </html>
+
