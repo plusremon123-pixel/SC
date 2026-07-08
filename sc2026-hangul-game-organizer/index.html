@@ -260,6 +260,40 @@
       white-space: nowrap;
     }
 
+    .sort-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sort-button:hover {
+      color: var(--accent-dark);
+    }
+
+    .sort-mark {
+      color: var(--accent);
+      font-size: 11px;
+      min-width: 12px;
+    }
+
+    .column-filter {
+      margin-top: 6px;
+      width: 100%;
+      min-height: 28px;
+      padding: 5px 7px;
+      font-size: 12px;
+      border-color: #cbd5e1;
+      background: #ffffff;
+    }
+
     tbody td {
       border-bottom: 1px solid #edf1f5;
       padding: 8px;
@@ -554,6 +588,8 @@
     let filteredRows = [];
     let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
     let visibleColorGroups = new Set(COLOR_GROUPS);
+    let sortState = { field: null, direction: "asc" };
+    let columnFilters = {};
 
     const $ = id => document.getElementById(id);
     const tableHead = $("tableHead");
@@ -589,8 +625,9 @@
       });
       $("columnAll").addEventListener("change", event => {
         visibleColumns = event.target.checked ? new Set(DEFAULT_TABLE_COLUMNS) : new Set();
+        pruneColumnFilters();
         renderColumnControls();
-        renderTable();
+        applyFilters();
       });
       $("exportCsvBtn").addEventListener("click", exportCsv);
       $("exportJsonBtn").addEventListener("click", exportJson);
@@ -624,8 +661,9 @@
         input.addEventListener("change", event => {
           const field = event.target.dataset.column;
           event.target.checked ? visibleColumns.add(field) : visibleColumns.delete(field);
+          pruneColumnFilters();
           renderColumnControls();
-          renderTable();
+          applyFilters();
         });
       });
       $("colorChecks").innerHTML = COLOR_GROUPS.map(group => `
@@ -652,7 +690,7 @@
       });
     }
 
-    function applyFilters() {
+    function applyFilters(renderHead = true) {
       const term = $("searchInput").value.trim().toLowerCase();
       const subject = $("subjectFilter").value;
       const menu = $("menuFilter").value;
@@ -662,6 +700,7 @@
         if (subject && cleanText(p["전체과목명"]) !== subject) return false;
         if (menu && cleanText(p["목차명"]) !== menu) return false;
         if (!visibleColorGroups.has(row.color_group || "투명or흰색")) return false;
+        if (!passesColumnFilters(row)) return false;
         if (term) {
           const haystack = TABLE_FIELDS.concat(["코너ZIP파일경로", "전체과목코드", "경로", "학년코드", "학기코드"])
             .map(field => cleanText(p[field]).toLowerCase()).join(" ");
@@ -669,9 +708,10 @@
         }
         return true;
       });
+      applySort();
 
       renderStats();
-      renderTable();
+      renderTable(renderHead);
     }
 
     function renderStats() {
@@ -680,8 +720,8 @@
       $("rowSummary").textContent = `전체 행 ${total.toLocaleString()} · 현재 보기 ${visible.toLocaleString()}`;
     }
 
-    function renderTable() {
-      renderTableHead();
+    function renderTable(renderHead = true) {
+      if (renderHead) renderTableHead();
       const maxRows = 500;
       const rendered = filteredRows.slice(0, maxRows);
       tableBody.innerHTML = rendered.map(row => rowHtml(row)).join("");
@@ -697,12 +737,82 @@
       return DEFAULT_TABLE_COLUMNS.filter(field => visibleColumns.has(field));
     }
 
+    function pruneColumnFilters() {
+      columnFilters = Object.fromEntries(
+        Object.entries(columnFilters).filter(([field]) => field === "__row" || visibleColumns.has(field))
+      );
+    }
+
     function renderTableHead() {
-      const columnHeaders = getVisibleTableColumns().map(field => `<th>${escapeHtml(field)}</th>`).join("");
+      const columnHeaders = getVisibleTableColumns().map(field => `<th>${sortHeader(field, field)}${filterInput(field)}</th>`).join("");
       tableHead.innerHTML = `<tr>
-        <th>행</th>
+        <th>${sortHeader("__row", "행")}${filterInput("__row")}</th>
         ${columnHeaders}
       </tr>`;
+      tableHead.querySelectorAll("button[data-sort-field]").forEach(button => {
+        button.addEventListener("click", () => toggleSort(button.dataset.sortField));
+      });
+      tableHead.querySelectorAll("input[data-column-filter]").forEach(input => {
+        input.addEventListener("click", event => event.stopPropagation());
+        input.addEventListener("input", event => {
+          const field = event.target.dataset.columnFilter;
+          const value = event.target.value.trim();
+          if (value) columnFilters[field] = value;
+          else delete columnFilters[field];
+          applyFilters(false);
+        });
+      });
+    }
+
+    function sortHeader(field, label) {
+      const mark = sortState.field === field ? (sortState.direction === "asc" ? "▲" : "▼") : "";
+      return `<button type="button" class="sort-button" data-sort-field="${escapeAttr(field)}">
+        <span>${escapeHtml(label)}</span><span class="sort-mark">${mark}</span>
+      </button>`;
+    }
+
+    function filterInput(field) {
+      return `<input class="column-filter" data-column-filter="${escapeAttr(field)}" value="${escapeAttr(columnFilters[field] || "")}" placeholder="필터" />`;
+    }
+
+    function toggleSort(field) {
+      if (sortState.field === field) {
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+      } else {
+        sortState = { field, direction: "asc" };
+      }
+      applySort();
+      renderTable();
+    }
+
+    function applySort() {
+      if (!sortState.field) return;
+      const direction = sortState.direction === "asc" ? 1 : -1;
+      filteredRows.sort((a, b) => compareRows(a, b, sortState.field) * direction);
+    }
+
+    function passesColumnFilters(row) {
+      return Object.entries(columnFilters).every(([field, filter]) => {
+        const value = field === "__row" ? row.source_row : row.payload[field];
+        return cleanText(value).toLowerCase().includes(filter.toLowerCase());
+      });
+    }
+
+    function compareRows(a, b, field) {
+      const av = field === "__row" ? a.source_row : a.payload[field];
+      const bv = field === "__row" ? b.source_row : b.payload[field];
+      const an = toSortableNumber(av);
+      const bn = toSortableNumber(bv);
+      if (an !== null && bn !== null) return an - bn;
+      return cleanText(av).localeCompare(cleanText(bv), "ko", { numeric: true, sensitivity: "base" });
+    }
+
+    function toSortableNumber(value) {
+      if (value === null || value === undefined || value === "") return null;
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      const text = cleanText(value).replace(/,/g, "");
+      if (!text || !/^-?\d+(\.\d+)?$/.test(text)) return null;
+      return Number(text);
     }
 
     function rowHtml(row) {
