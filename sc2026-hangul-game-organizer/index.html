@@ -1038,7 +1038,7 @@
         ${columnHeaders}
       </tr>`;
       tableHead.querySelectorAll("button[data-sort-field]").forEach(button => {
-        button.addEventListener("click", event => toggleSort(button.dataset.sortField, event));
+        button.addEventListener("click", () => toggleSort(button.dataset.sortField));
       });
       tableHead.querySelectorAll("button[data-filter-field]").forEach(button => {
         button.addEventListener("click", event => {
@@ -1082,9 +1082,8 @@
       return `<button type="button" class="filter-button${active}" data-filter-field="${escapeAttr(field)}" title="필터">▾</button>`;
     }
 
-    function toggleSort(field, event) {
-      const additive = Boolean(event?.shiftKey);
-      const nextSortState = additive ? [...sortState] : sortState.filter(sort => sort.field === field);
+    function toggleSort(field) {
+      const nextSortState = [...sortState];
       const existingIndex = nextSortState.findIndex(sort => sort.field === field);
       if (existingIndex === -1) {
         nextSortState.push({ field, direction: "desc" });
