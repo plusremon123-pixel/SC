@@ -55,3 +55,37 @@ for update
 to anon
 using (true)
 with check (true);
+
+create table if not exists public.sc2026_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_sc2026_settings_updated_at on public.sc2026_settings;
+create trigger trg_sc2026_settings_updated_at
+before update on public.sc2026_settings
+for each row
+execute function public.set_sc2026_updated_at();
+
+alter table public.sc2026_settings enable row level security;
+
+create policy "Allow anon read sc2026 settings"
+on public.sc2026_settings
+for select
+to anon
+using (true);
+
+create policy "Allow anon insert sc2026 settings"
+on public.sc2026_settings
+for insert
+to anon
+with check (true);
+
+create policy "Allow anon update sc2026 settings"
+on public.sc2026_settings
+for update
+to anon
+using (true)
+with check (true);

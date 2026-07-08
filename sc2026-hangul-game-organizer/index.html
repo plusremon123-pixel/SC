@@ -681,6 +681,8 @@
 
   <script>
     const TABLE_NAME = "sc2026";
+    const SETTINGS_TABLE_NAME = "sc2026_settings";
+    const DISPLAY_SETTINGS_KEY = "display_preferences";
     const IMPORTANT_FIELDS = [
       "앱패키지명", "옵션값(OPT_CODE)", "전체과목코드", "전체과목명", "영역명",
       "단원일련번호", "차시일련번호", "단원노출순서", "목차일련번호", "DTL_LIST",
@@ -763,6 +765,8 @@
     let selectedRows = new Set();
     let lastSelectedRow = null;
     let supabaseClient = null;
+    let settingsSaveTimer = null;
+    let displaySettingsTouched = false;
     const supabaseSaveQueue = new Map();
     const dirtyCells = new Set();
 
@@ -786,6 +790,7 @@
       renderColumnControls();
       bindEvents();
       applyFilters();
+      loadSharedDisplaySettings();
     }
 
     function initSupabase() {
@@ -815,6 +820,7 @@
         pruneColumnFilters();
         renderColumnControls();
         applyFilters();
+        queueSharedDisplaySettingsSave();
       });
       $("saveSupabaseBtn").addEventListener("click", flushSupabaseQueue);
       $("exportAllBtn").addEventListener("click", () => exportCsv(rows, sourceData.columns, "전체"));
@@ -852,6 +858,7 @@
           pruneColumnFilters();
           renderColumnControls();
           applyFilters();
+          queueSharedDisplaySettingsSave();
         });
       });
       $("colorChecks").innerHTML = COLOR_GROUPS.map(group => `
@@ -863,19 +870,76 @@
       $("colorAll").checked = visibleColorGroups.size === COLOR_GROUPS.length;
       $("colorAll").indeterminate = visibleColorGroups.size > 0 && visibleColorGroups.size < COLOR_GROUPS.length;
       $("colorCount").textContent = `${visibleColorGroups.size} / ${COLOR_GROUPS.length}개 표시`;
-      $("colorAll").addEventListener("change", event => {
+      $("colorAll").onchange = event => {
         visibleColorGroups = event.target.checked ? new Set(COLOR_GROUPS) : new Set();
         renderColumnControls();
         applyFilters();
-      });
+        queueSharedDisplaySettingsSave();
+      };
       $("colorChecks").querySelectorAll("input[data-color-group]").forEach(input => {
         input.addEventListener("change", event => {
           const group = event.target.dataset.colorGroup;
           event.target.checked ? visibleColorGroups.add(group) : visibleColorGroups.delete(group);
           renderColumnControls();
           applyFilters();
+          queueSharedDisplaySettingsSave();
         });
       });
+    }
+
+    async function loadSharedDisplaySettings() {
+      if (!supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from(SETTINGS_TABLE_NAME)
+          .select("value")
+          .eq("key", DISPLAY_SETTINGS_KEY)
+          .maybeSingle();
+        if (error) throw error;
+        if (displaySettingsTouched || !applySharedDisplaySettings(data?.value)) return;
+        renderColumnControls();
+        applyFilters();
+      } catch (error) {
+        console.warn("Supabase settings load failed", error);
+      }
+    }
+
+    function applySharedDisplaySettings(settings) {
+      if (!settings || typeof settings !== "object") return false;
+      if (Array.isArray(settings.visibleColumns)) {
+        visibleColumns = new Set(settings.visibleColumns.filter(field => DEFAULT_TABLE_COLUMNS.includes(field)));
+      }
+      if (Array.isArray(settings.visibleColorGroups)) {
+        visibleColorGroups = new Set(settings.visibleColorGroups.filter(group => COLOR_GROUPS.includes(group)));
+      }
+      pruneColumnFilters();
+      return true;
+    }
+
+    function queueSharedDisplaySettingsSave() {
+      if (!supabaseClient) return;
+      displaySettingsTouched = true;
+      if (settingsSaveTimer) clearTimeout(settingsSaveTimer);
+      settingsSaveTimer = setTimeout(saveSharedDisplaySettings, 300);
+    }
+
+    async function saveSharedDisplaySettings() {
+      if (!supabaseClient) return;
+      settingsSaveTimer = null;
+      try {
+        const { error } = await supabaseClient
+          .from(SETTINGS_TABLE_NAME)
+          .upsert({
+            key: DISPLAY_SETTINGS_KEY,
+            value: {
+              visibleColumns: [...visibleColumns],
+              visibleColorGroups: [...visibleColorGroups]
+            }
+          }, { onConflict: "key" });
+        if (error) throw error;
+      } catch (error) {
+        console.warn("Supabase settings save failed", error);
+      }
     }
 
     function applyFilters(renderHead = true) {
@@ -927,6 +991,11 @@
         tr.addEventListener("click", event => {
           if (event.detail > 1 || event.target.closest("input, [contenteditable]")) return;
           handleRowClick(Number(tr.dataset.row), event);
+        });
+        tr.addEventListener("contextmenu", event => {
+          if (event.target.closest("input, [contenteditable]")) return;
+          event.preventDefault();
+          handleRowContextMenu(Number(tr.dataset.row), event);
         });
       });
       tableBody.querySelectorAll("td[data-field]").forEach(td => {
@@ -1066,6 +1135,12 @@
         return;
       }
       selectSingleRow(sourceRow);
+    }
+
+    function handleRowContextMenu(sourceRow, event) {
+      if (!selectedRows.has(sourceRow)) {
+        selectSingleRow(sourceRow);
+      }
       openColorPopover(sourceRow, event.clientX, event.clientY);
     }
 
@@ -1073,6 +1148,7 @@
       selectedRows.clear();
       selectedRows.add(sourceRow);
       lastSelectedRow = sourceRow;
+      closeColorPopover();
       renderTable(false);
     }
 
