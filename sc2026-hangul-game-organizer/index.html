@@ -478,11 +478,11 @@
       font-weight: 700;
     }
 
-    .cell-edit {
-      width: 100%;
-      min-height: 28px;
-      padding: 4px 6px;
-      font: inherit;
+    .cell-editing {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+      background: #ffffff;
+      cursor: text;
     }
 
     .flag {
@@ -925,7 +925,7 @@
       }
       tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
         tr.addEventListener("click", event => {
-          if (event.detail > 1 || event.target.closest("input")) return;
+          if (event.detail > 1 || event.target.closest("input, [contenteditable]")) return;
           handleRowClick(Number(tr.dataset.row), event);
         });
       });
@@ -1093,44 +1093,62 @@
     }
 
     function startCellEdit(cell) {
-      if (cell.querySelector("input")) return;
+      if (cell.isContentEditable) return;
       const rowEl = cell.closest("tr[data-row]");
       const row = rows.find(item => item.source_row === Number(rowEl?.dataset.row));
       const field = cell.dataset.field;
       if (!row || !field) return;
       closeColorPopover();
       const originalValue = cleanText(row.payload[field]);
-      cell.innerHTML = `<input class="cell-edit" value="${escapeAttr(originalValue)}" />`;
-      const input = cell.querySelector("input");
-      input.focus();
-      input.select();
+      cell.textContent = originalValue;
+      cell.setAttribute("contenteditable", "plaintext-only");
+      cell.classList.add("cell-editing");
+      cell.focus();
+      selectCellText(cell);
       let committed = false;
-      const restoreCell = value => {
+      const finish = value => {
+        cell.removeEventListener("keydown", handleEditKeydown);
+        cell.removeAttribute("contenteditable");
+        cell.classList.remove("cell-editing");
         cell.textContent = cleanText(value);
         cell.classList.toggle("cell-dirty", dirtyCells.has(dirtyKey(row.source_row, field)));
       };
       const commit = () => {
         if (committed) return;
         committed = true;
-        const nextValue = input.value.trim();
+        const nextValue = cell.textContent.trim();
         const storedValue = nextValue || null;
         row.payload[field] = storedValue;
         if (storedValue !== (originalValue || null)) dirtyCells.add(dirtyKey(row.source_row, field));
-        restoreCell(storedValue);
+        finish(storedValue);
         if (storedValue !== (originalValue || null)) queueSupabaseSave(row);
       };
-      input.addEventListener("keydown", event => {
+      const cancel = () => {
+        if (committed) return;
+        committed = true;
+        finish(originalValue);
+      };
+      const handleEditKeydown = event => {
         if (event.key === "Enter") {
           event.preventDefault();
           commit();
         }
         if (event.key === "Escape") {
           event.preventDefault();
-          committed = true;
-          restoreCell(originalValue);
+          event.stopPropagation();
+          cancel();
         }
-      });
-      input.addEventListener("blur", commit, { once: true });
+      };
+      cell.addEventListener("keydown", handleEditKeydown);
+      cell.addEventListener("blur", commit, { once: true });
+    }
+
+    function selectCellText(cell) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
 
     function exportCsv(targetRows, fields, scope) {
