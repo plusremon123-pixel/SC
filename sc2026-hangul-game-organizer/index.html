@@ -797,8 +797,9 @@
 
     init();
 
-    function init() {
+    async function init() {
       initSupabase();
+      await loadSupabaseRows();
       populateFilters();
       renderColumnControls();
       bindEvents();
@@ -822,6 +823,40 @@
         color_code: row.color_code,
         payload: { ...row.payload }
       }));
+    }
+
+    async function loadSupabaseRows() {
+      if (!supabaseClient) return;
+      try {
+        const dbRows = [];
+        const pageSize = 1000;
+        for (let from = 0; ; from += pageSize) {
+          const { data, error } = await supabaseClient
+            .from(TABLE_NAME)
+            .select("source_row,color_group,color_code,payload")
+            .gte("source_row", 0)
+            .order("source_row", { ascending: true })
+            .range(from, from + pageSize - 1);
+          if (error) throw error;
+          dbRows.push(...(data || []));
+          if (!data || data.length < pageSize) break;
+        }
+        mergeSupabaseRows(dbRows);
+      } catch (error) {
+        console.warn("Supabase row load failed", error);
+      }
+    }
+
+    function mergeSupabaseRows(dbRows) {
+      if (!dbRows?.length) return;
+      const rowMap = new Map(rows.map(row => [row.source_row, row]));
+      dbRows.forEach(dbRow => {
+        const row = rowMap.get(Number(dbRow.source_row));
+        if (!row) return;
+        row.color_group = dbRow.color_group || "투명or흰색";
+        row.color_code = dbRow.color_code || "";
+        row.payload = { ...row.payload, ...(dbRow.payload || {}) };
+      });
     }
 
     function bindEvents() {
