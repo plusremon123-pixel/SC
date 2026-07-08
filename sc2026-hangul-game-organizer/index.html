@@ -673,7 +673,6 @@
   </div>
 
   <script>
-    const STORE_KEY = "hangul-game-organizer:v2";
     const TABLE_NAME = "sc2026";
     const IMPORTANT_FIELDS = [
       "앱패키지명", "옵션값(OPT_CODE)", "전체과목코드", "전체과목명", "영역명",
@@ -747,9 +746,7 @@
       color_code: row.color_code || "",
       payload: { ...row.payload }
     }));
-    const originalRowMap = new Map(originalRows.map(row => [row.source_row, row]));
-    let rowPatchMap = new Map();
-    let rows = loadRows();
+    let rows = cloneOriginalRows();
     let filteredRows = [];
     let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
     let visibleColorGroups = new Set(COLOR_GROUPS);
@@ -757,7 +754,6 @@
     let columnFilters = {};
     let selectedRows = new Set();
     let lastSelectedRow = null;
-    let persistTimer = null;
 
     const $ = id => document.getElementById(id);
     const table = document.querySelector("table");
@@ -780,21 +776,6 @@
       applyFilters();
     }
 
-    function loadRows() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-        if (saved?.patches?.length) {
-          rowPatchMap = new Map(saved.patches.map(patch => [patch.source_row, patch]));
-          return applySavedPatches(saved.patches);
-        }
-        if (saved?.rows?.length) {
-          rowPatchMap = new Map(saved.rows.map(makePatchForRow).filter(Boolean).map(patch => [patch.source_row, patch]));
-          return saved.rows;
-        }
-      } catch {}
-      return cloneOriginalRows();
-    }
-
     function cloneOriginalRows() {
       return originalRows.map(row => ({
         source_row: row.source_row,
@@ -802,54 +783,6 @@
         color_code: row.color_code,
         payload: { ...row.payload }
       }));
-    }
-
-    function applySavedPatches(patches) {
-      const clonedRows = cloneOriginalRows();
-      const rowMap = new Map(clonedRows.map(row => [row.source_row, row]));
-      patches.forEach(patch => {
-        const row = rowMap.get(patch.source_row);
-        if (!row) return;
-        if ("color_group" in patch) row.color_group = patch.color_group;
-        if ("color_code" in patch) row.color_code = patch.color_code;
-        if (patch.payload) Object.assign(row.payload, patch.payload);
-      });
-      return clonedRows;
-    }
-
-    function persistRows(immediate = false) {
-      if (persistTimer) clearTimeout(persistTimer);
-      if (immediate) {
-        saveRowsNow();
-        return;
-      }
-      persistTimer = setTimeout(saveRowsNow, 2000);
-    }
-
-    function saveRowsNow() {
-      if (persistTimer) clearTimeout(persistTimer);
-      persistTimer = null;
-      localStorage.setItem(STORE_KEY, JSON.stringify({ patches: [...rowPatchMap.values()] }));
-    }
-
-    function recordRowPatch(row) {
-      const patch = makePatchForRow(row);
-      if (patch) rowPatchMap.set(row.source_row, patch);
-      else rowPatchMap.delete(row.source_row);
-    }
-
-    function makePatchForRow(row) {
-      const original = originalRowMap.get(row.source_row);
-      if (!original) return null;
-      const patch = { source_row: row.source_row };
-      if (row.color_group !== original.color_group) patch.color_group = row.color_group;
-      if (row.color_code !== original.color_code) patch.color_code = row.color_code;
-      const payloadPatch = {};
-      Object.keys(row.payload).forEach(field => {
-        if (row.payload[field] !== original.payload[field]) payloadPatch[field] = row.payload[field];
-      });
-      if (Object.keys(payloadPatch).length) patch.payload = payloadPatch;
-      return Object.keys(patch).length > 1 ? patch : null;
     }
 
     function bindEvents() {
@@ -864,9 +797,6 @@
       });
       $("exportAllBtn").addEventListener("click", () => exportCsv(rows, sourceData.columns, "전체"));
       $("exportVisibleBtn").addEventListener("click", () => exportCsv(filteredRows, getVisibleTableColumns(), "표시"));
-      window.addEventListener("beforeunload", () => {
-        if (persistTimer) saveRowsNow();
-      });
     }
 
     function populateFilters() {
@@ -1162,10 +1092,6 @@
         const storedValue = nextValue || null;
         row.payload[field] = storedValue;
         restoreCell(storedValue);
-        if (storedValue !== (originalValue || null)) {
-          recordRowPatch(row);
-          persistRows();
-        }
       };
       input.addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -1246,11 +1172,9 @@
       getColorTargetRows().forEach(row => {
         row.color_group = group;
         row.color_code = `manual:${group}`;
-        recordRowPatch(row);
       });
       selectedRows.clear();
       lastSelectedRow = null;
-      persistRows();
       closeColorPopover();
       applyFilters();
     }
