@@ -473,6 +473,11 @@
       word-break: break-all;
     }
 
+    .cell-dirty {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
     .cell-edit {
       width: 100%;
       min-height: 28px;
@@ -607,6 +612,7 @@
         <h1>한깨 재미재미 한글게임 정리</h1>
       </div>
       <div class="toolbar">
+        <button id="saveSupabaseBtn">수정사항 저장</button>
         <button id="exportAllBtn">전체 데이터 다운로드</button>
         <button id="exportVisibleBtn">표시 데이터 다운로드</button>
       </div>
@@ -757,8 +763,8 @@
     let selectedRows = new Set();
     let lastSelectedRow = null;
     let supabaseClient = null;
-    let supabaseSaveTimer = null;
     const supabaseSaveQueue = new Map();
+    const dirtyCells = new Set();
 
     const $ = id => document.getElementById(id);
     const table = document.querySelector("table");
@@ -785,8 +791,10 @@
     function initSupabase() {
       const url = SUPABASE_CONFIG.url || SUPABASE_CONFIG.projectUrl || "";
       const anonKey = SUPABASE_CONFIG.anonKey || SUPABASE_CONFIG.key || "";
-      if (!url || !anonKey || !window.supabase?.createClient) return;
-      supabaseClient = window.supabase.createClient(url, anonKey);
+      if (url && anonKey && window.supabase?.createClient) {
+        supabaseClient = window.supabase.createClient(url, anonKey);
+      }
+      updateSaveButton();
     }
 
     function cloneOriginalRows() {
@@ -808,6 +816,7 @@
         renderColumnControls();
         applyFilters();
       });
+      $("saveSupabaseBtn").addEventListener("click", flushSupabaseQueue);
       $("exportAllBtn").addEventListener("click", () => exportCsv(rows, sourceData.columns, "전체"));
       $("exportVisibleBtn").addEventListener("click", () => exportCsv(filteredRows, getVisibleTableColumns(), "표시"));
     }
@@ -1038,7 +1047,8 @@
       const colorTitle = row.color_code ? `${row.color_group} · ${row.color_code}` : row.color_group || "투명or흰색";
       const cells = getVisibleTableColumns().map(field => {
         const value = cleanText(p[field]);
-        const cellClass = LONG_TEXT_FIELDS.has(field) ? "cell-long" : (field === "경로" ? "cell-path" : "nowrap");
+        const baseClass = LONG_TEXT_FIELDS.has(field) ? "cell-long" : (field === "경로" ? "cell-path" : "nowrap");
+        const cellClass = [baseClass, dirtyCells.has(dirtyKey(row.source_row, field)) ? "cell-dirty" : ""].filter(Boolean).join(" ");
         return `<td class="${cellClass}" data-field="${escapeAttr(field)}">${escapeHtml(value)}</td>`;
       }).join("");
       return `<tr data-row="${row.source_row}" class="${colorClass}" title="${escapeAttr(colorTitle)}">
@@ -1097,6 +1107,7 @@
       let committed = false;
       const restoreCell = value => {
         cell.textContent = cleanText(value);
+        cell.classList.toggle("cell-dirty", dirtyCells.has(dirtyKey(row.source_row, field)));
       };
       const commit = () => {
         if (committed) return;
@@ -1104,6 +1115,7 @@
         const nextValue = input.value.trim();
         const storedValue = nextValue || null;
         row.payload[field] = storedValue;
+        if (storedValue !== (originalValue || null)) dirtyCells.add(dirtyKey(row.source_row, field));
         restoreCell(storedValue);
         if (storedValue !== (originalValue || null)) queueSupabaseSave(row);
       };
@@ -1202,34 +1214,50 @@
     function queueSupabaseSave(row) {
       if (!supabaseClient) return;
       supabaseSaveQueue.set(row.source_row, toSupabaseRow(row));
-      if (supabaseSaveTimer) clearTimeout(supabaseSaveTimer);
-      supabaseSaveTimer = setTimeout(scheduleSupabaseFlush, 8000);
-    }
-
-    function scheduleSupabaseFlush() {
-      supabaseSaveTimer = null;
-      if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(() => flushSupabaseQueue(), { timeout: 5000 });
-      } else {
-        setTimeout(flushSupabaseQueue, 0);
-      }
+      updateSaveButton();
     }
 
     async function flushSupabaseQueue() {
       if (!supabaseClient || !supabaseSaveQueue.size) return;
-      if (supabaseSaveTimer) clearTimeout(supabaseSaveTimer);
-      supabaseSaveTimer = null;
       const payload = [...supabaseSaveQueue.values()];
+      const savedRowKeys = new Set(payload.map(row => row.source_row));
       supabaseSaveQueue.clear();
+      updateSaveButton("저장 중...", true);
       try {
         const { error } = await supabaseClient
           .from(TABLE_NAME)
           .upsert(payload, { onConflict: "source_row" });
         if (error) throw error;
+        dirtyCells.forEach(key => {
+          const [sourceRow] = key.split("::");
+          if (savedRowKeys.has(Number(sourceRow)) && !supabaseSaveQueue.has(Number(sourceRow))) {
+            dirtyCells.delete(key);
+          }
+        });
+        renderTable(false);
+        updateSaveButton();
       } catch (error) {
         console.warn("Supabase save failed", error);
         payload.forEach(row => supabaseSaveQueue.set(row.source_row, row));
+        updateSaveButton(`저장 실패 (${supabaseSaveQueue.size})`);
       }
+    }
+
+    function updateSaveButton(label = null, forceDisabled = false) {
+      const button = $("saveSupabaseBtn");
+      if (!button) return;
+      const count = supabaseSaveQueue.size;
+      if (!supabaseClient) {
+        button.disabled = true;
+        button.textContent = "DB 연결 없음";
+        return;
+      }
+      button.disabled = forceDisabled || !count;
+      button.textContent = label || (count ? `수정사항 저장 (${count})` : "수정사항 저장");
+    }
+
+    function dirtyKey(sourceRow, field) {
+      return `${sourceRow}::${field}`;
     }
 
     function toSupabaseRow(row) {
