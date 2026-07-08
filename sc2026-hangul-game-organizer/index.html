@@ -215,8 +215,20 @@
       background: white;
     }
 
+    tbody tr.row-gray {
+      background: #f3f4f6;
+    }
+
+    tbody tr.row-yellow {
+      background: #fffbeb;
+    }
+
+    tbody tr.row-green {
+      background: #f0fdf4;
+    }
+
     tbody tr:hover {
-      background: #f8fbff;
+      background: #eef6ff;
     }
 
     tbody tr.active {
@@ -399,7 +411,6 @@
               <th>목차명</th>
               <th>DTL_LIST</th>
               <th>ZIP</th>
-              <th>색상</th>
               <th>차시시스템</th>
               <th>목차번호</th>
             </tr>
@@ -612,7 +623,9 @@
     function rowHtml(row) {
       const p = row.payload;
       const active = selectedSourceRow === row.source_row ? "active" : "";
-      return `<tr data-row="${row.source_row}" class="${active}">
+      const colorClass = rowColorClass(row.color_group);
+      const colorTitle = row.color_code ? `${row.color_group} · ${row.color_code}` : row.color_group || "투명or흰색";
+      return `<tr data-row="${row.source_row}" class="${active} ${colorClass}" title="${escapeAttr(colorTitle)}">
         <td><input data-check-row="${row.source_row}" type="checkbox" ${selectedRows.has(row.source_row) ? "checked" : ""}></td>
         <td class="nowrap">${row.source_row}</td>
         <td>${tag(cleanText(p["옵션값(OPT_CODE)"]))}</td>
@@ -622,7 +635,6 @@
         <td><div class="truncate" title="${escapeAttr(cleanText(p["목차명"]))}">${escapeHtml(cleanText(p["목차명"]))}</div></td>
         <td>${escapeHtml(cleanText(p["DTL_LIST"]))}</td>
         <td>${escapeHtml(cleanText(p["코너ZIP파일명"]))}</td>
-        <td>${colorFlag(row.color_group, row.color_code)}</td>
         <td>${escapeHtml(cleanText(p["차시시스템코드"]))}</td>
         <td>${escapeHtml(cleanText(p["목차번호"]))}</td>
       </tr>`;
@@ -838,10 +850,11 @@
       el.style.color = isError ? "var(--bad)" : "var(--muted)";
     }
 
-    function colorFlag(group, code) {
-      const className = group === "초록" ? "ok" : group === "노랑" ? "warn" : group === "회색" ? "" : "soft";
-      const title = code ? ` title="${escapeAttr(code)}"` : "";
-      return `<span class="flag ${className}"${title}>${escapeHtml(group || "투명or흰색")}</span>`;
+    function rowColorClass(group) {
+      if (group === "회색") return "row-gray";
+      if (group === "노랑") return "row-yellow";
+      if (group === "초록") return "row-green";
+      return "";
     }
 
     function tag(value) {
