@@ -402,7 +402,8 @@
     }
 
     tbody tr.row-blue {
-      background: #eff6ff;
+      background: #dbeafe;
+      box-shadow: inset 4px 0 0 #2563eb;
     }
 
     tbody tr.row-selected {
@@ -413,6 +414,12 @@
 
     tbody tr.row-selected:hover {
       background: #dbeafe;
+    }
+
+    tbody tr.row-blue.row-selected,
+    tbody tr.row-blue.row-selected:hover {
+      background: #bfdbfe;
+      box-shadow: inset 4px 0 0 #1d4ed8;
     }
 
     tbody tr:hover {
@@ -748,8 +755,7 @@
     ]);
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
     const SUPABASE_CONFIG = window.SC2026_SUPABASE || {};
-    const BASE_COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
-    const COLOR_GROUPS = [...new Set([...BASE_COLOR_GROUPS.filter(group => group !== "투명or흰색"), "파랑", "투명or흰색"])];
+    const COLOR_GROUPS = ["파랑", "회색", "노랑", "초록", "투명or흰색"];
     const originalRows = sourceData.rows.map(row => ({
       source_row: row.source_row,
       color_group: row.color_group || "투명or흰색",
