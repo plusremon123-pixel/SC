@@ -773,7 +773,7 @@
     let filteredRows = [];
     let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
     let visibleColorGroups = new Set(COLOR_GROUPS);
-    let sortState = { field: null, direction: "asc" };
+    let sortState = [];
     let columnFilters = {};
     let selectedRows = new Set();
     let lastSelectedRow = null;
@@ -1028,6 +1028,7 @@
       columnFilters = Object.fromEntries(
         Object.entries(columnFilters).filter(([field]) => FILTERABLE_FIELDS.has(field) && visibleColumns.has(field))
       );
+      sortState = sortState.filter(sort => visibleColumns.has(sort.field));
     }
 
     function renderTableHead() {
@@ -1037,7 +1038,7 @@
         ${columnHeaders}
       </tr>`;
       tableHead.querySelectorAll("button[data-sort-field]").forEach(button => {
-        button.addEventListener("click", () => toggleSort(button.dataset.sortField));
+        button.addEventListener("click", event => toggleSort(button.dataset.sortField, event));
       });
       tableHead.querySelectorAll("button[data-filter-field]").forEach(button => {
         button.addEventListener("click", event => {
@@ -1067,7 +1068,9 @@
     }
 
     function sortHeader(field, label) {
-      const mark = sortState.field === field ? (sortState.direction === "asc" ? "▲" : "▼") : "";
+      const sortIndex = sortState.findIndex(sort => sort.field === field);
+      const sort = sortState[sortIndex];
+      const mark = sort ? `${sort.direction === "asc" ? "▲" : "▼"}${sortState.length > 1 ? sortIndex + 1 : ""}` : "";
       return `<button type="button" class="sort-button" data-sort-field="${escapeAttr(field)}" title="정렬" aria-label="${escapeAttr(`${label} 정렬`)}">
         <span>${escapeHtml(label)}</span><span class="sort-mark">${mark}</span>
       </button>`;
@@ -1079,13 +1082,19 @@
       return `<button type="button" class="filter-button${active}" data-filter-field="${escapeAttr(field)}" title="필터">▾</button>`;
     }
 
-    function toggleSort(field) {
-      if (sortState.field !== field) {
-        sortState = { field, direction: "desc" };
-      } else if (sortState.direction === "desc") {
-        sortState = { field, direction: "asc" };
+    function toggleSort(field, event) {
+      const additive = Boolean(event?.shiftKey);
+      const nextSortState = additive ? [...sortState] : sortState.filter(sort => sort.field === field);
+      const existingIndex = nextSortState.findIndex(sort => sort.field === field);
+      if (existingIndex === -1) {
+        nextSortState.push({ field, direction: "desc" });
+      } else if (nextSortState[existingIndex].direction === "desc") {
+        nextSortState[existingIndex] = { field, direction: "asc" };
       } else {
-        sortState = { field: null, direction: null };
+        nextSortState.splice(existingIndex, 1);
+      }
+      sortState = nextSortState;
+      if (!sortState.length) {
         applyFilters();
         return;
       }
@@ -1095,9 +1104,15 @@
     }
 
     function applySort() {
-      if (!sortState.field) return;
-      const direction = sortState.direction === "asc" ? 1 : -1;
-      filteredRows.sort((a, b) => compareRows(a, b, sortState.field) * direction);
+      if (!sortState.length) return;
+      filteredRows.sort((a, b) => {
+        for (const sort of sortState) {
+          const direction = sort.direction === "asc" ? 1 : -1;
+          const result = compareRows(a, b, sort.field) * direction;
+          if (result) return result;
+        }
+        return 0;
+      });
     }
 
     function moveGrayRowsLast() {
