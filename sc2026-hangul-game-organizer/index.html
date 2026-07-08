@@ -704,6 +704,15 @@
       "검증 등록일": 112
     };
     const LONG_TEXT_FIELDS = new Set(["전체과목명", "차시명", "목차명"]);
+    const FILTERABLE_FIELDS = new Set([
+      "전체과목명",
+      "차시명",
+      "목차명",
+      "경로",
+      "개정년도",
+      "개정여부",
+      "검증 등록일"
+    ]);
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
     const COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
     const originalRows = sourceData.rows.map(row => ({
@@ -883,7 +892,7 @@
 
     function pruneColumnFilters() {
       columnFilters = Object.fromEntries(
-        Object.entries(columnFilters).filter(([field]) => field === "__row" || visibleColumns.has(field))
+        Object.entries(columnFilters).filter(([field]) => FILTERABLE_FIELDS.has(field) && visibleColumns.has(field))
       );
     }
 
@@ -928,6 +937,7 @@
     }
 
     function filterButton(field) {
+      if (!FILTERABLE_FIELDS.has(field)) return "";
       const active = columnFilters[field] ? " active-filter" : "";
       return `<button type="button" class="filter-button${active}" data-filter-field="${escapeAttr(field)}" title="필터">▾</button>`;
     }
@@ -1155,7 +1165,7 @@
     }
 
     function applyFilterPopover() {
-      if (!filterPopoverField) return;
+      if (!filterPopoverField || !FILTERABLE_FIELDS.has(filterPopoverField)) return;
       const value = filterPopoverInput.value.trim();
       if (value) columnFilters[filterPopoverField] = value;
       else delete columnFilters[filterPopoverField];
