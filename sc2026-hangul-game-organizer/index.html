@@ -747,6 +747,8 @@
       color_code: row.color_code || "",
       payload: { ...row.payload }
     }));
+    const originalRowMap = new Map(originalRows.map(row => [row.source_row, row]));
+    let rowPatchMap = new Map();
     let rows = loadRows();
     let filteredRows = [];
     let visibleColumns = new Set(DEFAULT_TABLE_COLUMNS);
@@ -781,8 +783,14 @@
     function loadRows() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-        if (saved?.patches?.length) return applySavedPatches(saved.patches);
-        if (saved?.rows?.length) return saved.rows;
+        if (saved?.patches?.length) {
+          rowPatchMap = new Map(saved.patches.map(patch => [patch.source_row, patch]));
+          return applySavedPatches(saved.patches);
+        }
+        if (saved?.rows?.length) {
+          rowPatchMap = new Map(saved.rows.map(makePatchForRow).filter(Boolean).map(patch => [patch.source_row, patch]));
+          return saved.rows;
+        }
       } catch {}
       return cloneOriginalRows();
     }
@@ -815,30 +823,33 @@
         saveRowsNow();
         return;
       }
-      persistTimer = setTimeout(saveRowsNow, 900);
+      persistTimer = setTimeout(saveRowsNow, 2000);
     }
 
     function saveRowsNow() {
       if (persistTimer) clearTimeout(persistTimer);
       persistTimer = null;
-      localStorage.setItem(STORE_KEY, JSON.stringify({ patches: buildRowPatches() }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ patches: [...rowPatchMap.values()] }));
     }
 
-    function buildRowPatches() {
-      const originalMap = new Map(originalRows.map(row => [row.source_row, row]));
-      return rows.map(row => {
-        const original = originalMap.get(row.source_row);
-        if (!original) return null;
-        const patch = { source_row: row.source_row };
-        if (row.color_group !== original.color_group) patch.color_group = row.color_group;
-        if (row.color_code !== original.color_code) patch.color_code = row.color_code;
-        const payloadPatch = {};
-        Object.keys(row.payload).forEach(field => {
-          if (row.payload[field] !== original.payload[field]) payloadPatch[field] = row.payload[field];
-        });
-        if (Object.keys(payloadPatch).length) patch.payload = payloadPatch;
-        return Object.keys(patch).length > 1 ? patch : null;
-      }).filter(Boolean);
+    function recordRowPatch(row) {
+      const patch = makePatchForRow(row);
+      if (patch) rowPatchMap.set(row.source_row, patch);
+      else rowPatchMap.delete(row.source_row);
+    }
+
+    function makePatchForRow(row) {
+      const original = originalRowMap.get(row.source_row);
+      if (!original) return null;
+      const patch = { source_row: row.source_row };
+      if (row.color_group !== original.color_group) patch.color_group = row.color_group;
+      if (row.color_code !== original.color_code) patch.color_code = row.color_code;
+      const payloadPatch = {};
+      Object.keys(row.payload).forEach(field => {
+        if (row.payload[field] !== original.payload[field]) payloadPatch[field] = row.payload[field];
+      });
+      if (Object.keys(payloadPatch).length) patch.payload = payloadPatch;
+      return Object.keys(patch).length > 1 ? patch : null;
     }
 
     function bindEvents() {
@@ -1151,7 +1162,10 @@
         const storedValue = nextValue || null;
         row.payload[field] = storedValue;
         restoreCell(storedValue);
-        if (storedValue !== (originalValue || null)) persistRows();
+        if (storedValue !== (originalValue || null)) {
+          recordRowPatch(row);
+          persistRows();
+        }
       };
       input.addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -1232,6 +1246,7 @@
       getColorTargetRows().forEach(row => {
         row.color_group = group;
         row.color_code = `manual:${group}`;
+        recordRowPatch(row);
       });
       selectedRows.clear();
       lastSelectedRow = null;
