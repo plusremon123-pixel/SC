@@ -810,7 +810,6 @@
       });
       $("exportAllBtn").addEventListener("click", () => exportCsv(rows, sourceData.columns, "전체"));
       $("exportVisibleBtn").addEventListener("click", () => exportCsv(filteredRows, getVisibleTableColumns(), "표시"));
-      window.addEventListener("beforeunload", flushSupabaseQueue);
     }
 
     function populateFilters() {
@@ -1204,7 +1203,16 @@
       if (!supabaseClient) return;
       supabaseSaveQueue.set(row.source_row, toSupabaseRow(row));
       if (supabaseSaveTimer) clearTimeout(supabaseSaveTimer);
-      supabaseSaveTimer = setTimeout(flushSupabaseQueue, 1200);
+      supabaseSaveTimer = setTimeout(scheduleSupabaseFlush, 8000);
+    }
+
+    function scheduleSupabaseFlush() {
+      supabaseSaveTimer = null;
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(() => flushSupabaseQueue(), { timeout: 5000 });
+      } else {
+        setTimeout(flushSupabaseQueue, 0);
+      }
     }
 
     async function flushSupabaseQueue() {
