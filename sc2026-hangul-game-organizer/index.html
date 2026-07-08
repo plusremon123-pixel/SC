@@ -245,7 +245,7 @@
       border-collapse: separate;
       border-spacing: 0;
       font-size: 13px;
-      min-width: 1480px;
+      min-width: 1900px;
     }
 
     thead th {
@@ -521,23 +521,27 @@
     ];
     const TABLE_FIELDS = [
       "옵션값(OPT_CODE)", "전체과목명", "영역명", "차시명", "목차명",
-      "DTL_LIST", "코너ZIP파일명", "차시시스템코드", "목차번호", "DTL_LIST.1"
+      "DTL_LIST", "코너일련번호", "코너ZIP파일경로", "코너ZIP파일명",
+      "차시시스템코드", "목차번호", "DTL_LIST.1"
     ];
     const DEFAULT_TABLE_COLUMNS = [
-      "앱패키지명명",
-      "앱패키지명",
       "경로",
       "전체과목명",
-      "영역명",
       "단원일련번호",
       "차시일련번호",
       "학년코드",
       "학기코드",
       "단원노출순서",
       "목차일련번호",
+      "코너일련번호",
+      "코너ZIP파일경로",
+      "코너ZIP파일명",
+      "개정년도",
+      "개정여부",
       "차시명",
       "차시시스템코드",
-      "목차명"
+      "목차명",
+      "검증 등록일"
     ];
     const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
     const COLOR_GROUPS = sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"];
@@ -708,7 +712,7 @@
       const colorTitle = row.color_code ? `${row.color_group} · ${row.color_code}` : row.color_group || "투명or흰색";
       const cells = getVisibleTableColumns().map(field => {
         const value = cleanText(p[field]);
-        const content = field === "차시명" || field === "목차명" || field === "앱패키지명명" || field === "앱패키지명" || field === "경로"
+        const content = field === "차시명" || field === "목차명" || field === "경로" || field === "코너ZIP파일경로" || field === "코너ZIP파일명"
           ? `<div class="truncate" title="${escapeAttr(value)}">${escapeHtml(value)}</div>`
           : escapeHtml(value);
         return `<td>${content}</td>`;
