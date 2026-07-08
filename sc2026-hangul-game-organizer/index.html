@@ -585,8 +585,8 @@
         <h1>한깨 재미재미 한글게임 정리</h1>
       </div>
       <div class="toolbar">
-        <button id="exportCsvBtn">CSV</button>
-        <button id="exportJsonBtn">JSON</button>
+        <button id="exportAllBtn">전체 데이터 다운로드</button>
+        <button id="exportVisibleBtn">표시 데이터 다운로드</button>
       </div>
     </header>
 
@@ -780,8 +780,8 @@
         renderColumnControls();
         applyFilters();
       });
-      $("exportCsvBtn").addEventListener("click", exportCsv);
-      $("exportJsonBtn").addEventListener("click", exportJson);
+      $("exportAllBtn").addEventListener("click", () => exportCsv(rows, sourceData.columns, "전체"));
+      $("exportVisibleBtn").addEventListener("click", () => exportCsv(filteredRows, getVisibleTableColumns(), "표시"));
     }
 
     function populateFilters() {
@@ -1050,17 +1050,13 @@
       input.addEventListener("blur", commit, { once: true });
     }
 
-    function exportJson() {
-      download(`sc2026-${today()}.json`, JSON.stringify({ table: TABLE_NAME, rows }, null, 2), "application/json;charset=utf-8");
-    }
-
-    function exportCsv() {
-      const headers = ["source_row", "color_group", "color_code", ...sourceData.columns];
+    function exportCsv(targetRows, fields, scope) {
+      const headers = ["color_group", "color_code", ...fields.map(getColumnLabel)];
       const lines = [headers.map(csvCell).join(",")];
-      rows.forEach(row => {
-        lines.push([row.source_row, row.color_group, row.color_code, ...sourceData.columns.map(col => row.payload[col])].map(csvCell).join(","));
+      targetRows.forEach(row => {
+        lines.push([row.color_group, row.color_code, ...fields.map(field => row.payload[field])].map(csvCell).join(","));
       });
-      download(`sc2026-${today()}.csv`, lines.join("\n"), "text/csv;charset=utf-8");
+      download(`sc2026-${scope}-${today()}.csv`, `\ufeff${lines.join("\n")}`, "text/csv;charset=utf-8");
     }
 
     function csvCell(value) {
