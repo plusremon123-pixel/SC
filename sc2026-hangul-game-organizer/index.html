@@ -431,6 +431,9 @@
       <label>옵션값
         <select id="optFilter"></select>
       </label>
+      <label>목차명
+        <select id="menuFilter"></select>
+      </label>
       <label>색상구분
         <select id="colorFilter"></select>
       </label>
@@ -580,7 +583,7 @@
     }
 
     function bindEvents() {
-      ["searchInput", "subjectFilter", "optFilter", "colorFilter", "systemCodeFilter"].forEach(id => {
+      ["searchInput", "subjectFilter", "optFilter", "menuFilter", "colorFilter", "systemCodeFilter"].forEach(id => {
         $(id).addEventListener("input", applyFilters);
       });
       $("columnAll").addEventListener("change", event => {
@@ -605,6 +608,7 @@
     function populateFilters() {
       fillSelect("subjectFilter", "전체", uniqueValues("전체과목명"));
       fillSelect("optFilter", "전체", uniqueValues("옵션값(OPT_CODE)"));
+      fillSelect("menuFilter", "전체", uniqueValues("목차명"));
       fillSelect("colorFilter", "전체", sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"]);
     }
 
@@ -641,6 +645,7 @@
       const term = $("searchInput").value.trim().toLowerCase();
       const subject = $("subjectFilter").value;
       const opt = $("optFilter").value;
+      const menu = $("menuFilter").value;
       const color = $("colorFilter").value;
       const systemCode = $("systemCodeFilter").value.trim().toLowerCase();
 
@@ -648,6 +653,7 @@
         const p = row.payload;
         if (subject && cleanText(p["전체과목명"]) !== subject) return false;
         if (opt && cleanText(p["옵션값(OPT_CODE)"]) !== opt) return false;
+        if (menu && cleanText(p["목차명"]) !== menu) return false;
         if (color && row.color_group !== color) return false;
         if (systemCode && !cleanText(p["차시시스템코드"]).toLowerCase().includes(systemCode)) return false;
         if (term) {
