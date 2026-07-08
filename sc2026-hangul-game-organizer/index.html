@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>한깨 재미재미 한글게임 정리</title>
+  <script src="./hangul-game-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #64748b;
+      --line: #d9e0e8;
+      --soft: #f6f8fb;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --blue: #2563eb;
+      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+      color: var(--ink);
+      background: #eef2f6;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 7px;
+      padding: 8px 11px;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: #94a3b8; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    button.primary:hover { background: var(--accent-dark); }
+    button.blue { background: var(--blue); border-color: var(--blue); color: white; }
+    button.ghost { background: transparent; }
+    button.danger { color: var(--bad); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .source {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .filters {
+      padding: 14px 20px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1.8fr) repeat(4, minmax(140px, 1fr)) auto;
+      gap: 10px;
+      align-items: end;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      min-width: 0;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      background: white;
+      color: var(--ink);
+      min-height: 36px;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .toggle {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      height: 36px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .toggle input {
+      width: 16px;
+      min-height: 16px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 10px;
+      padding: 14px 20px 0;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .metric strong {
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    main {
+      min-height: 0;
+      padding: 14px 20px 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 14px;
+    }
+
+    .table-wrap, .detail, .supabase-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      min-height: 420px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+      min-width: 1120px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #e8f1f1;
+      border-bottom: 1px solid #b7c8c8;
+      color: #173635;
+      text-align: left;
+      padding: 9px 8px;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      border-bottom: 1px solid #edf1f5;
+      padding: 8px;
+      vertical-align: top;
+      max-width: 220px;
+    }
+
+    tbody tr {
+      background: white;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    tbody tr.active {
+      background: #fff7ed;
+      outline: 2px solid #fed7aa;
+      outline-offset: -2px;
+    }
+
+    .cell-muted { color: var(--muted); }
+    .nowrap { white-space: nowrap; }
+    .truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .flag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 12px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      white-space: nowrap;
+    }
+
+    .flag.ok { color: #166534; background: #ecfdf3; border-color: #bbf7d0; }
+    .flag.warn { color: var(--warn); background: #fff7ed; border-color: #fed7aa; }
+    .flag.bad { color: var(--bad); background: #fef2f2; border-color: #fecaca; }
+
+    .side {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+    }
+
+    .panel-head {
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .panel-head strong {
+      font-size: 15px;
+    }
+
+    .detail-body {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      max-height: calc(100vh - 330px);
+      overflow: auto;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .field-grid label {
+      color: #334155;
+      font-size: 12px;
+    }
+
+    .empty {
+      padding: 38px 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .supabase-body {
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .status {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    dialog {
+      width: min(920px, calc(100vw - 30px));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 0;
+    }
+
+    dialog::backdrop {
+      background: rgba(15, 23, 42, .42);
+    }
+
+    .modal-body {
+      padding: 16px;
+      max-height: 70vh;
+      overflow: auto;
+    }
+
+    pre {
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1100px) {
+      .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stats { grid-template-columns: repeat(3, minmax(120px, 1fr)); }
+      main { grid-template-columns: 1fr; }
+      .detail-body { max-height: none; }
+    }
+
+    @media (max-width: 680px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .toolbar { justify-content: flex-start; }
+      .filters, .stats { grid-template-columns: 1fr; }
+      main { padding: 12px; }
+      h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>한깨 재미재미 한글게임 정리</h1>
+        <div class="source" id="sourceMeta">엑셀 데이터를 불러오는 중</div>
+      </div>
+      <div class="toolbar">
+        <button id="saveLocalBtn">로컬 저장</button>
+        <button id="exportCsvBtn">CSV</button>
+        <button id="exportJsonBtn">JSON</button>
+        <button id="showSqlBtn">Supabase SQL</button>
+      </div>
+    </header>
+
+    <section class="filters">
+      <label>통합 검색
+        <input id="searchInput" type="search" placeholder="차시명, 목차명, ZIP, 담당자 등" />
+      </label>
+      <label>전체과목
+        <select id="subjectFilter"></select>
+      </label>
+      <label>옵션값
+        <select id="optFilter"></select>
+      </label>
+      <label>색상구분
+        <select id="colorFilter"></select>
+      </label>
+      <label>차시시스템코드
+        <input id="systemCodeFilter" placeholder="예: NY05" />
+      </label>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <main>
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input id="selectAll" type="checkbox" /></th>
+              <th>행</th>
+              <th>옵션</th>
+              <th>과목</th>
+              <th>영역</th>
+              <th>차시명</th>
+              <th>목차명</th>
+              <th>DTL_LIST</th>
+              <th>ZIP</th>
+              <th>색상</th>
+              <th>차시시스템</th>
+              <th>목차번호</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </section>
+
+      <aside class="side">
+        <section class="supabase-panel">
+          <div class="panel-head">
+            <strong>Supabase: sc2026</strong>
+            <button class="ghost" id="testDbBtn">연결 확인</button>
+          </div>
+          <div class="supabase-body">
+            <label>Project URL
+              <input id="supabaseUrl" placeholder="https://xxxxx.supabase.co" />
+            </label>
+            <label>Anon key
+              <input id="supabaseKey" type="password" placeholder="eyJ..." />
+            </label>
+            <div class="toolbar">
+              <button class="primary" id="syncSelectedBtn">선택 업서트</button>
+              <button class="blue" id="syncAllBtn">필터 결과 업서트</button>
+              <button id="pullDbBtn">DB 불러오기</button>
+            </div>
+            <div class="status" id="dbStatus">테이블명은 <b>sc2026</b>으로 고정되어 있습니다.</div>
+          </div>
+        </section>
+
+        <section class="detail">
+          <div class="panel-head">
+            <strong>상세 편집</strong>
+            <button id="resetRowBtn" class="danger" disabled>행 초기화</button>
+          </div>
+          <div class="detail-body" id="detailBody">
+            <div class="empty">표에서 행을 선택하면 전체 컬럼을 수정할 수 있습니다.</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="sqlDialog">
+    <div class="panel-head">
+      <strong>Supabase 테이블 생성 SQL</strong>
+      <button id="closeSqlBtn">닫기</button>
+    </div>
+    <div class="modal-body">
+      <pre id="sqlText"></pre>
+    </div>
+  </dialog>
+
+  <script>
+    const STORE_KEY = "hangul-game-organizer:v2";
+    const DB_CONFIG_KEY = "hangul-game-organizer:supabase";
+    const TABLE_NAME = "sc2026";
+    const IMPORTANT_FIELDS = [
+      "앱패키지명", "옵션값(OPT_CODE)", "전체과목코드", "전체과목명", "영역명",
+      "단원일련번호", "차시일련번호", "단원노출순서", "목차일련번호", "DTL_LIST",
+      "코너일련번호", "코너ZIP파일경로", "코너ZIP파일명", "개정년도", "개정여부",
+      "차시명", "차시시스템코드", "목차명", "검증 등록일",
+      "검증2차등록일", "목차번호", "DTL_LIST.1"
+    ];
+    const TABLE_FIELDS = [
+      "옵션값(OPT_CODE)", "전체과목명", "영역명", "차시명", "목차명",
+      "DTL_LIST", "코너ZIP파일명", "차시시스템코드", "목차번호", "DTL_LIST.1"
+    ];
+
+    const sourceData = window.HANGUL_GAME_DATA || { columns: [], rows: [] };
+    const originalRows = sourceData.rows.map(row => ({
+      source_row: row.source_row,
+      color_group: row.color_group || "투명or흰색",
+      color_code: row.color_code || "",
+      payload: { ...row.payload }
+    }));
+    let rows = loadRows();
+    let filteredRows = [];
+    let selectedSourceRow = null;
+    let selectedRows = new Set();
+
+    const $ = id => document.getElementById(id);
+    const tableBody = $("tableBody");
+    const detailBody = $("detailBody");
+
+    init();
+
+    function init() {
+      $("sourceMeta").textContent = `${sourceData.sourceFile || "엑셀"} · ${sourceData.sheetName || "시트"} · ${rows.length.toLocaleString()}행 / ${sourceData.columns.length}열`;
+      restoreDbConfig();
+      populateFilters();
+      bindEvents();
+      applyFilters();
+    }
+
+    function loadRows() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+        if (saved?.rows?.length) return saved.rows;
+      } catch {}
+      return originalRows.map(row => ({
+        source_row: row.source_row,
+        color_group: row.color_group,
+        color_code: row.color_code,
+        payload: { ...row.payload }
+      }));
+    }
+
+    function bindEvents() {
+      ["searchInput", "subjectFilter", "optFilter", "colorFilter", "systemCodeFilter"].forEach(id => {
+        $(id).addEventListener("input", applyFilters);
+      });
+      $("selectAll").addEventListener("change", event => {
+        filteredRows.forEach(row => event.target.checked ? selectedRows.add(row.source_row) : selectedRows.delete(row.source_row));
+        renderTable();
+      });
+      $("saveLocalBtn").addEventListener("click", saveLocal);
+      $("exportCsvBtn").addEventListener("click", exportCsv);
+      $("exportJsonBtn").addEventListener("click", exportJson);
+      $("resetRowBtn").addEventListener("click", resetSelectedRow);
+      $("testDbBtn").addEventListener("click", testDb);
+      $("syncSelectedBtn").addEventListener("click", () => syncRows([...selectedRows]));
+      $("syncAllBtn").addEventListener("click", () => syncRows(filteredRows.map(row => row.source_row)));
+      $("pullDbBtn").addEventListener("click", pullDb);
+      $("supabaseUrl").addEventListener("change", saveDbConfig);
+      $("supabaseKey").addEventListener("change", saveDbConfig);
+      $("showSqlBtn").addEventListener("click", showSql);
+      $("closeSqlBtn").addEventListener("click", () => $("sqlDialog").close());
+    }
+
+    function populateFilters() {
+      fillSelect("subjectFilter", "전체", uniqueValues("전체과목명"));
+      fillSelect("optFilter", "전체", uniqueValues("옵션값(OPT_CODE)"));
+      fillSelect("colorFilter", "전체", sourceData.colorGroups || ["회색", "노랑", "초록", "투명or흰색"]);
+    }
+
+    function uniqueValues(field) {
+      return [...new Set(rows.map(row => cleanText(row.payload[field])).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
+    }
+
+    function fillSelect(id, firstLabel, values) {
+      const select = $(id);
+      select.innerHTML = `<option value="">${firstLabel}</option>` + values.map(value => `<option>${escapeHtml(value)}</option>`).join("");
+    }
+
+    function applyFilters() {
+      const term = $("searchInput").value.trim().toLowerCase();
+      const subject = $("subjectFilter").value;
+      const opt = $("optFilter").value;
+      const color = $("colorFilter").value;
+      const systemCode = $("systemCodeFilter").value.trim().toLowerCase();
+
+      filteredRows = rows.filter(row => {
+        const p = row.payload;
+        if (subject && cleanText(p["전체과목명"]) !== subject) return false;
+        if (opt && cleanText(p["옵션값(OPT_CODE)"]) !== opt) return false;
+        if (color && row.color_group !== color) return false;
+        if (systemCode && !cleanText(p["차시시스템코드"]).toLowerCase().includes(systemCode)) return false;
+        if (term) {
+          const haystack = TABLE_FIELDS.concat(["코너ZIP파일경로", "전체과목코드", "경로", "학년코드", "학기코드"])
+            .map(field => cleanText(p[field]).toLowerCase()).join(" ");
+          if (!haystack.includes(term)) return false;
+        }
+        return true;
+      });
+
+      renderStats();
+      renderTable();
+    }
+
+    function renderStats() {
+      const total = rows.length;
+      const visible = filteredRows.length;
+      const gray = rows.filter(row => row.color_group === "회색").length;
+      const yellow = rows.filter(row => row.color_group === "노랑").length;
+      const green = rows.filter(row => row.color_group === "초록").length;
+      const selected = selectedRows.size;
+      const metrics = [
+        ["전체 행", total], ["현재 보기", visible], ["선택", selected],
+        ["회색", gray], ["노랑", yellow], ["초록", green]
+      ];
+      $("stats").innerHTML = metrics.map(([label, value]) => (
+        `<div class="metric"><span>${label}</span><strong>${Number(value).toLocaleString()}</strong></div>`
+      )).join("");
+    }
+
+    function renderTable() {
+      $("selectAll").checked = filteredRows.length > 0 && filteredRows.every(row => selectedRows.has(row.source_row));
+      const maxRows = 500;
+      const rendered = filteredRows.slice(0, maxRows);
+      tableBody.innerHTML = rendered.map(row => rowHtml(row)).join("");
+      if (filteredRows.length > maxRows) {
+        tableBody.insertAdjacentHTML("beforeend", `<tr><td colspan="12" class="cell-muted">현재 ${maxRows.toLocaleString()}행만 표시 중입니다. 검색이나 필터로 범위를 줄여주세요.</td></tr>`);
+      }
+      tableBody.querySelectorAll("tr[data-row]").forEach(tr => {
+        tr.addEventListener("click", event => {
+          if (event.target.matches("input[type='checkbox']")) return;
+          selectRow(Number(tr.dataset.row));
+        });
+      });
+      tableBody.querySelectorAll("input[data-check-row]").forEach(input => {
+        input.addEventListener("change", event => {
+          const sourceRow = Number(event.target.dataset.checkRow);
+          event.target.checked ? selectedRows.add(sourceRow) : selectedRows.delete(sourceRow);
+          renderStats();
+        });
+      });
+    }
+
+    function rowHtml(row) {
+      const p = row.payload;
+      const active = selectedSourceRow === row.source_row ? "active" : "";
+      return `<tr data-row="${row.source_row}" class="${active}">
+        <td><input data-check-row="${row.source_row}" type="checkbox" ${selectedRows.has(row.source_row) ? "checked" : ""}></td>
+        <td class="nowrap">${row.source_row}</td>
+        <td>${tag(cleanText(p["옵션값(OPT_CODE)"]))}</td>
+        <td>${escapeHtml(cleanText(p["전체과목명"]))}</td>
+        <td>${escapeHtml(cleanText(p["영역명"]))}</td>
+        <td><div class="truncate" title="${escapeAttr(cleanText(p["차시명"]))}">${escapeHtml(cleanText(p["차시명"]))}</div></td>
+        <td><div class="truncate" title="${escapeAttr(cleanText(p["목차명"]))}">${escapeHtml(cleanText(p["목차명"]))}</div></td>
+        <td>${escapeHtml(cleanText(p["DTL_LIST"]))}</td>
+        <td>${escapeHtml(cleanText(p["코너ZIP파일명"]))}</td>
+        <td>${colorFlag(row.color_group, row.color_code)}</td>
+        <td>${escapeHtml(cleanText(p["차시시스템코드"]))}</td>
+        <td>${escapeHtml(cleanText(p["목차번호"]))}</td>
+      </tr>`;
+    }
+
+    function selectRow(sourceRow) {
+      selectedSourceRow = sourceRow;
+      renderTable();
+      renderDetail();
+    }
+
+    function renderDetail() {
+      const row = rows.find(item => item.source_row === selectedSourceRow);
+      if (!row) return;
+      $("resetRowBtn").disabled = false;
+      const fields = [...IMPORTANT_FIELDS, ...sourceData.columns.filter(column => !IMPORTANT_FIELDS.includes(column))];
+      detailBody.innerHTML = `<div class="field-grid">${fields.map(field => fieldEditor(row, field)).join("")}</div>`;
+      detailBody.querySelectorAll("[data-field]").forEach(input => {
+        input.addEventListener("input", event => {
+          const field = event.target.dataset.field;
+          row.payload[field] = event.target.value;
+          applyFilters();
+          renderDetail();
+        }, { once: true });
+      });
+    }
+
+    function fieldEditor(row, field) {
+      const value = cleanText(row.payload[field]);
+      const isLong = value.length > 50 || field.includes("피드백") || field.includes("결과");
+      const label = escapeHtml(field.replace(/\n/g, " / "));
+      if (isLong) {
+        return `<label>${label}<textarea data-field="${escapeAttr(field)}">${escapeHtml(value)}</textarea></label>`;
+      }
+      return `<label>${label}<input data-field="${escapeAttr(field)}" value="${escapeAttr(value)}"></label>`;
+    }
+
+    function resetSelectedRow() {
+      const original = originalRows.find(row => row.source_row === selectedSourceRow);
+      const current = rows.find(row => row.source_row === selectedSourceRow);
+      if (!original || !current) return;
+      current.color_group = original.color_group;
+      current.color_code = original.color_code;
+      current.payload = { ...original.payload };
+      saveLocal(false);
+      applyFilters();
+      renderDetail();
+      setDbStatus(`${selectedSourceRow}행을 원본 값으로 되돌렸습니다.`);
+    }
+
+    function saveLocal(showMessage = true) {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ rows }));
+      if (showMessage) setDbStatus("현재 편집 내용을 이 브라우저에 저장했습니다.");
+    }
+
+    function exportJson() {
+      download(`sc2026-${today()}.json`, JSON.stringify({ table: TABLE_NAME, rows }, null, 2), "application/json;charset=utf-8");
+    }
+
+    function exportCsv() {
+      const headers = ["source_row", "color_group", "color_code", ...sourceData.columns];
+      const lines = [headers.map(csvCell).join(",")];
+      rows.forEach(row => {
+        lines.push([row.source_row, row.color_group, row.color_code, ...sourceData.columns.map(col => row.payload[col])].map(csvCell).join(","));
+      });
+      download(`sc2026-${today()}.csv`, lines.join("\n"), "text/csv;charset=utf-8");
+    }
+
+    function csvCell(value) {
+      const text = cleanText(value).replace(/"/g, '""');
+      return `"${text}"`;
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function getClient() {
+      const url = $("supabaseUrl").value.trim();
+      const key = $("supabaseKey").value.trim();
+      if (!url || !key) throw new Error("Supabase Project URL과 anon key를 입력해주세요.");
+      if (!window.supabase) throw new Error("Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.");
+      saveDbConfig();
+      return window.supabase.createClient(url, key);
+    }
+
+    async function testDb() {
+      try {
+        setDbStatus("연결 확인 중입니다.");
+        const client = getClient();
+        const { error, count } = await client.from(TABLE_NAME).select("*", { count: "exact", head: true });
+        if (error) throw error;
+        setDbStatus(`연결 성공. 현재 DB 행 수: ${(count || 0).toLocaleString()}`);
+      } catch (error) {
+        setDbStatus(`연결 실패: ${error.message}`, true);
+      }
+    }
+
+    async function syncRows(sourceRows) {
+      try {
+        const uniqueRows = [...new Set(sourceRows)];
+        if (!uniqueRows.length) {
+          setDbStatus("업서트할 행이 없습니다.");
+          return;
+        }
+        const client = getClient();
+        const targets = rows
+          .filter(row => uniqueRows.includes(row.source_row))
+          .map(row => ({
+            source_row: row.source_row,
+            color_group: row.color_group,
+            color_code: row.color_code,
+            payload: row.payload
+          }));
+        setDbStatus(`${targets.length.toLocaleString()}행 업서트 중입니다.`);
+        for (let i = 0; i < targets.length; i += 200) {
+          const chunk = targets.slice(i, i + 200);
+          const { error } = await client.from(TABLE_NAME).upsert(chunk, { onConflict: "source_row" });
+          if (error) throw error;
+          setDbStatus(`${Math.min(i + 200, targets.length).toLocaleString()} / ${targets.length.toLocaleString()}행 완료`);
+        }
+        setDbStatus(`Supabase ${TABLE_NAME}에 ${targets.length.toLocaleString()}행을 반영했습니다.`);
+      } catch (error) {
+        setDbStatus(`업서트 실패: ${error.message}`, true);
+      }
+    }
+
+    async function pullDb() {
+      try {
+        const client = getClient();
+        setDbStatus("DB에서 불러오는 중입니다.");
+        let offset = 0;
+        const pulled = [];
+        while (true) {
+          const { data, error } = await client.from(TABLE_NAME).select("source_row,color_group,color_code,payload").order("source_row").range(offset, offset + 999);
+          if (error) throw error;
+          pulled.push(...(data || []));
+          if (!data || data.length < 1000) break;
+          offset += 1000;
+        }
+        if (!pulled.length) {
+          setDbStatus("DB에 저장된 행이 없습니다.");
+          return;
+        }
+        const byRow = new Map(rows.map(row => [row.source_row, row]));
+        pulled.forEach(item => {
+          if (byRow.has(item.source_row)) {
+            const target = byRow.get(item.source_row);
+            target.color_group = item.color_group || target.color_group || "투명or흰색";
+            target.color_code = item.color_code || target.color_code || "";
+            target.payload = { ...target.payload, ...item.payload };
+          } else {
+            rows.push({
+              source_row: item.source_row,
+              color_group: item.color_group || "투명or흰색",
+              color_code: item.color_code || "",
+              payload: item.payload || {}
+            });
+          }
+        });
+        saveLocal(false);
+        populateFilters();
+        applyFilters();
+        setDbStatus(`DB에서 ${pulled.length.toLocaleString()}행을 불러왔습니다.`);
+      } catch (error) {
+        setDbStatus(`불러오기 실패: ${error.message}`, true);
+      }
+    }
+
+    function saveDbConfig() {
+      localStorage.setItem(DB_CONFIG_KEY, JSON.stringify({
+        url: $("supabaseUrl").value.trim(),
+        key: $("supabaseKey").value.trim()
+      }));
+    }
+
+    function restoreDbConfig() {
+      try {
+        const config = JSON.parse(localStorage.getItem(DB_CONFIG_KEY) || "{}");
+        $("supabaseUrl").value = config.url || "";
+        $("supabaseKey").value = config.key || "";
+      } catch {}
+    }
+
+    async function showSql() {
+      const fallback = `create table if not exists public.sc2026 (
+  id bigint generated by default as identity primary key,
+  source_row integer not null unique,
+  color_group text not null default '투명or흰색',
+  color_code text,
+  payload jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);`;
+      try {
+        const response = await fetch("./supabase-sc2026.sql");
+        $("sqlText").textContent = response.ok ? await response.text() : fallback;
+      } catch {
+        $("sqlText").textContent = fallback;
+      }
+      $("sqlDialog").showModal();
+    }
+
+    function setDbStatus(message, isError = false) {
+      const el = $("dbStatus");
+      el.textContent = message;
+      el.style.color = isError ? "var(--bad)" : "var(--muted)";
+    }
+
+    function colorFlag(group, code) {
+      const className = group === "초록" ? "ok" : group === "노랑" ? "warn" : group === "회색" ? "" : "soft";
+      const title = code ? ` title="${escapeAttr(code)}"` : "";
+      return `<span class="flag ${className}"${title}>${escapeHtml(group || "투명or흰색")}</span>`;
+    }
+
+    function tag(value) {
+      return value ? `<span class="flag">${escapeHtml(value)}</span>` : `<span class="cell-muted">-</span>`;
+    }
+
+    function cleanText(value) {
+      if (value === null || value === undefined) return "";
+      return String(value).replace(/\u3000/g, " ").trim();
+    }
+
+    function escapeHtml(value) {
+      return cleanText(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replaceAll("\n", "&#10;");
+    }
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+  </script>
+</body>
+</html>
