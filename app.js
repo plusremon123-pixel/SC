@@ -1263,8 +1263,8 @@ function tabButton(label, count, active, onClick, detailCount = null, dataLabel 
 }
 
 function renderTable() {
-  renderTablePublisherTabs();
   renderTableGradeTabs();
+  renderTablePublisherTabs();
   const rows = getVisibleRows();
   const isMixedTable = state.selectedCategory === ALL_CATEGORIES;
   const sheet = state.sheets.find((item) => item.name === state.selectedCategory);
@@ -1277,7 +1277,7 @@ function renderTable() {
   if (state.selectedTablePublisher) tablePath.push(state.selectedTablePublisher);
   els.tableTitle.textContent = tablePath.filter(Boolean).join(" > ") || "조회 결과";
   els.rowCount.textContent = `${rows.length.toLocaleString("ko-KR")}건`;
-  els.downloadButton.disabled = state.rows.length === 0;
+  els.downloadButton.disabled = state.rows.length === 0 || !state.selectedDate || state.selectedDate === ALL_DATES;
 
   els.tableHeader.innerHTML = "";
   els.tableBody.innerHTML = "";
@@ -1318,6 +1318,7 @@ function renderTableGradeTabs() {
   els.tableGradeTabs.innerHTML = "";
   els.tableGradeTabs.appendChild(smallTabButton("전체", baseRows.length, state.selectedTableGrade === "", () => {
     state.selectedTableGrade = "";
+    state.selectedTablePublisher = "";
     renderTable();
   }));
 
@@ -2572,6 +2573,10 @@ function gradeOrder(row) {
 
 async function downloadFilteredWorkbook() {
   if (!state.workbookBase64) return;
+  if (!state.selectedDate || state.selectedDate === ALL_DATES) {
+    showToast("오픈 날짜를 선택한 뒤 다운로드해주세요.");
+    return;
+  }
   const exportRows = getExportRows();
   if (!exportRows.length) return;
 
@@ -2586,7 +2591,7 @@ async function downloadFilteredWorkbook() {
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const safeDate = state.selectedDate === ALL_DATES ? "전체" : state.selectedDate.replaceAll("-", "");
+  const safeDate = state.selectedDate.replaceAll("-", "");
   saveBlob(
     new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
     `개정_차시별운영계오픈일정_${safeDate}.xlsx`,
@@ -2703,14 +2708,11 @@ function exportColumnWidth(header) {
 
 function getExportRows() {
   return state.rows
-    .filter((row) => dateMatches(row, state.selectedDate))
+    .filter((row) => row.__openDate === state.selectedDate)
     .sort((a, b) => {
       const sheetOrder = state.sheets.findIndex((sheet) => sheet.name === a.__sheet)
         - state.sheets.findIndex((sheet) => sheet.name === b.__sheet);
-      const dateOrder = state.selectedDate === ALL_DATES
-        ? String(a.__openDate || "").localeCompare(String(b.__openDate || ""))
-        : 0;
-      return sheetOrder || dateOrder || compareRows(a, b);
+      return sheetOrder || compareRows(a, b);
     });
 }
 
