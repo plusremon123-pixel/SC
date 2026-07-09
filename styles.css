@@ -594,7 +594,7 @@ body.lesson-only #lessonView > .controls {
 
 .table-head {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
@@ -606,6 +606,17 @@ body.lesson-only #lessonView > .controls {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.table-grade-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+#rowCount {
+  margin-left: auto;
 }
 
 .analysis-head {
@@ -1014,7 +1025,7 @@ body.lesson-only #lessonView > .controls {
   white-space: pre-line;
 }
 
-.table-head span {
+#rowCount {
   color: var(--muted);
   font-size: 13px;
 }

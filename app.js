@@ -66,6 +66,7 @@ const state = {
   selectedCategory: "",
   selectedTablePublisher: "",
   selectedTableGroup: "",
+  selectedTableGrade: "",
   selectedMathAnalysisDate: "",
   selectedMonthlyOpenMonth: "",
   mathPublisherConfig: {},
@@ -107,6 +108,7 @@ const els = {
   tableHeader: document.querySelector("#tableHeader"),
   tableBody: document.querySelector("#tableBody"),
   tableTitle: document.querySelector("#tableTitle"),
+  tableGradeTabs: document.querySelector("#tableGradeTabs"),
   tablePublisherTabs: document.querySelector("#tablePublisherTabs"),
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
@@ -265,6 +267,9 @@ function bindEvents() {
     state.search = event.target.value.trim();
     state.selectedCategory = "";
     state.selectedSubject = "";
+    state.selectedTablePublisher = "";
+    state.selectedTableGroup = "";
+    state.selectedTableGrade = "";
     render();
   });
 
@@ -274,6 +279,9 @@ function bindEvents() {
       localStorage.setItem(TAB_ORDER_KEY, state.tabOrder);
       state.selectedCategory = "";
       state.selectedSubject = "";
+      state.selectedTablePublisher = "";
+      state.selectedTableGroup = "";
+      state.selectedTableGrade = "";
       render();
     });
   });
@@ -629,6 +637,7 @@ function renderDateTabs() {
       state.selectedSubject = "";
       state.selectedTablePublisher = "";
       state.selectedTableGroup = "";
+      state.selectedTableGrade = "";
       render();
     }));
   }
@@ -640,6 +649,7 @@ function renderDateTabs() {
       state.selectedSubject = "";
       state.selectedTablePublisher = "";
       state.selectedTableGroup = "";
+      state.selectedTableGrade = "";
       render();
     }, null, date);
     button.classList.toggle("past-open-date", date <= today);
@@ -1152,6 +1162,7 @@ function renderSubjectTabs(level) {
     state.selectedSubject = ALL_SUBJECTS;
     state.selectedTablePublisher = "";
     state.selectedTableGroup = "";
+    state.selectedTableGrade = "";
     if (level === "primary") {
       state.selectedCategory = ALL_CATEGORIES;
       render();
@@ -1175,6 +1186,7 @@ function renderSubjectTabs(level) {
       state.selectedSubject = subject;
       state.selectedTablePublisher = "";
       state.selectedTableGroup = "";
+      state.selectedTableGrade = "";
       if (level === "primary") {
         state.selectedCategory = "";
         render();
@@ -1200,6 +1212,7 @@ function renderCategoryTabs(level) {
     state.selectedCategory = ALL_CATEGORIES;
     state.selectedTablePublisher = "";
     state.selectedTableGroup = "";
+    state.selectedTableGrade = "";
     if (level === "primary") {
       state.selectedSubject = ALL_SUBJECTS;
       render();
@@ -1223,6 +1236,7 @@ function renderCategoryTabs(level) {
       state.selectedCategory = category;
       state.selectedTablePublisher = "";
       state.selectedTableGroup = "";
+      state.selectedTableGrade = "";
       if (level === "primary") {
         state.selectedSubject = "";
         render();
@@ -1249,6 +1263,7 @@ function tabButton(label, count, active, onClick, detailCount = null, dataLabel 
 
 function renderTable() {
   renderTablePublisherTabs();
+  renderTableGradeTabs();
   const rows = getVisibleRows();
   const isMixedTable = state.selectedCategory === ALL_CATEGORIES;
   const sheet = state.sheets.find((item) => item.name === state.selectedCategory);
@@ -1289,6 +1304,29 @@ function renderTable() {
   els.tableBody.appendChild(fragment);
   els.emptyState.hidden = rows.length > 0;
   els.emptyState.textContent = state.rows.length ? "조건에 맞는 데이터가 없습니다." : "엑셀 파일을 업로드하면 데이터가 표시됩니다.";
+}
+
+function renderTableGradeTabs() {
+  const grades = ["5", "6"];
+  const baseRows = getVisibleRows({ includeGrade: false });
+  const availableGrades = new Set(baseRows.map(gradeValue).filter(Boolean));
+  if (state.selectedTableGrade && !availableGrades.has(state.selectedTableGrade)) {
+    state.selectedTableGrade = "";
+  }
+
+  els.tableGradeTabs.innerHTML = "";
+  els.tableGradeTabs.appendChild(smallTabButton("전체", baseRows.length, state.selectedTableGrade === "", () => {
+    state.selectedTableGrade = "";
+    renderTable();
+  }));
+
+  grades.forEach((grade) => {
+    const count = baseRows.filter((row) => gradeValue(row) === grade).length;
+    els.tableGradeTabs.appendChild(smallTabButton(`${grade}학년`, count, state.selectedTableGrade === grade, () => {
+      state.selectedTableGrade = grade;
+      renderTable();
+    }));
+  });
 }
 
 function renderTablePublisherTabs() {
@@ -2063,12 +2101,14 @@ function moveAfter(headers, source, target) {
 
 function getVisibleRows(options = {}) {
   const includePublisher = options.includePublisher !== false;
+  const includeGrade = options.includeGrade !== false;
   return rowsMatchingSearch()
     .filter((row) => dateMatches(row, state.selectedDate))
     .filter((row) => state.selectedSubject === ALL_SUBJECTS || row.__subject === state.selectedSubject)
     .filter((row) => state.selectedCategory === ALL_CATEGORIES || row.__sheet === state.selectedCategory)
     .filter((row) => !includePublisher || !state.selectedTablePublisher || (row["출판사"] || "미분류") === state.selectedTablePublisher)
     .filter((row) => !includePublisher || !state.selectedTableGroup || (sortGroup(row) || "미분류") === state.selectedTableGroup)
+    .filter((row) => !includeGrade || !state.selectedTableGrade || gradeValue(row) === state.selectedTableGrade)
     .sort(compareVisibleRows);
 }
 
@@ -2459,9 +2499,13 @@ function sortGroup(row) {
   return String(row.__sheet || "");
 }
 
+function gradeValue(row) {
+  const match = String(row["학년"] || "").match(/\d+/);
+  return match ? match[0] : "";
+}
+
 function gradeOrder(row) {
-  const grade = String(row["학년"] || "");
-  const number = Number((grade.match(/\d+/) || ["999"])[0]);
+  const number = Number(gradeValue(row) || "999");
   return Number.isFinite(number) ? number : 999;
 }
 
