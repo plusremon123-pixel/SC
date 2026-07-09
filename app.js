@@ -620,7 +620,7 @@ function renderDateTabs() {
   const searchedRows = rowsMatchingSearch();
   const dates = unique(searchedRows.map((row) => row.__openDate)).sort();
   const today = dateToYmd(new Date());
-  const nextOpenDate = dates.find((date) => date >= today) || "";
+  const nextOpenDate = dates.find((date) => date > today) || "";
   els.dateTabs.innerHTML = "";
   if (searchedRows.length) {
     els.dateTabs.appendChild(tabButton("전체", searchedRows.length, state.selectedDate === ALL_DATES, () => {
@@ -642,7 +642,7 @@ function renderDateTabs() {
       state.selectedTableGroup = "";
       render();
     }, null, date);
-    button.classList.toggle("past-open-date", date < today);
+    button.classList.toggle("past-open-date", date <= today);
     button.classList.toggle("next-open-date", date === nextOpenDate);
     els.dateTabs.appendChild(button);
   });
