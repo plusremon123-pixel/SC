@@ -586,10 +586,40 @@ body.lesson-only #lessonView > .controls {
   font-weight: 800;
 }
 
+.mini-tab.table-publisher-main {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+.mini-tab.table-publisher-main.active {
+  border-color: #1d4ed8;
+  background: #2563eb;
+  color: #fff;
+}
+
+.mini-tab.table-publisher-disabled {
+  border-color: #d5dce6;
+  background: #f1f5f9;
+  color: #8b97a7;
+}
+
+.mini-tab.table-publisher-mixed-disabled {
+  border-color: #cbd5e1;
+  background: linear-gradient(135deg, #fff 0%, #fff 52%, #f1f5f9 52%, #f1f5f9 100%);
+  color: #64748b;
+}
+
 .mini-tab span {
   margin-left: 4px;
   color: var(--muted);
   font-size: 10px;
+}
+
+.mini-tab.table-publisher-main span,
+.mini-tab.table-publisher-main.active span {
+  color: currentColor;
 }
 
 .table-head {

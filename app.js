@@ -1348,7 +1348,8 @@ function renderTablePublisherTabs() {
   }
 
   state.selectedTableGroup = "";
-  const publishers = unique(baseRows.map((row) => row["출판사"] || "미분류")).sort(compareTablePublisherOrder);
+  const publishers = unique(baseRows.map((row) => row["출판사"] || "미분류"))
+    .sort((a, b) => compareTablePublisherOrder(a, b, baseRows));
   if (state.selectedTablePublisher && !publishers.includes(state.selectedTablePublisher)) {
     state.selectedTablePublisher = "";
   }
@@ -1360,10 +1361,15 @@ function renderTablePublisherTabs() {
 
   publishers.forEach((publisher) => {
     const count = baseRows.filter((row) => (row["출판사"] || "미분류") === publisher).length;
-    els.tablePublisherTabs.appendChild(smallTabButton(publisher, count, state.selectedTablePublisher === publisher, () => {
+    const button = smallTabButton(publisher, count, state.selectedTablePublisher === publisher, () => {
       state.selectedTablePublisher = publisher;
       renderTable();
-    }));
+    });
+    const status = tablePublisherStatus(publisher, baseRows);
+    button.classList.toggle("table-publisher-main", status === "main");
+    button.classList.toggle("table-publisher-disabled", status === "disabled");
+    button.classList.toggle("table-publisher-mixed-disabled", status === "mixed-disabled");
+    els.tablePublisherTabs.appendChild(button);
   });
 }
 
@@ -1401,10 +1407,53 @@ function smallTabButton(label, count, active, onClick) {
   return button;
 }
 
-function compareTablePublisherOrder(a, b) {
+function compareTablePublisherOrder(a, b, rows = []) {
+  const aStatus = tablePublisherSortStatus(a, rows);
+  const bStatus = tablePublisherSortStatus(b, rows);
+  if (aStatus.order !== bStatus.order) return aStatus.order - bStatus.order;
+  if (aStatus.mainOrder !== bStatus.mainOrder) return aStatus.mainOrder - bStatus.mainOrder;
   if (a === "아이스크림" && b !== "아이스크림") return -1;
   if (b === "아이스크림" && a !== "아이스크림") return 1;
   return localeSort(a, b);
+}
+
+function tablePublisherSortStatus(publisher, rows) {
+  const status = tablePublisherStatus(publisher, rows);
+  return {
+    order: status === "main" ? 0 : status === "disabled" ? 2 : 1,
+    mainOrder: tablePublisherMainOrder(publisher, rows),
+  };
+}
+
+function tablePublisherMainOrder(publisher, rows) {
+  const orders = rows
+    .filter((row) => (row["출판사"] || "미분류") === publisher)
+    .map((row) => {
+      const config = mathPublisherConfigForDate(row.__openDate)[row["학년"] || "미분류"];
+      const index = config?.main?.indexOf(publisher) ?? -1;
+      return index === -1 ? 9999 : index;
+    });
+  return Math.min(...orders, 9999);
+}
+
+function tablePublisherStatus(publisher, rows) {
+  const statuses = rows
+    .filter((row) => (row["출판사"] || "미분류") === publisher)
+    .map((row) => mathPublisherStatusForRow(row, publisher))
+    .filter(Boolean);
+  if (statuses.includes("main")) return "main";
+  if (statuses.length && statuses.every((status) => status === "disabled")) return "disabled";
+  if (statuses.includes("disabled")) return "mixed-disabled";
+  return "sub";
+}
+
+function mathPublisherStatusForRow(row, publisher) {
+  const config = mathPublisherConfigForDate(row.__openDate)[row["학년"] || "미분류"];
+  if (!config) return "";
+  if ((config.main || []).includes(publisher)) return "main";
+  if ((config.sub || []).includes(publisher) && (config.disabledSub || []).includes(publisher)) return "disabled";
+  if ((config.sub || []).includes(publisher)) return "sub";
+  return "";
 }
 
 function renderMathAnalysis() {
