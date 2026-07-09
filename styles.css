@@ -164,6 +164,16 @@ body.lesson-only #lessonView > .controls {
   display: none;
 }
 
+body.lesson-only .lesson-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px;
+}
+
+body.lesson-only .lesson-action-bar .file-button {
+  display: none;
+}
+
 #scheduleCardViewButton {
   margin-left: auto;
   border-color: #ea7a1a;
