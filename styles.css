@@ -158,6 +158,19 @@ body.lesson-only .view-tabs {
   display: none;
 }
 
+body.lesson-only #lessonView {
+  display: flex;
+  flex-direction: column;
+}
+
+body.lesson-only #lessonView > * {
+  order: 10;
+}
+
+body.lesson-only .lesson-date-section {
+  order: 1;
+}
+
 body.lesson-only .topbar,
 body.lesson-only .lesson-action-bar,
 body.lesson-only #lessonView > .controls {
@@ -167,6 +180,7 @@ body.lesson-only #lessonView > .controls {
 body.lesson-only .lesson-action-bar {
   display: flex;
   justify-content: flex-end;
+  order: 2;
   padding: 10px 14px;
 }
 

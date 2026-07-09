@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="app-build" content="20260709-9" />
+    <meta name="app-build" content="20260709-10" />
     <title>5,6개정 실무 관리 툴</title>
-    <link rel="stylesheet" href="./styles.css?v=20260709-9" />
+    <link rel="stylesheet" href="./styles.css?v=20260709-10" />
   </head>
   <body>
     <main class="app-shell">
@@ -29,10 +29,10 @@
             차시 엑셀 업로드/교체
             <input id="fileInput" type="file" accept=".xlsx,.xls" />
           </label>
-          <button id="downloadButton" type="button" class="primary">차시 엑셀 다운로드</button>
+          <button id="downloadButton" type="button" class="primary">날짜별 엑셀 다운로드</button>
         </section>
 
-        <section class="tab-section">
+        <section class="tab-section lesson-date-section">
           <div id="dateTabs" class="tabs date-tabs"></div>
         </section>
 
@@ -163,6 +163,6 @@
     <div id="toast" class="toast" hidden></div>
 
     <script src="./vendor/exceljs.min.js?v=20260703-39"></script>
-    <script src="./app.js?v=20260709-9"></script>
+    <script src="./app.js?v=20260709-10"></script>
   </body>
 </html>
