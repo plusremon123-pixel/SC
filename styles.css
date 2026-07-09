@@ -158,6 +158,12 @@ body.lesson-only .view-tabs {
   display: none;
 }
 
+body.lesson-only .topbar,
+body.lesson-only .lesson-action-bar,
+body.lesson-only #lessonView > .controls {
+  display: none;
+}
+
 #scheduleCardViewButton {
   margin-left: auto;
   border-color: #ea7a1a;
