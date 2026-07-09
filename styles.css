@@ -154,6 +154,10 @@ button:disabled {
   padding: 10px;
 }
 
+body.lesson-only .view-tabs {
+  display: none;
+}
+
 #scheduleCardViewButton {
   margin-left: auto;
   border-color: #ea7a1a;

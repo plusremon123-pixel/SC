@@ -28,6 +28,8 @@ const DEFAULT_QA_DAYS = 5;
 const DEFAULT_STAGE_DAYS = 5;
 const COPY_SUBJECT_ORDER = ["국어", "수학", "과학", "사회", "영어"];
 const MONTHLY_SERVICE_LABEL = "스마트올 초등";
+const APP_PARAMS = new URLSearchParams(window.location.search);
+const IS_LESSON_ONLY = APP_PARAMS.get("view") === "lesson-only";
 const KOREA_HOLIDAYS_2026 = new Set([
   "2026-01-01",
   "2026-02-16",
@@ -130,6 +132,8 @@ init().catch((error) => {
 });
 
 async function init() {
+  document.body.classList.toggle("lesson-only", IS_LESSON_ONLY);
+  if (IS_LESSON_ONLY) state.currentView = "lesson";
   state.workbookBase64 = localStorage.getItem(STORAGE_KEY);
   state.sourceName = localStorage.getItem(SOURCE_KEY) || "";
   state.tabOrder = "subject-first";
@@ -580,6 +584,7 @@ function render() {
 }
 
 function renderView() {
+  if (IS_LESSON_ONLY) state.currentView = "lesson";
   const isOverall = state.currentView === "overall";
   const isMonthlyOpen = state.currentView === "monthly-open";
   const isMathAnalysis = state.currentView === "math-analysis";
