@@ -572,7 +572,10 @@ body.lesson-only #lessonView > .controls {
   flex-wrap: wrap;
   gap: 5px;
   align-items: center;
-  min-width: 0;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfe;
+  min-height: 40px;
 }
 
 .mini-tab {
