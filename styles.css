@@ -558,13 +558,21 @@ body.lesson-only #lessonView > .controls {
   min-height: 420px;
 }
 
-.table-publisher-tabs {
+.table-group-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   padding: 8px 14px;
   border-bottom: 1px solid var(--line);
   background: #fbfcfe;
+}
+
+.table-publisher-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
 }
 
 .mini-tab {
@@ -632,6 +640,7 @@ body.lesson-only #lessonView > .controls {
 }
 
 .table-head strong {
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
