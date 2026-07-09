@@ -515,6 +515,37 @@ body.lesson-only #lessonView > .controls {
   font-size: 11px;
 }
 
+.date-tabs .tab.past-open-date:not(.active) {
+  border-color: #d7dee8;
+  background: #eef2f6;
+  color: #7a8798;
+}
+
+.date-tabs .tab.past-open-date:not(.active) .count {
+  color: #8b97a7;
+}
+
+.date-tabs .tab.next-open-date {
+  border-color: #f97316;
+  background: #fff4e8;
+  color: #9a4a00;
+  box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.22);
+}
+
+.date-tabs .tab.next-open-date .count {
+  color: #b75b05;
+}
+
+.date-tabs .tab.next-open-date.active {
+  border-color: #ea580c;
+  background: #f97316;
+  color: #fff;
+}
+
+.date-tabs .tab.next-open-date.active .count {
+  color: #ffedd5;
+}
+
 .date-tabs {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));

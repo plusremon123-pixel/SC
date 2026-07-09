@@ -619,6 +619,8 @@ function renderOrderControl() {
 function renderDateTabs() {
   const searchedRows = rowsMatchingSearch();
   const dates = unique(searchedRows.map((row) => row.__openDate)).sort();
+  const today = dateToYmd(new Date());
+  const nextOpenDate = dates.find((date) => date >= today) || "";
   els.dateTabs.innerHTML = "";
   if (searchedRows.length) {
     els.dateTabs.appendChild(tabButton("전체", searchedRows.length, state.selectedDate === ALL_DATES, () => {
@@ -632,14 +634,17 @@ function renderDateTabs() {
   }
   dates.forEach((date) => {
     const count = searchedRows.filter((row) => row.__openDate === date).length;
-    els.dateTabs.appendChild(tabButton(formatDateTabLabel(date), count, date === state.selectedDate, () => {
+    const button = tabButton(formatDateTabLabel(date), count, date === state.selectedDate, () => {
       state.selectedDate = date;
       state.selectedCategory = "";
       state.selectedSubject = "";
       state.selectedTablePublisher = "";
       state.selectedTableGroup = "";
       render();
-    }, null, date));
+    }, null, date);
+    button.classList.toggle("past-open-date", date < today);
+    button.classList.toggle("next-open-date", date === nextOpenDate);
+    els.dateTabs.appendChild(button);
   });
 }
 
