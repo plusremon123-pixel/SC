@@ -1437,7 +1437,7 @@ function tablePublisherSortStatus(publisher, rows) {
 
 function tablePublisherMainOrder(publisher, rows) {
   const orders = rows
-    .filter((row) => row.__sheet === "학교공부" && (row["출판사"] || "미분류") === publisher)
+    .filter((row) => row.__sheet === "학교공부" && sortSubject(row) === "수학" && (row["출판사"] || "미분류") === publisher)
     .map((row) => {
       const config = mathPublisherConfigForDate(row.__openDate)[row["학년"] || "미분류"];
       const index = config?.main?.indexOf(publisher) ?? -1;
@@ -1458,7 +1458,7 @@ function tablePublisherStatus(publisher, rows) {
 }
 
 function mathPublisherStatusForRow(row, publisher) {
-  if (row.__sheet !== "학교공부") return "";
+  if (row.__sheet !== "학교공부" || sortSubject(row) !== "수학") return "";
   const config = mathPublisherConfigForDate(row.__openDate)[row["학년"] || "미분류"];
   if (!config) return "";
   if ((config.main || []).includes(publisher)) return "main";
