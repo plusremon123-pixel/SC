@@ -1343,7 +1343,7 @@ function renderTablePublisherTabs() {
 
   const baseRows = getVisibleRows({ includePublisher: false });
   const publishers = tablePublisherCandidates(baseRows);
-  const showPublisherTabs = publishers.length > 0;
+  const showPublisherTabs = Boolean(state.selectedTableGrade) && publishers.length > 0;
   els.tablePublisherTabs.hidden = !showPublisherTabs;
   els.tablePublisherTabs.innerHTML = "";
   if (!showPublisherTabs) {
