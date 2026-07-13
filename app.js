@@ -874,7 +874,7 @@ function renderWeeklyReportInfo() {
 
   els.weeklyReportWeekTabs.innerHTML = "";
   weeks.forEach((week) => {
-    const button = smallTabButton(week.label, week.count, week.key === state.selectedWeeklyReportWeek, () => {
+    const button = weeklyReportWeekButton(week, week.key === state.selectedWeeklyReportWeek, () => {
       state.selectedWeeklyReportWeek = week.key;
       renderWeeklyReportInfo();
     });
@@ -886,6 +886,15 @@ function renderWeeklyReportInfo() {
   els.weeklyReportCopyButton.disabled = report.sections.length === 0;
   els.weeklyReportContent.innerHTML = weeklyReportPreviewHtml(report);
   els.weeklyReportEmptyState.hidden = report.sections.length > 0;
+}
+
+function weeklyReportWeekButton(week, active, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `mini-tab${active ? " active" : ""}`;
+  button.innerHTML = `${escapeHtml(week.label)} <span>(${week.count.toLocaleString("ko-KR")}건)</span>`;
+  button.addEventListener("click", onClick);
+  return button;
 }
 
 function weeklyReportRows() {
@@ -922,14 +931,29 @@ function weeklyReportWeeksForMonth(month) {
   return monthWeekStarts(month).map((weekStart, index) => {
     const key = dateToYmd(weekStart);
     const end = dateToYmd(addDays(weekStart, 4));
+    const displayStart = maxDate(key, `${month}-01`);
+    const displayEnd = minDate(end, lastDateOfMonth(month));
     return {
       key,
       start: key,
       end,
-      label: `${index + 1}주`,
+      label: `${index + 1}주 ${formatShortSlashDate(displayStart)}~${formatShortSlashDate(displayEnd)}`,
       count: bundles.filter((bundle) => bundle.weekKey === key).length,
     };
   });
+}
+
+function maxDate(a, b) {
+  return a > b ? a : b;
+}
+
+function minDate(a, b) {
+  return a < b ? a : b;
+}
+
+function lastDateOfMonth(month) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return dateToYmd(new Date(year, monthNumber, 0));
 }
 
 function monthWeekStarts(month) {
