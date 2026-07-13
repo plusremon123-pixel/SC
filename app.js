@@ -1129,11 +1129,38 @@ function weeklyGradeLabel(rows) {
 
 function weeklyUnitScopeText(unit, rows) {
   const unitLabel = unit === "미분류" ? "단원 미분류" : `${unit}단원`;
-  if (monthlyScopeUsesUnitOnly(rows)) return unitLabel;
+  if (monthlyScopeUsesUnitOnly(rows) || weeklyUnitHasFullLessons(rows)) return unitLabel;
   const lessons = unique(rows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999))
     .sort((a, b) => a - b);
   const lessonText = weeklyLessonText(lessons);
   return lessonText ? `${unitLabel} ${lessonText}` : unitLabel;
+}
+
+function weeklyUnitHasFullLessons(rows) {
+  const selectedGroups = groupBy(rows, weeklyFullLessonKey);
+  return Object.keys(selectedGroups).every((key) => {
+    const selectedLessons = lessonOrderSet(selectedGroups[key]);
+    if (!selectedLessons.size) return false;
+    const allLessons = lessonOrderSet(state.rows.filter((row) => weeklyFullLessonKey(row) === key));
+    if (!allLessons.size) return false;
+    return [...allLessons].every((lesson) => selectedLessons.has(lesson));
+  });
+}
+
+function weeklyFullLessonKey(row) {
+  return [
+    row.__sheet || "",
+    weeklyReportSubject(row),
+    sortGroup(row) || "",
+    row["학년"] || "",
+    monthlyUnitValue(row) || "",
+  ].join("||");
+}
+
+function lessonOrderSet(rows) {
+  return new Set(rows
+    .map((row) => row.__lessonOrder)
+    .filter((value) => Number.isFinite(value) && value !== 999999));
 }
 
 function weeklyLessonText(lessons) {
