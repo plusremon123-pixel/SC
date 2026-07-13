@@ -864,8 +864,7 @@ function renderWeeklyReportInfo() {
 
   els.weeklyReportMonthTabs.innerHTML = "";
   months.forEach((month) => {
-    const count = bundles.filter((bundle) => bundle.month === month).length;
-    els.weeklyReportMonthTabs.appendChild(tabButton(formatMonthlyOpenMonth(month), count, month === state.selectedWeeklyReportMonth, () => {
+    els.weeklyReportMonthTabs.appendChild(simpleTabButton(formatMonthlyOpenMonth(month), month === state.selectedWeeklyReportMonth, () => {
       state.selectedWeeklyReportMonth = month;
       state.selectedWeeklyReportWeek = "";
       renderWeeklyReportInfo();
@@ -888,11 +887,20 @@ function renderWeeklyReportInfo() {
   els.weeklyReportEmptyState.hidden = report.sections.length > 0;
 }
 
+function simpleTabButton(label, active, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `tab${active ? " active" : ""}`;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
 function weeklyReportWeekButton(week, active, onClick) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = `mini-tab${active ? " active" : ""}`;
-  button.innerHTML = `${escapeHtml(week.label)} <span>(${week.count.toLocaleString("ko-KR")}건)</span>`;
+  button.textContent = week.label;
   button.addEventListener("click", onClick);
   return button;
 }
@@ -1011,7 +1019,7 @@ function weeklyReportSubjectBlock(subject, bundle) {
     progress: bundle.progress,
     grades: weeklyGradeLabel(subjectRows),
     categoryNames,
-    action: weeklyReportAction(categories.map(({ sheet }) => sheet)),
+    action: weeklyReportAction(bundle.progress),
     lines: categories.map(({ sheet, rows: categoryRows }) => ({
       label: weeklyReportCategoryName(sheet),
       detail: weeklyReportCategoryDetail(categoryRows),
@@ -1024,10 +1032,12 @@ function weeklyReportSubject(row) {
   return sortSubject(row) || row.__subject || "미분류";
 }
 
-function weeklyReportAction(sheets) {
-  if (sheets.some((sheet) => ["학교공부", "학교시험"].includes(sheet))) return "오픈 및 모니터링";
-  if (sheets.includes("수학마스터")) return "검증계 검수";
-  return "오픈 및 모니터링";
+function weeklyReportAction(progress) {
+  if (progress === 100) return "오픈 및 모니터링";
+  if (progress === 80) return "운영계 검수";
+  if (progress === 60) return "검증계 및 운영계 검수";
+  if (progress === 40) return "검증계 검수";
+  return "검증계 검수";
 }
 
 function weeklyReportCategories(rows) {
