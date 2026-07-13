@@ -72,7 +72,8 @@ const state = {
   selectedTableGrade: "",
   selectedMathAnalysisDate: "",
   selectedPublisherSubject: "수학",
-  selectedWeeklyReportDate: "",
+  selectedWeeklyReportMonth: "",
+  selectedWeeklyReportWeek: "",
   selectedMonthlyOpenMonth: "",
   mathPublisherConfig: {},
   tabOrder: "subject-first",
@@ -127,7 +128,8 @@ const els = {
   mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
   mathAnalysisTableBody: document.querySelector("#mathAnalysisTableBody"),
   mathAnalysisEmptyState: document.querySelector("#mathAnalysisEmptyState"),
-  weeklyReportDateTabs: document.querySelector("#weeklyReportDateTabs"),
+  weeklyReportMonthTabs: document.querySelector("#weeklyReportMonthTabs"),
+  weeklyReportWeekTabs: document.querySelector("#weeklyReportWeekTabs"),
   weeklyReportCopyButton: document.querySelector("#weeklyReportCopyButton"),
   weeklyReportContent: document.querySelector("#weeklyReportContent"),
   weeklyReportEmptyState: document.querySelector("#weeklyReportEmptyState"),
@@ -570,6 +572,22 @@ function dateToYmd(date) {
   return `${y}-${m}-${d}`;
 }
 
+function addDays(value, days) {
+  const date = value instanceof Date
+    ? new Date(value)
+    : new Date(...String(value).split("-").map((part, index) => index === 1 ? Number(part) - 1 : Number(part)));
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function weekStartDate(value) {
+  const date = value instanceof Date ? new Date(value) : addDays(value, 0);
+  const day = date.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + offset);
+  return date;
+}
+
 function toNumber(value) {
   const number = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
   return Number.isFinite(number) ? number : 999999;
@@ -825,57 +843,162 @@ function buildQaSummaryText() {
 }
 
 function renderWeeklyReportInfo() {
-  const rows = weeklyReportRows();
-  const dates = unique(rows.map((row) => row.__openDate)).sort();
-  if (!dates.length) {
-    els.weeklyReportDateTabs.innerHTML = "";
+  const bundles = weeklyReportBundles();
+  const months = weeklyReportMonths();
+  if (!bundles.length) {
+    els.weeklyReportMonthTabs.innerHTML = "";
+    els.weeklyReportWeekTabs.innerHTML = "";
     els.weeklyReportCopyButton.disabled = true;
     els.weeklyReportContent.innerHTML = "";
     els.weeklyReportEmptyState.hidden = false;
     return;
   }
 
-  if (!dates.includes(state.selectedWeeklyReportDate)) {
-    state.selectedWeeklyReportDate = dates[0];
+  if (!months.includes(state.selectedWeeklyReportMonth)) {
+    state.selectedWeeklyReportMonth = months[0];
+  }
+  const weeks = weeklyReportWeeksForMonth(state.selectedWeeklyReportMonth);
+  if (!weeks.some((week) => week.key === state.selectedWeeklyReportWeek)) {
+    state.selectedWeeklyReportWeek = weeks.find((week) => week.count > 0)?.key || weeks[0]?.key || "";
   }
 
-  els.weeklyReportDateTabs.innerHTML = "";
-  dates.forEach((date) => {
-    const count = rows.filter((row) => row.__openDate === date).length;
-    els.weeklyReportDateTabs.appendChild(tabButton(formatDateTabLabel(date), count, date === state.selectedWeeklyReportDate, () => {
-      state.selectedWeeklyReportDate = date;
+  els.weeklyReportMonthTabs.innerHTML = "";
+  months.forEach((month) => {
+    const count = bundles.filter((bundle) => bundle.month === month).length;
+    els.weeklyReportMonthTabs.appendChild(tabButton(formatMonthlyOpenMonth(month), count, month === state.selectedWeeklyReportMonth, () => {
+      state.selectedWeeklyReportMonth = month;
+      state.selectedWeeklyReportWeek = "";
       renderWeeklyReportInfo();
-    }, null, date));
+    }, null, month));
   });
 
-  const sections = weeklyReportSections(state.selectedWeeklyReportDate);
-  els.weeklyReportCopyButton.disabled = sections.length === 0;
-  els.weeklyReportContent.innerHTML = sections.map(weeklyReportSectionHtml).join("");
-  els.weeklyReportEmptyState.hidden = sections.length > 0;
+  els.weeklyReportWeekTabs.innerHTML = "";
+  weeks.forEach((week) => {
+    const button = smallTabButton(week.label, week.count, week.key === state.selectedWeeklyReportWeek, () => {
+      state.selectedWeeklyReportWeek = week.key;
+      renderWeeklyReportInfo();
+    });
+    button.title = `${formatDateWithDay(week.start)} ~ ${formatDateWithDay(week.end)}`;
+    els.weeklyReportWeekTabs.appendChild(button);
+  });
+
+  const report = weeklyReportData();
+  els.weeklyReportCopyButton.disabled = report.sections.length === 0;
+  els.weeklyReportContent.innerHTML = weeklyReportPreviewHtml(report);
+  els.weeklyReportEmptyState.hidden = report.sections.length > 0;
 }
 
 function weeklyReportRows() {
   return state.rows.filter((row) => row.__openDate);
 }
 
-function weeklyReportSections(openDate) {
-  const rows = weeklyReportRows().filter((row) => row.__openDate === openDate);
+function weeklyReportBundles() {
+  const rows = weeklyReportRows();
+  const rowsByDate = groupBy(rows, (row) => row.__openDate);
+  return Object.keys(rowsByDate).sort().flatMap((openDate) => {
+    const openWeek = weekStartDate(openDate);
+    return [0, 1, 2, 3].map((offset) => {
+      const weekStart = addDays(openWeek, -7 * offset);
+      const weekEnd = addDays(weekStart, 4);
+      return {
+        openDate,
+        progress: 100 - (offset * 20),
+        weekKey: dateToYmd(weekStart),
+        weekStart: dateToYmd(weekStart),
+        weekEnd: dateToYmd(weekEnd),
+        month: weeklyReportMonthKey(weekStart),
+        rows: rowsByDate[openDate],
+      };
+    });
+  }).filter((bundle) => bundle.progress >= 40);
+}
+
+function weeklyReportMonths() {
+  return ["2026-07", "2026-08", "2026-09", "2026-10", "2026-11"];
+}
+
+function weeklyReportWeeksForMonth(month) {
+  const bundles = weeklyReportBundles();
+  return monthWeekStarts(month).map((weekStart, index) => {
+    const key = dateToYmd(weekStart);
+    const end = dateToYmd(addDays(weekStart, 4));
+    return {
+      key,
+      start: key,
+      end,
+      label: `${index + 1}주`,
+      count: bundles.filter((bundle) => bundle.weekKey === key).length,
+    };
+  });
+}
+
+function monthWeekStarts(month) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const firstDay = new Date(year, monthNumber - 1, 1);
+  let cursor = weekStartDate(firstDay);
+  const weeks = [];
+  while (weeklyReportMonthKey(cursor) <= month) {
+    if (weeklyReportMonthKey(cursor) === month) weeks.push(new Date(cursor));
+    cursor = addDays(cursor, 7);
+  }
+  return weeks;
+}
+
+function weeklyReportMonthKey(weekStart) {
+  return dateToYmd(addDays(weekStart, 4)).slice(0, 7);
+}
+
+function weeklyReportData() {
+  const bundles = weeklyReportBundles()
+    .filter((bundle) => bundle.weekKey === state.selectedWeeklyReportWeek)
+    .sort((a, b) => a.openDate.localeCompare(b.openDate) || b.progress - a.progress);
+  const progress = bundles.length
+    ? Math.round(bundles.reduce((sum, bundle) => sum + bundle.progress, 0) / bundles.length)
+    : 0;
+  const openDates = unique(bundles.map((bundle) => bundle.openDate)).sort();
+  return {
+    headline: `5,6학년 개정 2학기 오픈 / 공정률 ${progress}% (${openDates.map(formatShortSlashDate).join(", ")})`,
+    progress,
+    openDates,
+    sections: weeklyReportSections(bundles),
+  };
+}
+
+function weeklyReportSections(bundles) {
+  const rows = bundles.flatMap((bundle) => bundle.rows);
   const subjects = unique(rows.map((row) => sortSubject(row) || row.__subject || "미분류")).sort(compareSubjectOrder);
   return subjects.map((subject) => {
-    const subjectRows = rows.filter((row) => (sortSubject(row) || row.__subject || "미분류") === subject);
-    const categories = weeklyReportCategories(subjectRows);
-    const categoryNames = categories.map(({ sheet }) => weeklyReportCategoryName(sheet));
+    const blocks = bundles.map((bundle) => weeklyReportSubjectBlock(subject, bundle)).filter(Boolean);
     return {
       subject,
-      openDate,
-      grades: weeklyGradeLabel(subjectRows),
-      categoryNames,
-      lines: categories.map(({ sheet, rows: categoryRows }) => ({
-        label: weeklyReportCategoryName(sheet),
-        detail: weeklyReportCategoryDetail(categoryRows),
-      })),
+      blocks,
     };
-  }).filter((section) => section.lines.length);
+  }).filter((section) => section.blocks.length);
+}
+
+function weeklyReportSubjectBlock(subject, bundle) {
+  const subjectRows = bundle.rows.filter((row) => (sortSubject(row) || row.__subject || "미분류") === subject);
+  if (!subjectRows.length) return null;
+  const categories = weeklyReportCategories(subjectRows);
+  const categoryNames = categories.map(({ sheet }) => weeklyReportCategoryName(sheet));
+  return {
+    subject,
+    openDate: bundle.openDate,
+    progress: bundle.progress,
+    grades: weeklyGradeLabel(subjectRows),
+    categoryNames,
+    action: weeklyReportAction(categories.map(({ sheet }) => sheet)),
+    lines: categories.map(({ sheet, rows: categoryRows }) => ({
+      label: weeklyReportCategoryName(sheet),
+      detail: weeklyReportCategoryDetail(categoryRows),
+    })),
+  };
+}
+
+function weeklyReportAction(sheets) {
+  if (sheets.some((sheet) => ["학교공부", "학교시험"].includes(sheet))) return "오픈 및 모니터링";
+  if (sheets.includes("수학마스터")) return "검증계 검수";
+  return "오픈 및 모니터링";
 }
 
 function weeklyReportCategories(rows) {
@@ -953,42 +1076,79 @@ function weeklyLessonText(lessons) {
   return `${lessons.join(",")}차시`;
 }
 
-function weeklyReportSectionHtml(section) {
-  const dateLabel = formatShortSlashDate(section.openDate);
-  const categoryText = section.categoryNames.join("/");
+function weeklyReportPreviewHtml(report) {
+  if (!report.sections.length) {
+    return `<div class="empty">선택한 주차에 포함되는 주간보고 데이터가 없습니다.</div>`;
+  }
   return `
-    <section class="weekly-report-card">
-      <h3>[${escapeHtml(section.subject)}]</h3>
-      <strong>${escapeHtml(section.grades)} ${escapeHtml(categoryText)} / 공정률 % (${escapeHtml(dateLabel)})</strong>
-      <div class="weekly-report-lines">
-        ${section.lines.map((line) => `
-          <p><b>${escapeHtml(line.label)}</b> : ${escapeHtml(line.detail)}</p>
+    <div class="weekly-report-title">${escapeHtml(report.headline)}</div>
+    ${report.sections.map((section) => `
+      <section class="weekly-report-card">
+        <h3>[${escapeHtml(section.subject)}]</h3>
+        ${section.blocks.map(weeklyReportBlockHtml).join("")}
+      </section>
+    `).join("")}
+  `;
+}
+
+function weeklyReportBlockHtml(block) {
+  const dateLabel = formatShortSlashDate(block.openDate);
+  const categoryText = block.categoryNames.join("/");
+  return `
+    <div class="weekly-report-block">
+      <strong>${escapeHtml(block.grades)} ${escapeHtml(categoryText)} ${escapeHtml(block.action)} / 공정률 ${block.progress}% (${escapeHtml(dateLabel)})</strong>
+      <ul>
+        ${block.lines.map((line) => `
+          <li><b>${escapeHtml(line.label)}</b> : ${escapeHtml(line.detail)}</li>
         `).join("")}
-      </div>
-    </section>
+      </ul>
+    </div>
   `;
 }
 
 async function copyWeeklyReportSummary() {
-  const sections = weeklyReportSections(state.selectedWeeklyReportDate);
-  if (!sections.length) {
+  const report = weeklyReportData();
+  if (!report.sections.length) {
     showToast("복사할 주간보고 정보가 없습니다.");
     return;
   }
-  await copyTextToClipboard(weeklyReportText(sections));
+  await copyTableToClipboard(weeklyReportClipboardHtml(report), weeklyReportText(report));
   showToast("주간보고 정보를 복사했습니다.");
 }
 
-function weeklyReportText(sections) {
-  return sections.map((section) => {
-    const dateLabel = formatShortSlashDate(section.openDate);
-    const lines = [
+function weeklyReportClipboardHtml(report) {
+  return `
+    <ul>
+      <li><strong>${escapeHtml(report.headline)}</strong></li>
+      ${report.sections.map((section) => `
+        <li><strong>[${escapeHtml(section.subject)}]</strong>
+          <ul>
+            ${section.blocks.map((block) => `
+              <li><strong>${escapeHtml(block.grades)} ${escapeHtml(block.categoryNames.join("/"))} ${escapeHtml(block.action)} / 공정률 ${block.progress}% (${escapeHtml(formatShortSlashDate(block.openDate))})</strong>
+                <ul>
+                  ${block.lines.map((line) => `<li><strong>${escapeHtml(line.label)}</strong> : ${escapeHtml(line.detail)}</li>`).join("")}
+                </ul>
+              </li>
+            `).join("")}
+          </ul>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+}
+
+function weeklyReportText(report) {
+  return [
+    report.headline,
+    "",
+    ...report.sections.map((section) => [
       `[${section.subject}]`,
-      `${section.grades} ${section.categoryNames.join("/")} / 공정률 % (${dateLabel})`,
-      ...section.lines.map((line) => `${line.label} : ${line.detail}`),
-    ];
-    return lines.join("\n");
-  }).join("\n\n");
+      ...section.blocks.flatMap((block) => [
+        `${block.grades} ${block.categoryNames.join("/")} ${block.action} / 공정률 ${block.progress}% (${formatShortSlashDate(block.openDate)})`,
+        ...block.lines.map((line) => `- ${line.label} : ${line.detail}`),
+      ]),
+    ].join("\n")),
+  ].join("\n\n");
 }
 
 function renderMonthlyOpenInfo() {

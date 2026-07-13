@@ -1055,15 +1055,31 @@ body.lesson-only .lesson-action-bar .file-button {
   gap: 8px;
 }
 
-.weekly-report-date-tabs {
+.weekly-report-month-tabs {
   padding: 14px 16px 12px;
   border-bottom: 1px solid var(--line);
+}
+
+.weekly-report-week-tabs {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfe;
 }
 
 .weekly-report-content {
   display: grid;
   gap: 12px;
   padding: 14px 16px 18px;
+}
+
+.weekly-report-title {
+  padding: 14px 16px;
+  border: 1px solid #b8d4df;
+  border-radius: 8px;
+  background: #f0f8fb;
+  color: var(--brand-strong);
+  font-size: 17px;
+  font-weight: 900;
 }
 
 .weekly-report-card {
@@ -1079,19 +1095,24 @@ body.lesson-only .lesson-action-bar .file-button {
   font-size: 17px;
 }
 
-.weekly-report-card > strong {
+.weekly-report-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.weekly-report-block > strong {
   display: block;
-  margin-bottom: 10px;
   font-size: 15px;
 }
 
-.weekly-report-lines {
-  display: grid;
-  gap: 6px;
+.weekly-report-block ul {
+  margin: 0;
+  padding-left: 24px;
 }
 
-.weekly-report-lines p {
-  margin: 0;
+.weekly-report-block li {
+  margin: 4px 0;
   line-height: 1.55;
 }
 
