@@ -704,6 +704,12 @@ body.lesson-only .lesson-action-bar .file-button {
   border-bottom: 1px solid var(--line);
 }
 
+.publisher-subject-tabs {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fbfcfe;
+}
+
 .publisher-filters {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

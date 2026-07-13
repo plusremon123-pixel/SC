@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="app-build" content="20260709-16" />
+    <meta name="app-build" content="20260713-1" />
     <title>5,6개정 실무 관리 툴</title>
-    <link rel="stylesheet" href="./styles.css?v=20260709-16" />
+    <link rel="stylesheet" href="./styles.css?v=20260713-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -18,7 +18,7 @@
       <nav class="view-tabs" aria-label="화면 선택">
         <button id="lessonViewButton" type="button" class="active">차시별 일정</button>
         <button id="overallViewButton" type="button">콘텐츠 오픈 예정일</button>
-        <button id="mathAnalysisViewButton" type="button">수학 차시별 분석</button>
+        <button id="mathAnalysisViewButton" type="button">오픈별 출판사 적용</button>
         <button id="monthlyOpenViewButton" type="button">월별 오픈 정보</button>
         <button id="scheduleCardViewButton" type="button">스케쥴 카드</button>
       </nav>
@@ -93,10 +93,11 @@
       <div id="mathAnalysisView" hidden>
         <section class="math-analysis-panel">
           <div class="analysis-head">
-            <strong>수학 차시별 분석</strong>
+            <strong>오픈별 출판사 적용</strong>
             <span id="mathAnalysisSummary"></span>
           </div>
           <div id="mathAnalysisDateTabs" class="tabs date-tabs analysis-date-tabs"></div>
+          <div id="publisherSubjectTabs" class="tabs publisher-subject-tabs"></div>
           <div id="mathPublisherFilters" class="publisher-filters"></div>
           <div id="mathAnalysisKpis" class="analysis-kpis"></div>
           <div class="scroll-area analysis-scroll">
@@ -112,7 +113,7 @@
               </thead>
               <tbody id="mathAnalysisTableBody"></tbody>
             </table>
-            <div id="mathAnalysisEmptyState" class="empty" hidden>수학 학교공부 데이터가 없습니다.</div>
+            <div id="mathAnalysisEmptyState" class="empty" hidden>학교공부 데이터가 없습니다.</div>
           </div>
         </section>
       </div>
@@ -163,6 +164,6 @@
     <div id="toast" class="toast" hidden></div>
 
     <script src="./vendor/exceljs.min.js?v=20260703-39"></script>
-    <script src="./app.js?v=20260709-16"></script>
+    <script src="./app.js?v=20260713-1"></script>
   </body>
 </html>

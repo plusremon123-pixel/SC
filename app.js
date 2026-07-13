@@ -2,7 +2,8 @@ const STORAGE_KEY = "schedule-card-workbook-v1";
 const SOURCE_KEY = "schedule-card-source-v1";
 const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const TIMELINE_KEY = "schedule-card-release-timeline-v1";
-const MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v3";
+const LEGACY_MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v3";
+const PUBLISHER_CONFIG_KEY = "schedule-card-open-publisher-config-v1";
 const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
 const PUBLISHER_AUTH_KEY = "schedule-card-publisher-auth-v1";
 const ALL_DATES = "__all_dates__";
@@ -14,7 +15,8 @@ const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
-const SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config-v3.json";
+const LEGACY_SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config-v3.json";
+const SUPABASE_PUBLISHER_CONFIG_PATH = "open-publisher-config-v1.json";
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -27,6 +29,7 @@ const TIMELINE_DAYS = 30;
 const DEFAULT_QA_DAYS = 5;
 const DEFAULT_STAGE_DAYS = 5;
 const COPY_SUBJECT_ORDER = ["국어", "수학", "과학", "사회", "영어"];
+const PUBLISHER_APPLY_SUBJECTS = ["수학", "과학", "사회"];
 const MONTHLY_SERVICE_LABEL = "스마트올 초등";
 const APP_PARAMS = new URLSearchParams(window.location.search);
 const IS_LESSON_ONLY = APP_PARAMS.get("view") === "lesson-only";
@@ -68,6 +71,7 @@ const state = {
   selectedTableGroup: "",
   selectedTableGrade: "",
   selectedMathAnalysisDate: "",
+  selectedPublisherSubject: "수학",
   selectedMonthlyOpenMonth: "",
   mathPublisherConfig: {},
   tabOrder: "subject-first",
@@ -114,6 +118,7 @@ const els = {
   rowCount: document.querySelector("#rowCount"),
   emptyState: document.querySelector("#emptyState"),
   mathAnalysisDateTabs: document.querySelector("#mathAnalysisDateTabs"),
+  publisherSubjectTabs: document.querySelector("#publisherSubjectTabs"),
   mathPublisherFilters: document.querySelector("#mathPublisherFilters"),
   mathAnalysisKpis: document.querySelector("#mathAnalysisKpis"),
   mathAnalysisSummary: document.querySelector("#mathAnalysisSummary"),
@@ -1438,9 +1443,9 @@ function tablePublisherSortStatus(publisher, rows) {
 
 function tablePublisherMainOrder(publisher, rows) {
   const orders = rows
-    .filter((row) => row.__sheet === "학교공부" && sortSubject(row) === "수학" && (row["출판사"] || "미분류") === publisher)
+    .filter((row) => publisherConfigAppliesToRow(row) && (row["출판사"] || "미분류") === publisher)
     .map((row) => {
-      const config = mathPublisherConfigForDate(row.__openDate)[row["학년"] || "미분류"];
+      const config = publisherConfigForRow(row);
       const index = config?.main?.indexOf(publisher) ?? -1;
       return index === -1 ? 9999 : index;
     });
@@ -1459,8 +1464,8 @@ function tablePublisherStatus(publisher, rows) {
 }
 
 function mathPublisherStatusForRow(row, publisher) {
-  if (row.__sheet !== "학교공부" || sortSubject(row) !== "수학") return "";
-  const config = mathPublisherConfigForDate(row.__openDate)[row["학년"] || "미분류"];
+  if (!publisherConfigAppliesToRow(row)) return "";
+  const config = publisherConfigForRow(row);
   if (!config) return "";
   if ((config.main || []).includes(publisher)) return "main";
   if ((config.sub || []).includes(publisher) && (config.disabledSub || []).includes(publisher)) return "disabled";
@@ -1468,7 +1473,21 @@ function mathPublisherStatusForRow(row, publisher) {
   return "";
 }
 
+function publisherConfigAppliesToRow(row) {
+  return row.__sheet === "학교공부" && PUBLISHER_APPLY_SUBJECTS.includes(sortSubject(row));
+}
+
 function renderMathAnalysis() {
+  const allRows = publisherAnalysisRows();
+  const subjects = PUBLISHER_APPLY_SUBJECTS.filter((subject) => (
+    allRows.some((row) => sortSubject(row) === subject)
+  ));
+  if (subjects.length && !subjects.includes(state.selectedPublisherSubject)) {
+    state.selectedPublisherSubject = subjects[0];
+    state.selectedMathAnalysisDate = "";
+  }
+  renderPublisherSubjectTabs(subjects, allRows);
+
   const rows = mathSchoolworkRows();
   const dates = unique(rows.map((row) => row.__openDate)).sort();
   if (!dates.includes(state.selectedMathAnalysisDate)) state.selectedMathAnalysisDate = dates[0] || "";
@@ -1500,8 +1519,8 @@ function renderMathAnalysis() {
   const unitCount = unique(selectedRows.map((row) => mathUnitKey(row))).length;
 
   els.mathAnalysisSummary.textContent = state.selectedMathAnalysisDate
-    ? `${formatDateWithDay(state.selectedMathAnalysisDate)} · 학교공부 수학 ${selectedRows.length.toLocaleString("ko-KR")}건`
-    : "학교공부 수학 데이터 없음";
+    ? `${formatDateWithDay(state.selectedMathAnalysisDate)} · 학교공부 ${currentPublisherSubject()} ${selectedRows.length.toLocaleString("ko-KR")}건`
+    : `학교공부 ${currentPublisherSubject()} 데이터 없음`;
   els.mathAnalysisKpis.innerHTML = [
     analysisKpi("전체 차시", selectedRows.length),
     analysisKpi("단원", unitCount),
@@ -1531,6 +1550,22 @@ function renderMathAnalysis() {
   });
   els.mathAnalysisTableBody.appendChild(fragment);
   els.mathAnalysisEmptyState.hidden = groups.length > 0;
+}
+
+function renderPublisherSubjectTabs(subjects, rows) {
+  els.publisherSubjectTabs.innerHTML = "";
+  if (!subjects.length) {
+    els.publisherSubjectTabs.hidden = true;
+    return;
+  }
+  els.publisherSubjectTabs.hidden = false;
+  subjects.forEach((subject) => {
+    const count = rows.filter((row) => sortSubject(row) === subject && mathPublisherSelected(row)).length;
+    els.publisherSubjectTabs.appendChild(smallTabButton(subject, count, subject === state.selectedPublisherSubject, () => {
+      state.selectedPublisherSubject = subject;
+      renderMathAnalysis();
+    }));
+  });
 }
 
 function renderMathPublisherFilters(publishersByGrade, rows) {
@@ -1582,8 +1617,12 @@ function mathDisabledCountForGrade(rows, grade) {
 
 function publisherLane(grade, lane, title) {
   const config = mathPublisherConfigForSelectedDate()[grade] || { main: [], sub: [], disabledSub: [] };
+  const subject = currentPublisherSubject();
+  const date = state.selectedMathAnalysisDate;
   const wrapper = document.createElement("div");
   wrapper.className = `publisher-lane publisher-lane-${lane}`;
+  wrapper.dataset.subject = subject;
+  wrapper.dataset.date = date;
   wrapper.dataset.grade = grade;
   wrapper.dataset.lane = lane;
 
@@ -1605,8 +1644,8 @@ function publisherLane(grade, lane, title) {
     event.preventDefault();
     list.classList.remove("drag-over");
     const payload = parseDragPayload(event.dataTransfer.getData("text/plain"));
-    if (!payload || payload.grade !== grade) return;
-    moveMathPublisher(grade, payload.publisher, lane);
+    if (!payload || payload.grade !== grade || payload.subject !== subject || payload.date !== date) return;
+    moveMathPublisher(grade, payload.publisher, lane, subject, date);
   });
 
   const publishers = publishersForLane(config, lane);
@@ -1627,6 +1666,8 @@ function publisherLane(grade, lane, title) {
 
 function publisherChip(grade, publisher, lane) {
   const config = mathPublisherConfigForSelectedDate()[grade] || { disabledSub: [] };
+  const subject = currentPublisherSubject();
+  const date = state.selectedMathAnalysisDate;
   const chip = document.createElement("div");
   chip.className = `publisher-chip publisher-chip-${lane}`;
   chip.draggable = true;
@@ -1634,7 +1675,7 @@ function publisherChip(grade, publisher, lane) {
   chip.setAttribute("tabindex", "0");
   chip.addEventListener("dragstart", (event) => {
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", JSON.stringify({ grade, publisher, lane }));
+    event.dataTransfer.setData("text/plain", JSON.stringify({ subject, date, grade, publisher, lane }));
   });
 
   if (lane === "sub" || lane === "disabled") {
@@ -1645,7 +1686,7 @@ function publisherChip(grade, publisher, lane) {
     checkbox.checked = !isDisabled;
     checkbox.addEventListener("click", (event) => event.stopPropagation());
     checkbox.addEventListener("change", () => {
-      toggleSubPublisher(grade, publisher, checkbox.checked);
+      toggleSubPublisher(grade, publisher, checkbox.checked, subject, date);
     });
     chip.appendChild(checkbox);
   }
@@ -1667,20 +1708,20 @@ function publishersForLane(config, lane) {
 function parseDragPayload(value) {
   try {
     const payload = JSON.parse(value);
-    if (!payload?.grade || !payload?.publisher) return null;
+    if (!payload?.subject || !payload?.date || !payload?.grade || !payload?.publisher) return null;
     return payload;
   } catch {
     return null;
   }
 }
 
-function moveMathPublisher(grade, publisher, targetLane) {
+function moveMathPublisher(grade, publisher, targetLane, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
   if (!confirmPublisherPassword()) {
     showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
     return;
   }
 
-  const config = ensureGradePublisherConfig(grade);
+  const config = ensureGradePublisherConfig(grade, subject, date);
   config.main = config.main.filter((item) => item !== publisher);
   config.sub = config.sub.filter((item) => item !== publisher);
   config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
@@ -1697,14 +1738,14 @@ function moveMathPublisher(grade, publisher, targetLane) {
   renderMathAnalysis();
 }
 
-function toggleSubPublisher(grade, publisher, enabled) {
+function toggleSubPublisher(grade, publisher, enabled, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
   if (!confirmPublisherPassword()) {
     showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
     renderMathAnalysis();
     return;
   }
 
-  const config = ensureGradePublisherConfig(grade);
+  const config = ensureGradePublisherConfig(grade, subject, date);
   if (enabled) {
     config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
   } else {
@@ -1724,9 +1765,8 @@ function mathPublishersByGrade(rows) {
 }
 
 function mathPublisherSelected(row) {
-  const grade = row["학년"] || "미분류";
   const publisher = row["출판사"] || "미분류";
-  const config = mathPublisherConfigForDate(row.__openDate)[grade];
+  const config = publisherConfigForRow(row);
   if (!config) return true;
   if ((config.main || []).includes(publisher)) return true;
   if ((config.sub || []).includes(publisher)) return !(config.disabledSub || []).includes(publisher);
@@ -1734,17 +1774,16 @@ function mathPublisherSelected(row) {
 }
 
 function mathPublisherDisabled(row) {
-  const grade = row["학년"] || "미분류";
   const publisher = row["출판사"] || "미분류";
-  const config = mathPublisherConfigForDate(row.__openDate)[grade];
+  const config = publisherConfigForRow(row);
   return Boolean(config && (config.sub || []).includes(publisher) && (config.disabledSub || []).includes(publisher));
 }
 
-function ensureMathPublisherConfig(publishersByGrade) {
-  const dateConfig = mathPublisherConfigForSelectedDate();
+function ensureMathPublisherConfig(publishersByGrade, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
+  const dateConfig = publisherConfigForSubjectDate(subject, date);
   Object.entries(publishersByGrade).forEach(([grade, publishers]) => {
     const normalized = unique(publishers).sort(localeSort);
-    const config = ensureGradePublisherConfig(grade);
+    const config = ensureGradePublisherConfig(grade, subject, date);
     if (!config.main.length && !config.sub.length) {
       config.main = [];
       config.sub = [...normalized];
@@ -1767,8 +1806,8 @@ function ensureMathPublisherConfig(publishersByGrade) {
   saveMathPublisherConfig();
 }
 
-function ensureGradePublisherConfig(grade) {
-  const dateConfig = mathPublisherConfigForSelectedDate();
+function ensureGradePublisherConfig(grade, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
+  const dateConfig = publisherConfigForSubjectDate(subject, date);
   if (!dateConfig[grade]) {
     dateConfig[grade] = { main: [], sub: [], disabledSub: [] };
   }
@@ -1780,7 +1819,8 @@ function ensureGradePublisherConfig(grade) {
 
 function readMathPublisherConfig() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(MATH_PUBLISHER_CONFIG_KEY) || "{}");
+    const raw = localStorage.getItem(PUBLISHER_CONFIG_KEY) || localStorage.getItem(LEGACY_MATH_PUBLISHER_CONFIG_KEY) || "{}";
+    const parsed = JSON.parse(raw);
     return normalizeMathPublisherConfig(parsed);
   } catch {
     return {};
@@ -1789,12 +1829,17 @@ function readMathPublisherConfig() {
 
 async function loadSharedMathPublisherConfig() {
   try {
-    const response = await fetch(supabasePublicUrl(SUPABASE_MATH_PUBLISHER_PATH), { cache: "no-store" });
+    let response = await fetch(supabasePublicUrl(SUPABASE_PUBLISHER_CONFIG_PATH), { cache: "no-store" });
+    let isLegacy = false;
+    if (!response.ok) {
+      response = await fetch(supabasePublicUrl(LEGACY_SUPABASE_MATH_PUBLISHER_PATH), { cache: "no-store" });
+      isLegacy = true;
+    }
     if (!response.ok) return false;
     const value = await response.json();
     if (!value || typeof value !== "object") return false;
-    state.mathPublisherConfig = normalizeMathPublisherConfig(value);
-    localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
+    state.mathPublisherConfig = normalizeMathPublisherConfig(value, isLegacy);
+    localStorage.setItem(PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
     return true;
   } catch (error) {
     console.warn("공유 출판사 설정을 불러오지 못했습니다.", error);
@@ -1802,8 +1847,25 @@ async function loadSharedMathPublisherConfig() {
   }
 }
 
-function normalizeMathPublisherConfig(config) {
+function normalizeMathPublisherConfig(config, forceLegacy = false) {
   if (!config || typeof config !== "object") return {};
+  if (forceLegacy || isLegacyMathPublisherConfig(config)) {
+    return { 수학: normalizePublisherDateConfig(config) };
+  }
+  const normalized = {};
+  PUBLISHER_APPLY_SUBJECTS.forEach((subject) => {
+    if (config[subject] && typeof config[subject] === "object") {
+      normalized[subject] = normalizePublisherDateConfig(config[subject]);
+    }
+  });
+  return normalized;
+}
+
+function isLegacyMathPublisherConfig(config) {
+  return Object.keys(config).some((key) => /^\d{4}-\d{2}-\d{2}$/.test(key));
+}
+
+function normalizePublisherDateConfig(config) {
   const normalized = {};
   Object.entries(config).forEach(([date, value]) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
@@ -1822,19 +1884,40 @@ function normalizeMathPublisherConfig(config) {
 }
 
 function mathPublisherConfigForSelectedDate() {
-  const date = state.selectedMathAnalysisDate || "__noDate";
-  if (!state.mathPublisherConfig[date]) {
-    state.mathPublisherConfig[date] = {};
-  }
-  return state.mathPublisherConfig[date];
+  return publisherConfigForSubjectDate(currentPublisherSubject(), state.selectedMathAnalysisDate);
 }
 
-function mathPublisherConfigForDate(date) {
-  return state.mathPublisherConfig[date || state.selectedMathAnalysisDate] || {};
+function mathPublisherConfigForDate(date, subject = currentPublisherSubject()) {
+  return state.mathPublisherConfig[subject]?.[date || state.selectedMathAnalysisDate] || {};
+}
+
+function publisherConfigForSubjectDate(subject, date) {
+  const safeSubject = PUBLISHER_APPLY_SUBJECTS.includes(subject) ? subject : "수학";
+  const safeDate = date || "__noDate";
+  if (!state.mathPublisherConfig[safeSubject]) {
+    state.mathPublisherConfig[safeSubject] = {};
+  }
+  if (!state.mathPublisherConfig[safeSubject][safeDate]) {
+    state.mathPublisherConfig[safeSubject][safeDate] = {};
+  }
+  return state.mathPublisherConfig[safeSubject][safeDate];
+}
+
+function publisherConfigForRow(row) {
+  if (!publisherConfigAppliesToRow(row)) return null;
+  const subject = sortSubject(row);
+  const grade = row["학년"] || "미분류";
+  return mathPublisherConfigForDate(row.__openDate, subject)[grade] || null;
+}
+
+function currentPublisherSubject() {
+  return PUBLISHER_APPLY_SUBJECTS.includes(state.selectedPublisherSubject)
+    ? state.selectedPublisherSubject
+    : "수학";
 }
 
 function saveMathPublisherConfig(options = {}) {
-  localStorage.setItem(MATH_PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
+  localStorage.setItem(PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
   if (options.shared) {
     saveMathPublisherConfigToSupabase().catch((error) => {
       console.error(error);
@@ -1844,13 +1927,22 @@ function saveMathPublisherConfig(options = {}) {
 }
 
 async function saveMathPublisherConfigToSupabase() {
-  const result = await putJsonToSupabase(SUPABASE_MATH_PUBLISHER_PATH, mathPublisherConfigPayload());
+  const result = await putJsonToSupabase(SUPABASE_PUBLISHER_CONFIG_PATH, mathPublisherConfigPayload());
   if (!result.ok) throw new Error(result.message);
   showToast("출판사 설정을 공유 저장했습니다.");
 }
 
 function mathSchoolworkRows() {
-  return state.rows.filter((row) => row.__sheet === "학교공부" && row.__subject === "수학");
+  const subject = currentPublisherSubject();
+  return publisherAnalysisRows().filter((row) => sortSubject(row) === subject);
+}
+
+function publisherAnalysisRows() {
+  return state.rows.filter((row) => (
+    row.__sheet === "학교공부"
+    && PUBLISHER_APPLY_SUBJECTS.includes(sortSubject(row))
+    && isMeaningfulPublisher(row["출판사"] || "미분류")
+  ));
 }
 
 function mathLessonGroups(rows) {
@@ -2332,6 +2424,11 @@ function sharedTimelinePayload() {
 function mathPublisherConfigPayload() {
   const config = clonePlainObject(state.mathPublisherConfig);
   delete config.__noDate;
+  Object.values(config).forEach((subjectConfig) => {
+    if (subjectConfig && typeof subjectConfig === "object") {
+      delete subjectConfig.__noDate;
+    }
+  });
   return config;
 }
 
