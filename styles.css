@@ -1024,7 +1024,8 @@ body.lesson-only .lesson-action-bar .file-button {
   background: #fff;
 }
 
-.monthly-open-panel {
+.monthly-open-panel,
+.weekly-report-panel {
   position: relative;
   margin-top: 14px;
   background: var(--panel);
@@ -1032,7 +1033,8 @@ body.lesson-only .lesson-action-bar .file-button {
   border-radius: 8px;
 }
 
-.monthly-open-head {
+.monthly-open-head,
+.weekly-report-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1041,14 +1043,56 @@ body.lesson-only .lesson-action-bar .file-button {
   border-bottom: 1px solid var(--line);
 }
 
-.monthly-open-head strong {
+.monthly-open-head strong,
+.weekly-report-head strong {
   font-size: 16px;
 }
 
-.monthly-open-tools {
+.monthly-open-tools,
+.weekly-report-tools {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.weekly-report-date-tabs {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.weekly-report-content {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 18px;
+}
+
+.weekly-report-card {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.weekly-report-card h3 {
+  margin: 0 0 8px;
+  color: var(--brand-strong);
+  font-size: 17px;
+}
+
+.weekly-report-card > strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+
+.weekly-report-lines {
+  display: grid;
+  gap: 6px;
+}
+
+.weekly-report-lines p {
+  margin: 0;
+  line-height: 1.55;
 }
 
 .monthly-open-list {
