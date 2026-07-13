@@ -966,7 +966,7 @@ function weeklyReportData() {
 
 function weeklyReportSections(bundles) {
   const rows = bundles.flatMap((bundle) => bundle.rows);
-  const subjects = unique(rows.map((row) => sortSubject(row) || row.__subject || "미분류")).sort(compareSubjectOrder);
+  const subjects = unique(rows.map(weeklyReportSubject)).sort(compareSubjectOrder);
   return subjects.map((subject) => {
     const blocks = bundles.map((bundle) => weeklyReportSubjectBlock(subject, bundle)).filter(Boolean);
     return {
@@ -977,7 +977,7 @@ function weeklyReportSections(bundles) {
 }
 
 function weeklyReportSubjectBlock(subject, bundle) {
-  const subjectRows = bundle.rows.filter((row) => (sortSubject(row) || row.__subject || "미분류") === subject);
+  const subjectRows = bundle.rows.filter((row) => weeklyReportSubject(row) === subject);
   if (!subjectRows.length) return null;
   const categories = weeklyReportCategories(subjectRows);
   const categoryNames = categories.map(({ sheet }) => weeklyReportCategoryName(sheet));
@@ -993,6 +993,11 @@ function weeklyReportSubjectBlock(subject, bundle) {
       detail: weeklyReportCategoryDetail(categoryRows),
     })),
   };
+}
+
+function weeklyReportSubject(row) {
+  if (row.__sheet === "수학마스터") return "수학";
+  return sortSubject(row) || row.__subject || "미분류";
 }
 
 function weeklyReportAction(sheets) {
@@ -1020,10 +1025,41 @@ function weeklyReportCategoryName(sheet) {
 }
 
 function weeklyReportCategoryDetail(rows) {
-  return weeklyReportDetailGroups(rows).map(({ label, rows: groupRows }) => {
+  const details = weeklyReportDetailGroups(rows).map(({ label, rows: groupRows }) => {
     const scope = weeklyReportScopeText(groupRows);
-    return label ? `${label} ${scope}` : scope;
-  }).join(", ");
+    return { label, scope };
+  });
+  return mergeWeeklyReportDetails(details).join(", ");
+}
+
+function mergeWeeklyReportDetails(details) {
+  const unlabeled = details
+    .filter((detail) => !detail.label)
+    .map((detail) => detail.scope)
+    .filter(Boolean);
+  const labeledGroups = groupBy(details.filter((detail) => detail.label), (detail) => detail.scope || "");
+  const labeled = Object.keys(labeledGroups)
+    .sort((a, b) => compareWeeklyScopeOrder(a, b))
+    .map((scope) => {
+      const labels = labeledGroups[scope].map((detail) => detail.label).sort(compareWeeklyDetailLabel);
+      return [labels.join(", "), scope].filter(Boolean).join(" ");
+    });
+  return [...unlabeled, ...labeled].filter(Boolean);
+}
+
+function compareWeeklyDetailLabel(a, b) {
+  const order = ["단원요점정리", "단원 요점정리", "단원평가", "단원핵심특강", "서술형 트레이닝", "AI 서술형 평가", "실력완성문제"];
+  const aIndex = order.indexOf(a);
+  const bIndex = order.indexOf(b);
+  const aOrder = aIndex === -1 ? order.length : aIndex;
+  const bOrder = bIndex === -1 ? order.length : bIndex;
+  return aOrder - bOrder || localeSort(a, b);
+}
+
+function compareWeeklyScopeOrder(a, b) {
+  const aNumber = toNumber(a);
+  const bNumber = toNumber(b);
+  return aNumber - bNumber || localeSort(a, b);
 }
 
 function weeklyReportDetailGroups(rows) {
@@ -1045,12 +1081,11 @@ function weeklyReportDetailGroups(rows) {
 
 function weeklyReportScopeText(rows) {
   const sortedRows = [...rows].sort(compareRows);
-  const grades = weeklyGradeLabel(sortedRows);
   const unitGroups = groupBy(sortedRows, (row) => monthlyUnitValue(row) || "미분류");
   const unitParts = Object.keys(unitGroups)
     .sort((a, b) => toNumber(a) - toNumber(b) || localeSort(a, b))
     .map((unit) => weeklyUnitScopeText(unit, unitGroups[unit]));
-  return [grades, unitParts.join(", ")].filter(Boolean).join(" ");
+  return unitParts.join(", ");
 }
 
 function weeklyGradeLabel(rows) {
