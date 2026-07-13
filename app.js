@@ -984,16 +984,21 @@ function weeklyReportData() {
   const bundles = weeklyReportBundles()
     .filter((bundle) => bundle.weekKey === state.selectedWeeklyReportWeek)
     .sort((a, b) => a.openDate.localeCompare(b.openDate) || b.progress - a.progress);
-  const progress = bundles.length
-    ? Math.round(bundles.reduce((sum, bundle) => sum + bundle.progress, 0) / bundles.length)
-    : 0;
-  const openDates = unique(bundles.map((bundle) => bundle.openDate)).sort();
   return {
-    headline: `5,6학년 개정 2학기 오픈 / 공정률 ${progress}% (${openDates.map(formatShortSlashDate).join(", ")})`,
-    progress,
-    openDates,
+    headline: "5,6학년 개정 2학기 오픈",
+    progressItems: weeklyReportProgressItems(bundles),
     sections: weeklyReportSections(bundles),
   };
+}
+
+function weeklyReportProgressItems(bundles) {
+  return unique(bundles.map((bundle) => bundle.openDate)).sort().map((openDate) => {
+    const bundle = bundles.find((item) => item.openDate === openDate);
+    return {
+      openDate,
+      progress: bundle?.progress || 0,
+    };
+  });
 }
 
 function weeklyReportSections(bundles) {
@@ -1177,7 +1182,14 @@ function weeklyReportPreviewHtml(report) {
     return `<div class="empty">선택한 주차에 포함되는 주간보고 데이터가 없습니다.</div>`;
   }
   return `
-    <div class="weekly-report-title">${escapeHtml(report.headline)}</div>
+    <div class="weekly-report-title">
+      <strong>${escapeHtml(report.headline)}</strong>
+      <ul>
+        ${report.progressItems.map((item) => `
+          <li>공정률 ${item.progress}% (${escapeHtml(formatShortSlashDate(item.openDate))})</li>
+        `).join("")}
+      </ul>
+    </div>
     ${report.sections.map((section) => `
       <section class="weekly-report-card">
         <h3>[${escapeHtml(section.subject)}]</h3>
@@ -1215,7 +1227,11 @@ async function copyWeeklyReportSummary() {
 function weeklyReportClipboardHtml(report) {
   return `
     <ul>
-      <li><strong>${escapeHtml(report.headline)}</strong></li>
+      <li><strong>${escapeHtml(report.headline)}</strong>
+        <ul>
+          ${report.progressItems.map((item) => `<li>공정률 ${item.progress}% (${escapeHtml(formatShortSlashDate(item.openDate))})</li>`).join("")}
+        </ul>
+      </li>
       ${report.sections.map((section) => `
         <li><strong>[${escapeHtml(section.subject)}]</strong>
           <ul>
@@ -1236,6 +1252,7 @@ function weeklyReportClipboardHtml(report) {
 function weeklyReportText(report) {
   return [
     report.headline,
+    ...report.progressItems.map((item) => `- 공정률 ${item.progress}% (${formatShortSlashDate(item.openDate)})`),
     "",
     ...report.sections.map((section) => [
       `[${section.subject}]`,
