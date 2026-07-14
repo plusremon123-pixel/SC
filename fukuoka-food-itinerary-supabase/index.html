@@ -775,7 +775,7 @@
 
     .recommend-map-layout {
       display: grid;
-      grid-template-columns: 250px minmax(0, 1fr);
+      grid-template-columns: 290px minmax(0, 1fr);
       gap: 10px;
       margin-top: 12px;
     }
@@ -783,12 +783,15 @@
     .recommend-map-panel {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       padding: 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
       font-size: 13px;
+      max-height: min(54vh, 560px);
+      min-height: 420px;
+      overflow: auto;
     }
 
     .recommend-map-panel strong {
@@ -798,6 +801,56 @@
     .recommend-map-panel .jp-query {
       color: var(--muted);
       word-break: keep-all;
+    }
+
+    .recommend-search-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recommend-search-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .recommend-search-item.is-active {
+      border-color: #222;
+      box-shadow: inset 3px 0 0 #222;
+    }
+
+    .recommend-search-title {
+      display: block;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .recommend-search-query {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .recommend-search-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 7px;
+    }
+
+    .recommend-search-meta span {
+      border-radius: 999px;
+      background: var(--chip);
+      padding: 3px 7px;
+      font-size: 12px;
+      color: var(--accent);
     }
 
     .recommend-map-frame {
@@ -1083,9 +1136,8 @@
           <b>구글맵에서 실제 매장 확인</b>
           <div class="recommend-map-layout">
             <div class="recommend-map-panel">
-              <strong id="recommend-map-label">검색 조건</strong>
-              <span id="recommend-map-query" class="jp-query"></span>
-              <a id="recommend-map-external" class="btn light" href="#" target="_blank" rel="noreferrer" data-google-search-link="external">새 탭으로 열기</a>
+              <strong>검색 목록</strong>
+              <div id="recommend-search-list" class="recommend-search-list"></div>
             </div>
             <iframe id="recommend-map-frame" class="recommend-map-frame" title="Google Map Search"></iframe>
           </div>
@@ -2333,21 +2385,22 @@
       const location = profile?.label || base;
       const menus = menu
         ? menu.split(/[,，/ ]+/).map(item => item.trim()).filter(Boolean)
-        : ["정식", "해산물", "라멘", "야키니쿠", "초밥"];
+        : ["음식점", "정식", "해산물", "라멘", "야키니쿠", "초밥"];
+      const condition = `Google 評価 ${rating} 以上 徒歩 ${distance}`;
       const coreCards = [
-        { label: "기본 검색", jp: `${base} ${menu || title}` },
-        { label: "평점 조건 검색", jp: `${base} ${menu || title} Google 評価 ${rating} 以上` },
-        { label: "거리 조건 검색", jp: `${base} ${menu || title} ${distance} 近く` },
-        { label: "가격 조건 검색", jp: `${base} ${menu || title} ${price}` },
-        { label: "영업중 검색", jp: `${base} ${menu || title} 営業中` }
+        { label: "음식점", jp: `${base} ${menu || "飲食店"} ${condition}` },
+        { label: "평점 기준 음식점", jp: `${base} ${menu || title} Google 評価 ${rating} 以上` },
+        { label: "도보 거리 기준", jp: `${base} ${menu || title} 徒歩 ${distance}` },
+        { label: "가성비 음식점", jp: `${base} ${menu || title} ${price}` },
+        { label: "영업중 음식점", jp: `${base} ${menu || title} 営業中 ${condition}` }
       ];
       const menuCards = menus.map(item => ({
-        label: `${recommendationKindKo[item] || item} 검색`,
-        jp: `${base} ${item}`
+        label: recommendationKindKo[item] || item,
+        jp: `${base} ${item} ${condition}`
       }));
       const kindCards = recommendationKinds.map(kind => ({
-        label: `${recommendationKindKo[kind] || kind} 검색`,
-        jp: `${base} ${kind}`
+        label: recommendationKindKo[kind] || kind,
+        jp: `${base} ${kind} ${condition}`
       }));
       const seen = new Set();
       return [...coreCards, ...menuCards, ...kindCards].filter(card => {
@@ -2361,24 +2414,42 @@
         rating,
         distance,
         price,
-        menu: menu || card.label.replace(" 검색", ""),
+        menu: menu || card.label,
         url: mapUrl(card.jp)
       }));
     }
 
-    function selectedRecommendSearchCard() {
+    function selectedRecommendSearchCard(index = 0) {
       if (!currentRecommendMealId) return null;
       const cards = recommendSearchCards(currentRecommendMealId);
-      return cards[0] || null;
+      return cards[index] || cards[0] || null;
+    }
+
+    function setRecommendMap(index = 0) {
+      const card = selectedRecommendSearchCard(index);
+      if (!card) return;
+      document.querySelector("#recommend-map-frame").src = embedMapUrl(card.url);
+      document.querySelectorAll("[data-recommend-search]").forEach(button => {
+        button.classList.toggle("is-active", Number(button.dataset.recommendSearch) === card.index);
+      });
     }
 
     function renderRecommendSearches() {
-      const card = selectedRecommendSearchCard();
-      if (!card) return;
-      document.querySelector("#recommend-map-label").textContent = card.label;
-      document.querySelector("#recommend-map-query").textContent = card.jp;
-      document.querySelector("#recommend-map-external").href = card.url;
-      document.querySelector("#recommend-map-frame").src = embedMapUrl(card.url);
+      const box = document.querySelector("#recommend-search-list");
+      if (!box || !currentRecommendMealId) return;
+      const cards = recommendSearchCards(currentRecommendMealId);
+      box.innerHTML = cards.map(card => `
+        <button class="recommend-search-item${card.index === 0 ? " is-active" : ""}" type="button" data-recommend-search="${card.index}">
+          <span class="recommend-search-title">${card.index + 1}. ${attr(card.label)}</span>
+          <span class="recommend-search-query">${attr(card.jp)}</span>
+          <span class="recommend-search-meta">
+            <span>평점 ${attr(card.rating)} 이상</span>
+            <span>도보 ${attr(card.distance)}</span>
+            <span>${attr(card.price)}</span>
+          </span>
+        </button>
+      `).join("");
+      setRecommendMap(0);
     }
 
     function renderCandidateEditor(mealId) {
@@ -3014,6 +3085,12 @@
           return;
         }
         openMapModal(mapLink.href, mapLink.textContent.trim() || "지도", findItemByMapUrl(mapLink.href));
+        return;
+      }
+
+      const recommendSearchButton = event.target.closest("button[data-recommend-search]");
+      if (recommendSearchButton) {
+        setRecommendMap(Number(recommendSearchButton.dataset.recommendSearch));
         return;
       }
 
