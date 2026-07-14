@@ -716,16 +716,68 @@
       margin-top: 12px;
     }
 
-    .search-links a {
-      display: block;
-      padding: 9px 10px;
+    .search-card {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding: 11px;
       border: 1px solid var(--line);
       border-radius: 7px;
       color: var(--text);
       background: #fafafa;
-      text-decoration: none;
       font-size: 13px;
       line-height: 1.35;
+    }
+
+    .search-card strong {
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .search-card .jp-query {
+      color: var(--muted);
+      font-size: 12px;
+      word-break: keep-all;
+    }
+
+    .search-card .search-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .search-card .search-meta span {
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #eef5f2;
+      color: #31423c;
+      font-size: 12px;
+    }
+
+    .search-card a {
+      width: fit-content;
+      margin-top: auto;
+      padding: 7px 10px;
+      border-radius: 7px;
+      color: #fff;
+      background: #222;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .search-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .search-card button {
+      padding: 7px 10px;
+      border-radius: 7px;
+      font-weight: 700;
+      font-size: 12px;
     }
 
     .candidate-editor {
@@ -999,7 +1051,7 @@
           </label>
         </div>
         <div class="modal-section">
-          <b>구글맵 AI 검색</b>
+          <b>구글맵 검색 조건</b>
           <div id="recommend-searches" class="search-links"></div>
         </div>
         <div class="modal-section">
@@ -2293,37 +2345,121 @@
       return { profile, meal, selectedOption, title, base };
     }
 
-    function recommendSearchQueries(mealId) {
-      const { base, title } = mealSearchBase(mealId);
+    function recommendSearchCards(mealId) {
+      const { base, title, profile } = mealSearchBase(mealId);
       const rating = document.querySelector("#recommend-rating")?.value || "4.5";
       const distance = document.querySelector("#recommend-distance")?.value || "500m";
       const menu = document.querySelector("#recommend-menu")?.value.trim() || "";
       const price = document.querySelector("#recommend-price")?.value || "가성비";
+      const location = profile?.label || base;
       const menus = menu
         ? menu.split(/[,，/ ]+/).map(item => item.trim()).filter(Boolean)
-        : ["현지 맛집", "정식", "해산물", "라멘", "야키니쿠"];
-      const intents = [
-        `${base} ${menu || title} Google 평점 ${rating} 이상 ${distance} ${price}`,
-        `${base} ${menu || title} 구글 리뷰 많은 곳 ${distance}`,
-        `${base} ${menu || title} 예약 가능 ${price}`,
-        `${base} ${menu || title} 영업중 ${distance}`,
-        `${base} ${menu || title} 대기 적은 곳 ${price}`
+        : ["정식", "해산물", "라멘", "야키니쿠", "초밥"];
+      const coreCards = [
+        { ko: `${location} ${menu || title} 고평점 후보`, jp: `${base} ${menu || title} Google 評価 ${rating} 以上 ${distance} ${price}`, menu: menu || title, note: "고평점" },
+        { ko: `${location} 리뷰 많은 후보`, jp: `${base} ${menu || title} 口コミ 多い ${distance}`, menu: menu || title, note: "리뷰수" },
+        { ko: `${location} 예약 가능한 후보`, jp: `${base} ${menu || title} 予約可 ${price}`, menu: menu || title, note: "예약 가능" },
+        { ko: `${location} 영업중 후보`, jp: `${base} ${menu || title} 営業中 ${distance}`, menu: menu || title, note: "영업중" },
+        { ko: `${location} 대기 적은 후보`, jp: `${base} ${menu || title} 待ち時間 少ない ${price}`, menu: menu || title, note: "대기 적음" }
       ];
-      const menuQueries = menus.flatMap(item => [
-        `${base} ${item} 평점 ${rating} 이상`,
-        `${base} ${item} ${distance} 맛집`,
-        `${base} ${item} ${price} 추천`
-      ]);
-      return [...new Set([...intents, ...menuQueries, ...recommendationKinds.map(kind => `${base} ${kind} 평점 ${rating} 이상 ${distance}`)])].slice(0, 20);
+      const menuCards = menus.flatMap(item => {
+        const menuKo = recommendationKindKo[item] || item;
+        return [
+          { ko: `${location} ${menuKo}`, jp: `${base} ${item} 評価 ${rating} 以上`, menu: menuKo, note: "평점 기준" },
+          { ko: `${location} ${menuKo} 가까운 곳`, jp: `${base} ${item} ${distance} 近く`, menu: menuKo, note: "거리 기준" },
+          { ko: `${location} ${menuKo} ${price}`, jp: `${base} ${item} ${price} おすすめ`, menu: menuKo, note: "가격 기준" }
+        ];
+      });
+      const kindCards = recommendationKinds.map(kind => ({
+        ko: `${location} ${recommendationKindKo[kind] || kind}`,
+        jp: `${base} ${kind} 評価 ${rating} 以上 ${distance}`,
+        menu: recommendationKindKo[kind] || kind,
+        note: "카테고리"
+      }));
+      const seen = new Set();
+      return [...coreCards, ...menuCards, ...kindCards].filter(card => {
+        if (seen.has(card.jp)) return false;
+        seen.add(card.jp);
+        return true;
+      }).slice(0, 20).map((card, index) => ({
+        ...card,
+        index,
+        rating: `★${rating}+`,
+        distance,
+        price,
+        url: mapUrl(card.jp)
+      }));
     }
 
     function renderRecommendSearches() {
       const box = document.querySelector("#recommend-searches");
       if (!box || !currentRecommendMealId) return;
-      const queries = recommendSearchQueries(currentRecommendMealId);
-      box.innerHTML = queries.map((query, index) => `
-        <a href="${mapUrl(query)}" target="_blank" rel="noreferrer">${index + 1}. ${attr(query)}</a>
+      const cards = recommendSearchCards(currentRecommendMealId);
+      box.innerHTML = cards.map(card => `
+        <div class="search-card">
+          <strong>${card.index + 1}. ${attr(card.ko)}</strong>
+          <div class="jp-query">${attr(card.jp)}</div>
+          <div class="search-meta">
+            <span>메뉴 ${attr(card.menu)}</span>
+            <span>평점 ${attr(card.rating)}</span>
+            <span>${attr(card.distance)}</span>
+            <span>${attr(card.price)}</span>
+          </div>
+          <div class="search-card-actions">
+            <a href="${card.url}" target="_blank" rel="noreferrer" data-google-search-link="popup" data-search-index="${card.index}">구글맵 팝업</a>
+            <button type="button" data-add-search-card="${card.index}">후보칸에 추가</button>
+          </div>
+        </div>
       `).join("");
+    }
+
+    function addSearchCardToCandidate(index) {
+      const card = recommendSearchCards(currentRecommendMealId)[Number(index)];
+      if (!card) return;
+      const rows = [...document.querySelectorAll("#candidate-editor .candidate-row")];
+      const target = rows.find(row => !row.querySelector('[data-candidate-field="name"]')?.value.trim()) || rows[0];
+      if (!target) return;
+      const setField = (field, value) => {
+        const node = target.querySelector(`[data-candidate-field="${field}"]`);
+        if (node) node.value = value;
+      };
+      setField("name", card.jp);
+      setField("ko", card.ko);
+      setField("mapQuery", card.jp);
+      setField("rating", card.rating);
+      setField("menu", `${card.menu} 메뉴 확인 / 세트 메뉴 확인 / 음료·사이드 확인`);
+      setField("price", card.price);
+      setField("why", `${card.distance}, ${card.rating}, ${card.note} 조건으로 구글맵에서 확인할 검색 후보`);
+      document.querySelector("#recommend-status").textContent = `${card.ko} 검색 조건을 아래 입력칸에 넣었습니다. 실제 매장명과 평점은 구글맵에서 확인 후 수정하세요.`;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function searchCardInfoHtml(card) {
+      if (!card) return `<div>구글맵 검색</div>`;
+      return `
+        <strong>${attr(card.ko)}</strong>
+        <span class="ko-name">실제 매장 정보는 오른쪽 구글맵에서 확인</span>
+        <div class="info-line"><span class="info-label">메뉴</span><span>${attr(card.menu)}</span></div>
+        <div class="info-line"><span class="info-label">평점 조건</span><span>${attr(card.rating)}</span></div>
+        <div class="info-line"><span class="info-label">거리 조건</span><span>${attr(card.distance)}</span></div>
+        <div class="info-line"><span class="info-label">가격 조건</span><span>${attr(card.price)}</span></div>
+        <div class="info-line"><span class="info-label">검색어</span><span>${attr(card.jp)}</span></div>
+        <div class="selected-actions">
+          <button class="primary" type="button" data-add-search-card="${card.index}">후보칸에 추가</button>
+          <a class="btn light" href="${card.url}" target="_blank" rel="noreferrer" data-google-search-link="external">새 탭으로 열기</a>
+        </div>
+      `;
+    }
+
+    function openRecommendSearchMap(index) {
+      const card = recommendSearchCards(currentRecommendMealId)[Number(index)];
+      if (!card) return;
+      const modal = document.querySelector("#map-modal");
+      document.querySelector("#map-title").textContent = "구글맵 검색";
+      document.querySelector("#store-info").innerHTML = searchCardInfoHtml(card);
+      document.querySelector("#map-frame").src = embedMapUrl(card.url);
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
     }
 
     function renderCandidateEditor(mealId) {
@@ -2353,7 +2489,7 @@
       if (!meal) return;
       currentRecommendMealId = mealId;
       document.querySelector("#recommend-title").textContent = `${title} 추천 다시하기`;
-      document.querySelector("#recommend-subtitle").textContent = `${profile?.label || base} 기준으로 구글맵 검색어를 만듭니다.`;
+      document.querySelector("#recommend-subtitle").textContent = `${profile?.label || base} 기준 검색 조건입니다. 구글맵에서 실제 매장 정보를 확인한 뒤 아래 3개 후보에 넣어주세요.`;
       document.querySelector("#recommend-menu").value = "";
       document.querySelector("#recommend-status").textContent = "";
       renderRecommendSearches();
@@ -2947,12 +3083,24 @@
     document.addEventListener("click", event => {
       const mapLink = event.target.closest('a[href*="google.com/maps"]');
       if (mapLink) {
+        if (mapLink.dataset.googleSearchLink === "popup") {
+          event.preventDefault();
+          openRecommendSearchMap(mapLink.dataset.searchIndex);
+          return;
+        }
+        if (mapLink.dataset.googleSearchLink === "external") return;
         event.preventDefault();
         if (mapLink.dataset.routeLink === "true") {
           openRouteModal(mapLink);
           return;
         }
         openMapModal(mapLink.href, mapLink.textContent.trim() || "지도", findItemByMapUrl(mapLink.href));
+        return;
+      }
+
+      const addSearchButton = event.target.closest("button[data-add-search-card]");
+      if (addSearchButton) {
+        addSearchCardToCandidate(addSearchButton.dataset.addSearchCard);
         return;
       }
 
