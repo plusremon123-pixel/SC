@@ -1888,8 +1888,8 @@
       ,"焼うどん専門店 きつね": "야키우동 전문점 키츠네"
     };
 
-    function nameBlock(name, tag = "h4") {
-      const ko = nameKo[name];
+    function nameBlock(name, tag = "h4", koName = "") {
+      const ko = koName || nameKo[name];
       if (!ko) return `<${tag}>${name}</${tag}>`;
       return `<${tag}><span class="jp-name">${name}</span><span class="ko-name">${ko}</span></${tag}>`;
     }
@@ -2160,11 +2160,45 @@
       "そば", "おでん", "明太子", "丼もの", "駅ナカ 食事", "地下街 食事", "予約可", "高評価", " 가성비", "대기 적은 식당"
     ];
 
+    const recommendationKindKo = {
+      "和食 定食": "일식 정식",
+      "海鮮丼": "해산물 덮밥",
+      "寿司": "초밥",
+      "うどん": "우동",
+      "ラーメン": "라멘",
+      "焼鳥": "야키토리",
+      "水炊き": "미즈타키",
+      "もつ鍋": "모츠나베",
+      "餃子": "교자",
+      "天ぷら": "튀김",
+      "カレー": "카레",
+      "カフェ ランチ": "카페 점심",
+      "ベーカリー": "베이커리",
+      "サンドイッチ": "샌드위치",
+      "喫茶店": "찻집/커피점",
+      "居酒屋": "이자카야",
+      "焼肉": "야키니쿠",
+      "鉄板焼き": "철판구이",
+      "とんかつ": "돈카츠",
+      "牛カツ": "규카츠",
+      "そば": "소바",
+      "おでん": "오뎅",
+      "明太子": "명란",
+      "丼もの": "덮밥",
+      "駅ナカ 食事": "역 안 식사",
+      "地下街 食事": "지하상가 식사",
+      "予約可": "예약 가능",
+      "高評価": "고평점",
+      " 가성비": "가성비",
+      "대기 적은 식당": "대기 적은 식당"
+    };
+
     function generatedRecommendations(mealId) {
       const profile = recommendationProfiles[mealId];
       if (!profile) return [];
       return recommendationKinds.map(kind => ({
-        name: `${profile.label} ${kind}`,
+        name: `${profile.query} ${kind}`,
+        ko: `${profile.label} ${recommendationKindKo[kind] || kind}`,
         rank: "후보",
         image: "",
         location: profile.label,
@@ -2466,7 +2500,7 @@
           <div class="card-body">
             <div class="card-title">
               <span class="rank">${option.rank}</span>
-              ${nameBlock(option.name)}
+              ${nameBlock(option.name, "h4", option.ko)}
             </div>
             <p class="google-rating" data-google-rating="${option.name}">${googleRatingText(option)}</p>
             <div class="chips">
@@ -2499,7 +2533,7 @@
             ${snacks.length ? snacks.map(({ item, index, meters }) => `
               <article class="snack-card" data-snack-day="${day.id}" data-snack-meal="${meal.id}" data-snack-index="${index}" title="자세히 보기">
                 <div>
-                  ${nameBlock(item.name)}
+                  ${nameBlock(item.name, "h4", item.ko)}
                   <p class="google-rating" data-google-rating="${item.name}">${googleRatingText(item)}</p>
                   <p><b>${formatDistance(meters)}, 도보 이동</b></p>
                   ${menuBlock(item)}
@@ -2707,7 +2741,7 @@
             ${routeBetween}
             <div class="selected-item" data-selected-slot="${type === "dessert" ? `${stop.slot}:${stop.index}` : stop.slot}">
               <b>${type === "dessert" ? "디저트" : meal.title}</b>
-              ${nameBlock(option.name, "strong")}
+              ${nameBlock(option.name, "strong", option.ko)}
               ${type === "dessert" ? menuBlock(option, true) : koreanMenuBlock(option)}
               <div class="selected-actions">
                 ${reserveButton}
@@ -2757,7 +2791,7 @@
 
     function openModal(item) {
       const modal = document.querySelector("#detail-modal");
-      document.querySelector("#modal-title").innerHTML = nameBlock(item.name, "span");
+      document.querySelector("#modal-title").innerHTML = nameBlock(item.name, "span", item.ko);
       document.querySelector("#modal-location").textContent = item.location || item.time || "";
       document.querySelector("#modal-menu").innerHTML = String(item.menu || "")
         .split(" / ")
