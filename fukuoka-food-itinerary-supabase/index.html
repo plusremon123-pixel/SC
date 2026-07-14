@@ -1,0 +1,2728 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>후쿠오카 2027 식도락 추천 코스</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #69747c;
+      --line: #e5e7eb;
+      --paper: #f6f7f8;
+      --card: #ffffff;
+      --green: #2563eb;
+      --green2: #eef4ff;
+      --red: #334155;
+      --yellow: #d7dee8;
+      --soft: #f1f5f9;
+      --shadow: 0 14px 32px rgba(15, 23, 42, .10);
+      --shadow2: 0 6px 18px rgba(15, 23, 42, .06);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.58;
+    }
+
+    a { color: inherit; }
+
+    .hero {
+      min-height: auto;
+      display: grid;
+      align-items: end;
+      color: #fff;
+      background: #111827;
+    }
+
+    .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+    .hero-inner { padding: 18px 0 16px; }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid rgba(255,255,255,.42);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 10px 0 6px;
+      font-size: clamp(24px, 3.2vw, 34px);
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .refresh-info {
+      flex: 0 0 auto;
+      background: #fff;
+      color: #222;
+      border: 1px solid #bbb;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 0;
+      color: rgba(255,255,255,.9);
+      font-size: 14px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid rgba(24,33,36,.1);
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(16px);
+    }
+
+    nav {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 12px 0;
+    }
+
+    nav a {
+      flex: 0 0 auto;
+      text-decoration: none;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #223033;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    main { padding: 16px 0 54px; }
+
+    .notice {
+      margin: 0 0 22px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left: 4px solid #64748b;
+      border-radius: 8px;
+      background: #fff;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .planner {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,253,248,.86);
+      box-shadow: var(--shadow2);
+    }
+
+    .selected-panel {
+      position: static;
+      overflow: visible;
+    }
+
+    .panel-head {
+      padding: 17px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .panel-head h2, .day h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .panel-head p, .day-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .selected-list { padding: 12px; }
+
+    .selected-day {
+      margin-bottom: 14px;
+    }
+
+    .selected-day h3 {
+      margin: 4px 0 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #eef4ff;
+      color: var(--green);
+      font-size: 15px;
+    }
+
+    .selected-item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+
+    .selected-item.focused,
+    .selected-day.focused h3 {
+      outline: 2px solid #222;
+      outline-offset: 2px;
+    }
+
+    .selected-item b {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--green);
+      font-size: 13px;
+    }
+
+    .selected-item strong { display: block; font-size: 15px; }
+
+    .jp-name {
+      display: block;
+      color: var(--ink);
+    }
+
+    .ko-name {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .selected-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 9px;
+    }
+
+    .route-link {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin: -3px 0 9px;
+      padding: 8px 10px;
+      border-left: 2px dashed #cbd5e1;
+      color: #415054;
+      font-size: 12px;
+    }
+
+    .route-link span {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #eef4ff;
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .day-route-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+
+    .btn, button {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 11px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .btn.primary, button.primary { color: #fff; background: var(--green); }
+    .btn.light { color: var(--green); background: var(--green2); border-color: #cfe0ff; }
+    .btn.ghost { color: #324044; background: #fff; border-color: var(--line); }
+
+    .total {
+      margin: 0 12px 14px;
+      padding: 13px 14px;
+      border-radius: 8px;
+      background: #183033;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .day {
+      margin-bottom: 18px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: var(--shadow2);
+    }
+
+    .day-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tag {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .route {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0 8px;
+    }
+
+    .step {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .step b { display: block; color: var(--green); font-size: 15px; }
+
+    .meal {
+      margin-top: 16px;
+    }
+
+    .meal-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 9px;
+    }
+
+    .meal-title h3 {
+      margin: 0;
+      font-size: 19px;
+    }
+
+    .meal-title-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .reroll {
+      min-height: 30px;
+      padding: 5px 9px;
+      font-size: 12px;
+      background: #fff;
+      color: #222;
+      border-color: #bbb;
+    }
+
+    .meal-title span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      box-shadow: var(--shadow2);
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+      cursor: pointer;
+    }
+
+    .card::before {
+      content: "";
+      display: block;
+      height: 7px;
+      background: #111827;
+    }
+
+    .card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+    .card.is-selected {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(15,111,102,.18), var(--shadow);
+    }
+
+    .rank {
+      position: static;
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(0,0,0,.12);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .card-title h4 {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 7px;
+      padding: 12px;
+    }
+
+    .card h4 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .google-rating {
+      color: #333;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .chip {
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #435052;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .chip.reserve { background: #eef4ff; color: #1d4ed8; }
+    .chip.wait { background: #f8fafc; color: #64748b; }
+    .chip.no { background: #f1f5f9; color: #475569; }
+
+    .menu {
+      padding: 9px;
+      border: 1px solid #dfe9e5;
+      border-radius: 8px;
+      background: #f8fafc;
+      font-size: 13px;
+    }
+
+    .menu b { color: #334155; }
+
+    .menu-title {
+      display: block;
+      margin-bottom: 6px;
+      color: #222;
+      font-weight: 800;
+    }
+
+    .menu-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .menu-list li {
+      margin: 3px 0;
+    }
+
+    .price-line {
+      display: block;
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .why {
+      color: #39474a;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: auto;
+    }
+
+    .choose {
+      width: 100%;
+      margin-top: 3px;
+    }
+
+    .dessert-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .snack-strip {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .snack-strip h3 {
+      margin: 0 0 4px;
+      font-size: 18px;
+    }
+
+    .snack-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .snack-head h3 {
+      margin: 0;
+    }
+
+    .none-dessert {
+      min-height: 32px;
+      padding: 6px 12px;
+      background: #fff;
+      color: #222;
+      border: 1px solid #d33;
+    }
+
+    .none-dessert.is-selected {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
+
+    .snack-strip > p {
+      margin: 0 0 12px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .snack-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .snack-card {
+      display: block;
+      align-items: stretch;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .snack-card div {
+      padding: 12px;
+    }
+
+    .snack-card h4 {
+      margin: 0 0 3px;
+      font-size: 15px;
+    }
+
+    .snack-card p {
+      margin: 0 0 8px;
+      color: #4a4030;
+      font-size: 12px;
+    }
+
+    .map-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(12, 18, 19, .62);
+    }
+
+    .modal-backdrop.is-open { display: flex; }
+
+    .modal {
+      width: min(760px, 100%);
+      max-height: min(88vh, 860px);
+      overflow: auto;
+      border-radius: 14px;
+      background: #ffffff;
+      box-shadow: 0 24px 80px rgba(0,0,0,.32);
+    }
+
+    .modal-body {
+      padding: 18px;
+    }
+
+    .modal-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .modal h2 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.25;
+    }
+
+    .modal-close {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: 50%;
+      color: #263235;
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      font-size: 21px;
+    }
+
+    .modal-section {
+      margin-top: 14px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+    }
+
+    .modal-section b {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--green);
+    }
+
+    .modal-section ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .modal-section li { margin: 4px 0; }
+
+    .map-modal {
+      width: min(1280px, calc(100vw - 28px));
+    }
+
+    .map-layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .map-frame {
+      width: 100%;
+      height: min(76vh, 720px);
+      border: 0;
+      display: block;
+      background: #f5f5f5;
+    }
+
+    .store-info {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      max-height: min(76vh, 720px);
+      overflow: auto;
+      padding: 20px 18px;
+      border-right: 1px solid var(--line);
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .store-info strong {
+      color: var(--text);
+      font-size: 23px;
+      line-height: 1.25;
+    }
+
+    .store-info .ko-name {
+      margin-top: -7px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .store-info .info-line {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 8px;
+      line-height: 1.45;
+    }
+
+    .store-info .info-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .store-info .menu {
+      margin-top: 2px;
+    }
+
+    footer {
+      margin-top: 30px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1040px) {
+      .planner { grid-template-columns: 1fr; }
+      .selected-panel { position: static; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dessert-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 680px) {
+      .wrap { width: min(100% - 28px, 1180px); }
+      .hero { min-height: auto; }
+      .day { padding: 15px; }
+      .day-head { grid-template-columns: 1fr; }
+      .route, .grid, .dessert-grid { grid-template-columns: 1fr; }
+      .map-layout { grid-template-columns: 1fr; }
+      .store-info {
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .map-frame { height: 62vh; }
+      .snack-grid { grid-template-columns: 1fr; }
+      .meal-title { display: block; }
+      .meal-title span { display: block; margin-top: 3px; }
+    }
+
+    /* Simple personal planner look */
+    :root {
+      --ink: #222;
+      --muted: #666;
+      --line: #ddd;
+      --paper: #fff;
+      --card: #fff;
+      --green: #222;
+      --green2: #f5f5f5;
+      --red: #222;
+      --yellow: #ddd;
+      --soft: #f7f7f7;
+      --shadow: none;
+      --shadow2: none;
+    }
+
+    body, .hero, .topbar { background: #fff; color: #222; }
+    .hero { border-bottom: 1px solid #ddd; }
+    .lead { color: #666; }
+    .eyebrow, nav a, .tag, .chip, .selected-day h3, .route-link span {
+      background: #f7f7f7;
+      color: #333;
+      border-color: #ddd;
+    }
+    nav a, .btn, button, .card, .day, .panel, .selected-item, .snack-strip, .snack-card, .modal-section {
+      border-radius: 5px;
+      box-shadow: none;
+    }
+    .btn.primary, button.primary { background: #222; color: #fff; }
+    .btn.light, .btn.ghost { background: #fff; color: #222; border-color: #ddd; }
+    .card:hover { transform: none; border-color: #999; box-shadow: none; }
+    .card.is-selected, .snack-card.is-selected { background: #fafafa; border-color: #222; box-shadow: none; }
+    .card::before { background: #222; }
+    .notice, .menu, .snack-strip { background: #fafafa; }
+    .topbar { backdrop-filter: none; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-inner">
+      <div class="title-row">
+        <h1>후쿠오카 식당 선택</h1>
+        <button id="refresh-info" class="refresh-info" type="button">정보 재검색</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <div class="planner">
+        <div id="content"></div>
+
+        <aside id="my-plan" class="panel selected-panel">
+          <div class="panel-head">
+            <h2>내 일정</h2>
+            <p>추천 기본값은 1순위로 선택해두었습니다.</p>
+          </div>
+          <div id="selected-list" class="selected-list"></div>
+          <div id="total" class="total"></div>
+        </aside>
+      </div>
+
+      <footer>
+        <p>사진은 로컬 images 폴더에 저장된 이미지를 우선 사용합니다. 일부 후보는 원문 사이트 정책 때문에 외부 이미지를 불러오며, 보이지 않을 경우 카드의 사진/리뷰 링크에서 확인하면 됩니다.</p>
+      </footer>
+    </div>
+  </main>
+
+  <div id="detail-modal" class="modal-backdrop" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-body">
+        <div class="modal-top">
+          <h2 id="modal-title"></h2>
+          <button id="modal-close" class="modal-close" type="button" aria-label="닫기">×</button>
+        </div>
+        <p id="modal-location" class="meta"></p>
+        <div class="modal-section">
+          <b>추천 메뉴와 가격</b>
+          <ul id="modal-menu"></ul>
+        </div>
+        <div class="modal-section">
+          <b>추천 이유</b>
+          <p id="modal-why"></p>
+        </div>
+        <div id="modal-actions" class="links modal-section"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="map-modal" class="modal-backdrop" aria-hidden="true">
+    <section class="modal map-modal" role="dialog" aria-modal="true" aria-labelledby="map-title">
+      <div class="modal-body">
+        <div class="modal-top">
+          <h2 id="map-title">지도</h2>
+          <button id="map-close" class="modal-close" type="button" aria-label="닫기">×</button>
+        </div>
+        <div class="map-layout">
+          <div id="store-info" class="store-info"></div>
+          <iframe id="map-frame" class="map-frame" title="Google Map"></iframe>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const days = [
+      {
+        id: "day1",
+        title: "2/27 토요일: 도착일, 텐진/하카타",
+        subtitle: "09:20 FUK 도착 → 호텔 짐 보관 → 텐진/하카타 쇼핑과 저녁",
+        tag: "첫날은 가까운 곳 위주",
+        meals: [
+          {
+            id: "d1-lunch",
+            title: "점심",
+            note: "호텔에 짐 맡긴 뒤 텐진 근처",
+            options: [
+              {
+                name: "オールデイダイニング グランカフェ",
+                rank: "1순위",
+                image: "",
+                location: "니시테츠 그랜드 호텔 1층. 짐 맡긴 뒤 이동 없음.",
+                hours: "07:00-10:00, 11:30-22:00 (Last In 21:00)",
+                menu: "ランチブッフェ(런치 뷔페) 3,500엔대부터 / ビーフカレー(비프 카레) 1,800-2,500엔대 / オムライス(오므라이스) 1,800-2,500엔대",
+                fullMenu: "メインディッシュ付きランチブッフェ(메인 포함 런치 뷔페) 3,500엔대부터 / グランド トラディショナルセット(그랜드 트래디셔널 세트) 가격 현장 확인 / ビーフカレー(비프 카레) 1,800-2,500엔대 / オムライス(오므라이스) 1,800-2,500엔대 / アラカルトメニュー(단품 메뉴) 가격 현장 확인 / アフタヌーンティー・サロン(애프터눈 티) 가격 현장 확인 / クラシックスイーツ(클래식 디저트) 가격 현장 확인 / ディナービュッフェ(디너 뷔페) 가격 현장 확인",
+                price: "점심 1,800-3,500엔대",
+                budget: 2800,
+                why: "짐 보관 직후 바로 식사할 수 있어 가장 편합니다. 비싸도 동선 부담이 거의 없습니다.",
+                reserveStatus: "예약 가능",
+                reserveClass: "reserve",
+                links: {
+                  official: "https://grandhotel.nnr-h.com/restaurant/grancafe"
+                },
+                mapQuery: "オールデイダイニング グランカフェ 西鉄グランドホテル"
+              },
+              {
+                name: "牛カツ京都勝牛 天神西通り店",
+                rank: "2순위",
+                image: "",
+                location: "호텔에서 약 160m. 니시도리 바로 옆.",
+                hours: "11:00-23:00 (L.O. 22:30)",
+                menu: "牛カツ膳(규카츠 정식) 1,500-2,000엔대 / 牛ロースカツ膳(우로스카츠 정식) 1,800-2,500엔대 / とろろ追加(토로로 추가) 200-400엔대",
+                fullMenu: "牛カツ膳(규카츠 정식) 1,500-2,000엔대 / 牛リブカツ膳(규 리브카츠 정식) 1,290엔대 / 牛リブロースカツ膳(규 리브로스카츠 정식) 1,000-1,500엔대 / 牛サーロインカツ膳(규 사로인카츠 정식) 1,490-1,969엔대 / 牛サーロインカツ膳 W(규 사로인카츠 더블 정식) 1,990엔대 / 京都勝重(교토 카츠쥬) 가격 현장 확인 / 京玉(교타마) 추가 가격 현장 확인 / とろろ(토로로) 추가 200-400엔대",
+                price: "점심 1,500-2,500엔대",
+                budget: 1900,
+                why: "호텔에서 매우 가깝고 메뉴가 직관적이라 도착일 점심으로 편합니다.",
+                reserveStatus: "예약 불필요",
+                reserveClass: "wait",
+                links: {},
+                mapQuery: "牛カツ京都勝牛 天神西通り店"
+              },
+              {
+                name: "Horumon Yakiniku Buchi Hakata Daimyo",
+                rank: "3순위",
+                image: "",
+                location: "호텔에서 약 400m. 다이묘 방향.",
+                hours: "월-목·공휴일 17:00-24:00 (L.O. 23:00), 금-일·공휴일 전날 17:00-익일 02:00 또는 04:00",
+                menu: "焼肉ランチ(야키니쿠 런치) 1,500-2,500엔대 / ホルモン定食(호르몬 정식) 1,200-2,000엔대 / 和牛ユッケ(와규 육회) 1,000-1,800엔대",
+                fullMenu: "黒毛和牛赤身盛り合わせ 小(흑모와규 살코기 모둠 소) 1,890엔 / 黒毛和牛赤身盛り合わせ 中(흑모와규 살코기 모둠 중) 3,390엔 / 黒毛和牛赤身盛り合わせ 大(흑모와규 살코기 모둠 대) 5,590엔 / ホルモン単品(호르몬 단품) 450엔부터 / 焼肉宴会コース(야키니쿠 연회 코스) 4,500엔대부터 / 単品飲み放題(단품 음료 무제한) 1,880엔 / 和牛ユッケ(와규 육회) 1,000-1,800엔대 / 焼肉ランチ(야키니쿠 런치) 1,500-2,500엔대",
+                price: "점심 1,500-3,000엔대",
+                budget: 2300,
+                why: "도보권 안에서 고기 메뉴로 든든하게 먹고 싶을 때 좋습니다.",
+                reserveStatus: "예약 가능",
+                reserveClass: "reserve",
+                links: {},
+                mapQuery: "Horumon Yakiniku Buchi Hakata Daimyo"
+              }
+            ]
+          },
+          {
+            id: "d1-dinner",
+            title: "저녁",
+            note: "텐진/다이묘에서 편하게",
+            options: [
+              {
+                name: "もつ鍋 田しゅう 福岡大名本店",
+                rank: "1순위",
+                image: "images/tashu.webp",
+                location: "다이묘. 4-5명 예약 추천.",
+                menu: "미소 모츠나베 1인 약 1,903엔 / 쇼유 모츠나베 1인 약 1,903엔 / 챔폰면 추가 300-500엔대",
+                price: "나베 중심 2,500-3,500엔대",
+                budget: 3200,
+                why: "여럿이 먹기 좋고 숙소 복귀도 편합니다. 첫날 저녁 메인으로 가장 안정적입니다.",
+                reserveStatus: "예약 가능",
+                reserveClass: "reserve",
+                links: {
+                  official: "https://www.motsunabe-tashu.com/",
+                  reserve: "https://tashu-daimyou.foodre.jp/",
+                  altReserve: "https://www.hotpepper.jp/strJ000839692/"
+                },
+                mapQuery: "もつ鍋 田しゅう 福岡大名本店"
+              },
+              {
+                name: "博多だるま 総本店",
+                rank: "2순위",
+                image: "https://static.gltjp.com/glt/data/directory/15000/14415/20221201_113448_88ef37fb_w1920.webp",
+                location: "진한 돈코츠 라멘. 빠른 저녁용.",
+                menu: "라멘 800-1,000엔대 / 차슈멘 1,100-1,400엔대 / 교자 세트 1,300-1,800엔대",
+                price: "1인 1,000-1,800엔대",
+                budget: 1400,
+                why: "나베 예약이 어렵거나 피곤해서 짧게 먹고 싶을 때 좋습니다.",
+                reserveStatus: "대기 추천",
+                reserveClass: "wait",
+                links: {
+                  review: "https://www.gltjp.com/en/directory/item/14415/"
+                },
+                mapQuery: "博多だるま 総本店 福岡"
+              },
+              {
+                name: "もつ鍋・水炊き 四番館",
+                rank: "3순위",
+                image: "images/yonbankan.jpg",
+                location: "텐진권. 따뜻한 나베류 대안.",
+                menu: "모츠나베 1인 1,500-2,000엔대 / 미즈타키 1인 2,000엔대 / 가벼운 이자카야 안주 500-1,000엔대",
+                price: "저녁 2,500-3,500엔대",
+                budget: 3000,
+                why: "모츠나베와 미즈타키를 모두 후보로 둘 수 있어 취향이 갈릴 때 편합니다.",
+                reserveStatus: "예약 가능",
+                reserveClass: "reserve",
+                links: {
+                  review: "https://tabelog.com/en/fukuoka/A4001/A400103/40002810/",
+                  reserve: "https://hitosara.com/0006022291/"
+                },
+                mapQuery: "もつ鍋 水炊き 四番館 天神"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: "day2",
+        title: "2/28 일요일: 가라토 시장 + 모지코 + 고쿠라",
+        subtitle: "호텔 출발 → 하카타 → 고쿠라 → 모지코 → 페리 → 가라토 시장",
+        tag: "식도락 메인 데이",
+        route: [
+          ["08:30", "호텔 출발"],
+          ["09:10 전후", "하카타 → 고쿠라 신칸센"],
+          ["10:15 전후", "모지코항 → 가라토항 페리"],
+          ["10:30", "가라토 시장 도착 목표"]
+        ],
+        meals: [
+          {
+            id: "d2-breakfast",
+            title: "아침",
+            note: "과식하지 않는 게 핵심",
+            options: [
+              {
+                name: "니시테츠 그랜드 호텔 조식",
+                rank: "1순위",
+                image: "https://grandhotel.nnr-h.com/wp-content/themes/nnr-hotel/images/ogp.jpg",
+                location: "이동 전 여유 있게 시작하기 좋음.",
+                menu: "밥+국+커피 가볍게 / 빵+커피 / 과일+요거트",
+                price: "숙박 플랜에 따라 다름",
+                budget: 0,
+                why: "이동 전 가장 편한 선택입니다. 가라토 시장을 위해 가볍게 먹기 좋습니다.",
+                reserveStatus: "숙박 플랜 확인",
+                reserveClass: "wait",
+                links: {
+                  official: "https://grandhotel.nnr-h.com/"
+                },
+                mapQuery: "Nishitetsu Grand Hotel Fukuoka"
+              },
+              {
+                name: "魚吉 天神",
+                rank: "2순위",
+                image: "images/uokichi.jpg",
+                location: "솔라리아스테이지 B2F. 07:30-10:30 아침.",
+                menu: "サバ煮定食(고등어조림 정식) 990엔 / 本まぐろ定食(참다랑어 정식) 1,190엔 / 海鮮定食(해산물 정식) 1,390엔",
+                price: "990-1,390엔",
+                budget: 1390,
+                why: "명란 아침으로 유명하지만, 이 날은 가라토 시장 전이라 소식 추천입니다.",
+                reserveStatus: "예약 비추천",
+                reserveClass: "wait",
+                links: {
+                  menu: "https://r.gnavi.co.jp/2fa5md480000/menu5/",
+                  review: "https://www.hotpepper.jp/strJ001194354/"
+                },
+                mapQuery: "博多海鮮食堂 魚吉 ソラリアステージ店"
+              },
+              {
+                name: "たんや HAKATA",
+                rank: "3순위",
+                image: "images/tanya_hakata.jpg",
+                location: "하카타역 B1F. 07:00-10:00 아침 메뉴.",
+                menu: "牛たん朝定食(우설 아침정식) 790엔 / 牛たん多め(우설 추가형) 1,000엔대 / 커피 추가 시 1,000엔 전후",
+                price: "790-1,200엔대",
+                budget: 790,
+                why: "하카타역 동선상 좋지만 줄이 있으면 가라토 도착이 밀립니다.",
+                reserveStatus: "대기 추천",
+                reserveClass: "wait",
+                links: {
+                  official: "https://www.hakata-1bangai.com/floorguide/shop2.html",
+                  menu: "https://www.hakata-1bangai.com/recommends/detail330.html"
+                },
+                mapQuery: "たんや HAKATA 博多1番街"
+              }
+            ]
+          },
+          {
+            id: "d2-lunch",
+            title: "점심",
+            note: "가라토 시장 해산물",
+            options: [
+              {
+                name: "가라토 시장 이키이키 바칸가이",
+                rank: "1순위",
+                image: "images/karato_market.jpg",
+                location: "일요일은 08:00-15:00 기준. 10:30 전후 도착 목표.",
+                menu: "복어 초밥 여러 점 500-1,500엔 / 참치·장어·조개 초밥 조합 1,500-2,500엔 / 복어국 추가 400-700엔대",
+                price: "가볍게 1,500엔대, 넉넉히 2,500-3,500엔",
+                budget: 2500,
+                why: "이 날의 메인. 여러 점포에서 조금씩 고르는 재미가 큽니다.",
+                reserveStatus: "예약 없음",
+                reserveClass: "no",
+                links: {
+                  official: "https://yamaguchi-tourism.jp/spot/detail_11069.html",
+                  review: "https://www.into-you.jp/en/places/2649/"
+                },
+                mapQuery: "唐戸市場 下関市"
+              },
+              {
+                name: "市場食堂 よし",
+                rank: "2순위",
+                image: "images/market_yoshi.png",
+                location: "가라토 시장 2층. 앉아서 먹는 대안.",
+                menu: "해산 덮밥 1,500-2,500엔대 / 생선 정식 1,500-2,500엔대 / 복어 정식 2,000-3,500엔대",
+                price: "1,500-3,000엔대",
+                budget: 2200,
+                why: "시장이 너무 붐비거나 서서 먹기 불편하면 바로 이쪽으로 돌리면 됩니다.",
+                reserveStatus: "확인 필요",
+                reserveClass: "wait",
+                links: {
+                  official: "https://www.shimonoseki-yoshi.com/"
+                },
+                mapQuery: "市場食堂 よし 唐戸市場"
+              },
+              {
+                name: "からと屋 / ふくの関",
+                rank: "3순위",
+                image: "images/karatoya.jpg",
+                location: "카몬와프. 복어와 해산물 식사.",
+                menu: "ふくランチ(복어 런치) 1,430엔부터 / ふく唐揚げ定食(복어튀김 정식) 1,500-2,500엔대 / 복어 초밥·정식류 2,000-3,000엔대",
+                price: "1,430-3,000엔대",
+                budget: 1800,
+                why: "앉아서 편하게 먹기 좋습니다. 시장 분위기가 부담될 때 쓰는 플랜 B입니다.",
+                reserveStatus: "확인 필요",
+                reserveClass: "wait",
+                links: {
+                  official: "https://fugunohonba.jp/gourmet/1069/",
+                  review: "https://s.tabelog.com/en/yamaguchi/A3502/A350201/35002364/"
+                },
+                mapQuery: "からと屋 カモンワーフ 下関"
+              }
+            ]
+          },
+          {
+            id: "d2-dinner",
+            title: "저녁",
+            note: "고쿠라에서 마무리",
+            options: [
+              {
+                name: "小倉鉄なべ",
+                rank: "1순위",
+                image: "images/kokura_tetsunabe.png",
+                location: "고쿠라 명물 철나베 교자.",
+                menu: "철나베 교자 700엔대 / 물교자 600-800엔대 / 모츠나베 1인 약 1,400엔",
+                price: "교자 중심 1,200-2,000엔대",
+                budget: 1800,
+                why: "북큐슈 식도락 마무리로 좋습니다. 저녁 피크면 예약/이른 방문 추천.",
+                reserveStatus: "예약 요청 가능",
+                reserveClass: "reserve",
+                links: {
+                  official: "https://tetsunabe-g.com/",
+                  menu: "https://tetsunabe-g.com/grandmenu/",
+                  reserve: "https://tetsunabe-g.com/reserve/"
+                },
+                mapQuery: "小倉鉄なべ 本店 北九州市小倉北区魚町2-3-12"
+              },
+              {
+                name: "資さんうどん 魚町店",
+                rank: "2순위",
+                image: "images/sukesan_udon.png",
+                location: "북큐슈 소울푸드. 피곤할 때 좋은 선택.",
+                menu: "ごぼ天うどん(우엉튀김 우동) 600-800엔대 / 肉ごぼ天うどん(고기+우엉튀김 우동) 800-1,000엔대 / ぼたもち(팥떡) 150-250엔대",
+                price: "1인 700-1,200엔대",
+                budget: 900,
+                why: "일정이 밀려도 대응하기 쉽고, 늦은 저녁에도 부담이 적습니다.",
+                reserveStatus: "예약 불필요",
+                reserveClass: "no",
+                links: {
+                  official: "https://www.sukesanudon.com/",
+                  store: "https://store-info.skylark.co.jp/map/480046/"
+                },
+                mapQuery: "資さんうどん 魚町店"
+              },
+              {
+                name: "고쿠라 야키우동",
+                rank: "3순위",
+                image: "images/kokura_yakiudon.jpg",
+                location: "고쿠라 발상지급 명물.",
+                menu: "야키우동 800-1,200엔대 / 오코노미·철판 안주 600-1,200엔대 / 음료 포함 1,500-2,500엔대",
+                price: "식사만 800-1,500엔대",
+                budget: 1200,
+                why: "철나베 교자 후 2차처럼 가볍게 넣거나, 교자가 부담될 때 대체하기 좋습니다.",
+                reserveStatus: "가게별 확인",
+                reserveClass: "wait",
+                links: {
+                  official: "https://www.kokurayakiudon.com/index.php"
+                },
+                mapQuery: "小倉焼うどん 北九州市小倉"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: "day3",
+        title: "3/1 월요일: 귀국일",
+        subtitle: "호텔 조식 → 텐진 지하상가 짧게 → 11:15-11:30 공항 이동 권장",
+        tag: "시간 관리가 최우선",
+        meals: [
+          {
+            id: "d3-breakfast",
+            title: "아침",
+            note: "체크아웃 전후",
+            options: [
+              {
+                name: "니시테츠 그랜드 호텔 조식",
+                rank: "1순위",
+                image: "https://grandhotel.nnr-h.com/wp-content/themes/nnr-hotel/images/ogp.jpg",
+                location: "가장 안정적. 짐 정리와 체크아웃 동선이 쉬움.",
+                menu: "밥+국+계란 / 빵+커피 / 과일+요거트",
+                price: "숙박 플랜 확인",
+                budget: 0,
+                why: "귀국일에는 호텔 조식이 가장 덜 흔들립니다.",
+                reserveStatus: "숙박 플랜 확인",
+                reserveClass: "wait",
+                links: {
+                  official: "https://grandhotel.nnr-h.com/"
+                },
+                mapQuery: "Nishitetsu Grand Hotel Fukuoka"
+              },
+              {
+                name: "REC COFFEE 天神南店",
+                rank: "2순위",
+                image: "",
+                location: "텐진남역 근처. 체크아웃 전후 커피와 가벼운 디저트.",
+                menu: "カフェラテ(카페라테) 600-800엔대 / バスクチーズケーキ(바스크 치즈케이크) 500-700엔대 / ハニートースト(허니토스트) 900-1,300엔대",
+                price: "800-1,800엔대",
+                budget: 1200,
+                why: "폐업 리스크가 있는 후보 대신, 귀국일 오전에 동선 부담이 적은 카페로 교체했습니다.",
+                reserveStatus: "예약 불필요",
+                reserveClass: "no",
+                links: {
+                  official: "https://rec-coffee.com/"
+                },
+                mapQuery: "REC COFFEE 天神南店"
+              },
+              {
+                name: "魚吉 天神",
+                rank: "3순위",
+                image: "images/uokichi.jpg",
+                location: "마지막 명란/해산물 아침.",
+                menu: "サバ煮定食(고등어조림 정식) 990엔 / 本まぐろ定食(참다랑어 정식) 1,190엔 / 海鮮定食(해산물 정식) 1,390엔",
+                price: "990-1,390엔",
+                budget: 1390,
+                why: "식도락 욕심이 남아 있다면 좋지만, 시간은 넉넉히 잡아야 합니다.",
+                reserveStatus: "예약 비추천",
+                reserveClass: "wait",
+                links: {
+                  menu: "https://r.gnavi.co.jp/2fa5md480000/menu5/"
+                },
+                mapQuery: "博多海鮮食堂 魚吉 ソラリアステージ店"
+              }
+            ]
+          },
+          {
+            id: "d3-lunch",
+            title: "점심/간식",
+            note: "공항 또는 텐진에서 가볍게",
+            options: [
+              {
+                name: "후쿠오카공항 HAKATA FOOD HALL",
+                rank: "1순위",
+                image: "https://www.fukuoka-airport.jp/uploads/2024/12/hakatafoodhall0328_main.jpg",
+                location: "출국 전 시간 관리가 쉬움.",
+                menu: "라멘 1,000-1,500엔대 / 우동·덮밥류 800-1,300엔대 / 가벼운 세트 1,200-2,000엔대",
+                price: "800-2,000엔대",
+                budget: 1300,
+                why: "비행기 시간이 있는 날에는 공항에서 먹는 게 마음이 편합니다.",
+                reserveStatus: "예약 불필요",
+                reserveClass: "no",
+                links: {
+                  official: "https://www.fukuoka-airport.jp/en/information/hakatafoodhall0328.html"
+                },
+                mapQuery: "Fukuoka Airport HAKATA FOOD HALL"
+              },
+              {
+                name: "텐진 지하상가 카페/디저트",
+                rank: "2순위",
+                image: "https://gofukuoka.jp/image/rendering/attraction_image/27127/keep/1200?v=3a59d4b7a4496529d0b623fe7b4919fe2b55b4b6",
+                location: "호텔에서 바로 움직이기 좋음.",
+                menu: "커피 400-700엔대 / 말차 디저트 700-1,300엔대 / 샌드위치류 700-1,200엔대",
+                price: "600-1,300엔대",
+                budget: 900,
+                why: "쇼핑과 간식을 같이 해결하기 좋습니다.",
+                reserveStatus: "예약 불필요",
+                reserveClass: "no",
+                links: {
+                  official: "https://www.gofukuoka.jp/spots/detail/27127"
+                },
+                mapQuery: "天神地下街 福岡"
+              },
+              {
+                name: "공항/하카타역 도시락·명란 선물",
+                rank: "3순위",
+                image: "https://www.fukuoka-airport.jp/uploads/shops/shop_main.jpg",
+                location: "먹고 남은 시간은 선물 구입.",
+                menu: "명란 주먹밥·도시락 700-1,500엔대 / 과자 선물 500-1,500엔대 / 명란 제품 상품별 상이",
+                price: "상품별 상이",
+                budget: 1500,
+                why: "마지막 날은 식당 대기보다 포장/선물이 더 효율적일 수 있습니다.",
+                reserveStatus: "예약 불필요",
+                reserveClass: "no",
+                links: {
+                  official: "https://www.fukuoka-airport.jp/en/shops/"
+                },
+                mapQuery: "Fukuoka Airport shops"
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    const desserts = [
+      {
+        name: "il FORNO del MIGNON",
+        area: "하카타역",
+        image: "https://tblg.k-img.com/restaurant/images/Rvw/317375/640x640_rect_317375215.jpg",
+        menu: "플레인 미니 크루아상 / 초코 미니 크루아상 / 고구마 미니 크루아상",
+        price: "중량 판매, 소량 구매 300-800엔대",
+        link: "https://www.tripadvisor.com/Restaurant_Review-g14127501-d6125087-Reviews-Il_Forno_del_Mignon_Hakata_Station-Hakata_Fukuoka_Fukuoka_Prefecture_Kyushu.html",
+        mapQuery: "il FORNO del MIGNON 博多駅"
+      },
+      {
+        name: "鈴懸 Suzukake",
+        area: "나카스/텐진권",
+        image: "images/suzukake.png",
+        menu: "계절 화과자 300-700엔대 / 모나카 200-500엔대 / 선물용 과자 1,000엔대부터",
+        price: "간식 300-1,000엔대, 선물은 별도",
+        link: "https://www.suzukake.co.jp/en/main-shop",
+        mapQuery: "鈴懸 福岡 本店"
+      },
+      {
+        name: "MACCHA HOUSE",
+        area: "텐진 지하상가",
+        image: "images/maccha_house.jpg",
+        menu: "말차 티라미수 700-900엔대 / 말차 파르페 1,000-1,300엔대 / 말차 라떼 500-800엔대",
+        price: "500-1,300엔대",
+        link: "https://s.tabelog.com/en/fukuoka/A4001/A400103/40068870/",
+        mapQuery: "MACCHA HOUSE 抹茶館 天神地下街"
+      },
+      {
+        name: "REC COFFEE 天神南店",
+        area: "텐진남",
+        image: "",
+        menu: "カフェラテ(카페라테) 600-800엔대 / バスクチーズケーキ(바스크 치즈케이크) 500-700엔대 / ハニートースト(허니토스트) 900-1,300엔대",
+        price: "800-1,800엔대",
+        link: "https://rec-coffee.com/",
+        mapQuery: "REC COFFEE 天神南店"
+      },
+      {
+        name: "シロヤベーカリー 小倉店",
+        area: "고쿠라",
+        image: "images/shiroya.webp",
+        menu: "サニーパン(연유빵) 100-200엔대 / オムレット(오믈렛 케이크) 100-200엔대 / 기본 빵류 100-300엔대",
+        price: "1,000엔 이하로 여러 개 구입 가능",
+        link: "https://www.gltjp.com/en/directory/item/16673/",
+        mapQuery: "シロヤベーカリー 小倉店"
+      }
+    ];
+
+    const dessertStops = {
+      day1: [
+        {
+          time: "15:00 전후 · 텐진 쇼핑 중",
+          name: "MACCHA HOUSE",
+          image: "images/maccha_house.jpg",
+          menu: "말차 티라미수 700-900엔대 / 말차 파르페 1,000-1,300엔대 / 말차 라떼 500-800엔대",
+          price: "500-1,300엔대",
+          link: "https://s.tabelog.com/en/fukuoka/A4001/A400103/40068870/",
+          mapQuery: "MACCHA HOUSE 抹茶館 天神地下街"
+        },
+        {
+          time: "16:00 전후 · 나카스/니시나카스 산책",
+          name: "鈴懸 Suzukake",
+          image: "images/suzukake.png",
+          menu: "계절 화과자 300-700엔대 / 모나카 200-500엔대 / 선물용 과자 1,000엔대부터",
+          price: "간식 300-1,000엔대, 선물은 별도",
+          link: "https://www.suzukake.co.jp/en/main-shop",
+          mapQuery: "鈴懸 福岡 本店"
+        },
+        {
+          time: "점심 후 산책 · 니시나카스",
+          name: "REC COFFEE 天神南店",
+          image: "",
+          menu: "カフェラテ(카페라테) / バスクチーズケーキ(바스크 치즈케이크) / ハニートースト(허니토스트)",
+          price: "800-1,800엔대",
+          link: "https://rec-coffee.com/",
+          mapQuery: "REC COFFEE 天神南店"
+        }
+      ],
+      day2: [
+        {
+          time: "17:00 전후 · 고쿠라 도착 후",
+          name: "シロヤベーカリー 小倉店",
+          image: "images/shiroya.webp",
+          menu: "サニーパン(연유빵) / オムレット(오믈렛 케이크) / 기본 빵류",
+          price: "1,000엔 이하로 여러 개 구입 가능",
+          link: "https://www.gltjp.com/en/directory/item/16673/",
+          mapQuery: "シロヤベーカリー 小倉店"
+        },
+        {
+          time: "저녁 후 · 고쿠라역 포장 간식",
+          name: "シロヤベーカリー 小倉店",
+          image: "images/shiroya.webp",
+          menu: "サニーパン(연유빵) / オムレット(오믈렛 케이크) / 호텔 간식용 빵 포장",
+          price: "100-300엔대 빵 중심",
+          link: "https://www.tripadvisor.com/Restaurant_Review-g303160-d1701186-Reviews-Shiroya_Bakery-Kitakyushu_Fukuoka_Prefecture_Kyushu.html",
+          mapQuery: "シロヤベーカリー 小倉店"
+        },
+        {
+          time: "하카타역 복귀 후 · 시간이 남으면",
+          name: "il FORNO del MIGNON",
+          image: "https://tblg.k-img.com/restaurant/images/Rvw/317375/640x640_rect_317375215.jpg",
+          menu: "플레인 / 초코 / 고구마 미니 크루아상",
+          price: "소량 구매 300-800엔대",
+          link: "https://www.tripadvisor.com/Restaurant_Review-g14127501-d6125087-Reviews-Il_Forno_del_Mignon_Hakata_Station-Hakata_Fukuoka_Fukuoka_Prefecture_Kyushu.html",
+          mapQuery: "il FORNO del MIGNON 博多駅"
+        }
+      ],
+      day3: [
+        {
+          time: "10:00 전후 · 텐진 지하상가",
+          name: "MACCHA HOUSE",
+          image: "images/maccha_house.jpg",
+          menu: "말차 라떼 / 말차 티라미수 / 말차 파르페",
+          price: "500-1,300엔대",
+          link: "https://s.tabelog.com/en/fukuoka/A4001/A400103/40068870/",
+          mapQuery: "MACCHA HOUSE 抹茶館 天神地下街"
+        },
+        {
+          time: "10:30 전후 · 선물 구입 겸",
+          name: "鈴懸 Suzukake",
+          image: "images/suzukake.png",
+          menu: "화과자 / 모나카 / 선물용 과자",
+          price: "간식 300-1,000엔대, 선물은 별도",
+          link: "https://www.suzukake.co.jp/en/main-shop",
+          mapQuery: "鈴懸 福岡 本店"
+        },
+        {
+          time: "공항/하카타 이동 전 · 하카타역 경유 시",
+          name: "il FORNO del MIGNON",
+          image: "https://tblg.k-img.com/restaurant/images/Rvw/317375/640x640_rect_317375215.jpg",
+          menu: "플레인 / 초코 / 고구마 미니 크루아상 포장",
+          price: "소량 구매 300-800엔대",
+          link: "https://www.tripadvisor.com/Restaurant_Review-g14127501-d6125087-Reviews-Il_Forno_del_Mignon_Hakata_Station-Hakata_Fukuoka_Fukuoka_Prefecture_Kyushu.html",
+          mapQuery: "il FORNO del MIGNON 博多駅"
+        }
+      ]
+    };
+
+    const dessertSlots = {
+      day1: {
+        "d1-lunch": dessertStops.day1
+      },
+      day2: {
+        "d2-breakfast": [
+          {
+            time: "09:00 전후 · 하카타역 신칸센 타기 전 포장",
+            name: "il FORNO del MIGNON",
+            image: "",
+            menu: "플레인 / 초코 / 고구마 미니 크루아상",
+            price: "소량 구매 300-800엔대",
+            link: "https://www.tripadvisor.com/Restaurant_Review-g14127501-d6125087-Reviews-Il_Forno_del_Mignon_Hakata_Station-Hakata_Fukuoka_Fukuoka_Prefecture_Kyushu.html",
+            mapQuery: "il FORNO del MIGNON 博多駅"
+          }
+        ],
+        "d2-lunch": dessertStops.day2
+      },
+      day3: {
+        "d3-breakfast": dessertStops.day3
+      }
+    };
+
+    const selected = {};
+    const selectedDesserts = {};
+    let suppressFocus = false;
+    const rerollCursor = {};
+    const STORAGE_KEY = "fukuoka-food-itinerary-state-v1";
+    const SUPABASE_CONFIG = window.FUKUOKA_SUPABASE_CONFIG || {};
+    let cloudSaveTimer = null;
+    let isBooting = true;
+
+    function currentState() {
+      const mealOptions = {};
+      for (const day of days) {
+        for (const meal of day.meals) mealOptions[meal.id] = meal.options;
+      }
+      const dessertOptions = {};
+      for (const [dayId, slots] of Object.entries(dessertSlots)) {
+        for (const [mealId, options] of Object.entries(slots)) {
+          dessertOptions[`${dayId}:${mealId}`] = options;
+        }
+      }
+      return {
+        selected,
+        selectedDesserts,
+        rerollCursor,
+        mealOptions,
+        dessertOptions,
+        savedAt: new Date().toISOString()
+      };
+    }
+
+    function saveState() {
+      const state = currentState();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.warn("Failed to save itinerary state", error);
+      }
+      if (!isBooting) queueCloudSave(state);
+    }
+
+    function applyState(state) {
+      if (!state) return;
+      for (const day of days) {
+        for (const meal of day.meals) {
+          if (Array.isArray(state.mealOptions?.[meal.id])) {
+            meal.options = state.mealOptions[meal.id];
+          }
+        }
+      }
+      for (const [slot, options] of Object.entries(state.dessertOptions || {})) {
+        const [dayId, mealId] = slot.split(":");
+        if (dessertSlots[dayId]?.[mealId] && Array.isArray(options)) {
+          dessertSlots[dayId][mealId] = options;
+        }
+      }
+      Object.assign(selected, state.selected || {});
+      Object.assign(selectedDesserts, state.selectedDesserts || {});
+      Object.assign(rerollCursor, state.rerollCursor || {});
+    }
+
+    function restoreState() {
+      let state = null;
+      try {
+        state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      } catch (error) {
+        console.warn("Failed to load itinerary state", error);
+      }
+      applyState(state);
+    }
+
+    function supabaseEnabled() {
+      return SUPABASE_CONFIG.url && SUPABASE_CONFIG.key && SUPABASE_CONFIG.bucket && SUPABASE_CONFIG.statePath;
+    }
+
+    function supabaseObjectUrl() {
+      return `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.bucket}/${SUPABASE_CONFIG.statePath}`;
+    }
+
+    function supabasePublicUrl() {
+      return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.bucket}/${SUPABASE_CONFIG.statePath}?v=${Date.now()}`;
+    }
+
+    function queueCloudSave(state) {
+      if (!supabaseEnabled()) return;
+      window.clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = window.setTimeout(() => saveCloudState(state), 500);
+    }
+
+    async function saveCloudState(state) {
+      if (!supabaseEnabled()) return;
+      try {
+        const response = await fetch(supabaseObjectUrl(), {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_CONFIG.key,
+            Authorization: `Bearer ${SUPABASE_CONFIG.key}`,
+            "Content-Type": "application/json",
+            "x-upsert": "true"
+          },
+          body: JSON.stringify(state)
+        });
+        if (!response.ok) {
+          console.warn("Supabase itinerary save failed", response.status, await response.text());
+        }
+      } catch (error) {
+        console.warn("Supabase itinerary save failed", error);
+      }
+    }
+
+    async function loadCloudState() {
+      if (!supabaseEnabled()) return;
+      try {
+        const response = await fetch(supabasePublicUrl(), { cache: "no-store" });
+        if (!response.ok) return;
+        const state = await response.json();
+        applyState(state);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        renderDays();
+        suppressFocus = true;
+        for (const [mealId, index] of Object.entries(selected)) choose(mealId, index);
+        syncAllDessertSelections();
+        renderSelected();
+        suppressFocus = false;
+      } catch (error) {
+        console.warn("Supabase itinerary load failed", error);
+      }
+    }
+
+    function mapUrl(query) {
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
+    }
+
+    function directionsUrl(origin, destination, mode = "transit") {
+      return "https://www.google.com/maps/dir/?api=1"
+        + "&origin=" + encodeURIComponent(origin)
+        + "&destination=" + encodeURIComponent(destination)
+        + "&travelmode=" + encodeURIComponent(mode);
+    }
+
+    function multiStopMapUrl(points) {
+      if (points.length < 2) return mapUrl(points[0] || "Fukuoka");
+      const origin = points[0];
+      const destination = points[points.length - 1];
+      const waypoints = points.slice(1, -1).join("|");
+      return "https://www.google.com/maps/dir/?api=1"
+        + "&origin=" + encodeURIComponent(origin)
+        + "&destination=" + encodeURIComponent(destination)
+        + (waypoints ? "&waypoints=" + encodeURIComponent(waypoints) : "")
+        + "&travelmode=transit";
+    }
+
+    const dayAnchors = {
+      day1: {
+        start: { label: "니시테츠 그랜드 호텔", query: "Nishitetsu Grand Hotel Fukuoka" },
+        end: { label: "니시테츠 그랜드 호텔", query: "Nishitetsu Grand Hotel Fukuoka" }
+      },
+      day2: {
+        start: { label: "니시테츠 그랜드 호텔", query: "Nishitetsu Grand Hotel Fukuoka" },
+        end: { label: "니시테츠 그랜드 호텔", query: "Nishitetsu Grand Hotel Fukuoka" }
+      },
+      day3: {
+        start: { label: "니시테츠 그랜드 호텔", query: "Nishitetsu Grand Hotel Fukuoka" },
+        end: { label: "후쿠오카공항 국제선", query: "Fukuoka Airport International Terminal" }
+      }
+    };
+
+    const coords = {
+      "Nishitetsu Grand Hotel Fukuoka": [33.5906, 130.3957],
+      "Fukuoka Airport International Terminal": [33.5869, 130.4511],
+      "オールデイダイニング グランカフェ 西鉄グランドホテル": [33.5906, 130.3957],
+      "牛カツ京都勝牛 天神西通り店": [33.5895, 130.3947],
+      "Horumon Yakiniku Buchi Hakata Daimyo": [33.5882, 130.3932],
+      "博多料亭 稚加榮 福岡店": [33.5890, 130.3914],
+      "スシロー 福岡親富孝通り店": [33.5921, 130.3942],
+      "食堂 光 福岡 柳橋連合市場": [33.5839, 130.4060],
+      "GARAM 福岡 高砂": [33.5812, 130.4066],
+      "食堂 煮魚少年 福岡 住吉": [33.5847, 130.4131],
+      "博多ごまさば屋 福岡市中央区舞鶴1丁目2-11": [33.5919, 130.3925],
+      "元祖博多めんたい重 福岡市中央区西中洲6-15": [33.5913, 130.4041],
+      "ひょうたん寿司 福岡 天神": [33.5901, 130.3990],
+      "もつ鍋 田しゅう 福岡大名本店": [33.5866, 130.3941],
+      "博多だるま 総本店 福岡": [33.5844, 130.4053],
+      "もつ鍋 水炊き 四番館 天神": [33.5927, 130.3955],
+      "博多海鮮食堂 魚吉 ソラリアステージ店": [33.5897, 130.3988],
+      "たんや HAKATA 博多1番街": [33.5904, 130.4206],
+      "唐戸市場 下関市": [33.9566, 130.9432],
+      "市場食堂 よし 唐戸市場": [33.9566, 130.9432],
+      "からと屋 カモンワーフ 下関": [33.9570, 130.9420],
+      "小倉鉄なべ 本店 北九州市小倉北区魚町2-3-12": [33.8832, 130.8811],
+      "資さんうどん 魚町店": [33.8841, 130.8804],
+      "小倉焼うどん 北九州市小倉": [33.8840, 130.8810],
+      "サン フカヤ 新天町本店 福岡": [33.5906, 130.3970],
+      "Fukuoka Airport HAKATA FOOD HALL": [33.5869, 130.4511],
+      "天神地下街 福岡": [33.5901, 130.3983],
+      "Fukuoka Airport shops": [33.5869, 130.4511],
+      "il FORNO del MIGNON 博多駅": [33.5904, 130.4206],
+      "鈴懸 福岡 本店": [33.5940, 130.4053],
+      "MACCHA HOUSE 抹茶館 天神地下街": [33.5901, 130.3983],
+      "Age.3 HAKATA 福岡": [33.5924, 130.4045],
+      "シロヤベーカリー 小倉店": [33.8861, 130.8828],
+      "REC COFFEE 天神南店": [33.5873, 130.4031],
+      "魚ト肴いとおかし 福岡 春吉": [33.5884, 130.4054],
+      "だしいなり海木 本店 福岡": [33.5834, 130.4061],
+      "博多もつ鍋 徳永屋 総本店": [33.5947, 130.4114],
+      "唐戸市場 活きいき馬関街": [33.9566, 130.9432],
+      "小倉 焼うどん 専門店 きつね": [33.8841, 130.8811]
+    };
+
+    function distanceMeters(from, to) {
+      const a = coords[from];
+      const b = coords[to];
+      if (!a || !b) return null;
+      const rad = Math.PI / 180;
+      const dLat = (b[0] - a[0]) * rad;
+      const dLon = (b[1] - a[1]) * rad;
+      const lat1 = a[0] * rad;
+      const lat2 = b[0] * rad;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+      return Math.round(6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+    }
+
+    function formatDistance(meters) {
+      if (meters == null) return "거리 확인 필요";
+      if (meters < 1000) return `약 ${Math.max(50, Math.round(meters / 50) * 50)}m`;
+      return `약 ${(meters / 1000).toFixed(meters < 10000 ? 1 : 0)}km`;
+    }
+
+    function routeSummary(from, to, dayId) {
+      const meters = distanceMeters(from, to);
+      if (meters == null) return "구글 지도에서 거리 확인, 대중교통 이동";
+      const distance = formatDistance(meters);
+      let mode = "도보 이동";
+      if (dayId === "day2" && meters > 5000) mode = "JR/페리/대중교통 이동";
+      else if (dayId === "day3" && meters > 3000) mode = "지하철/택시 이동";
+      else if (meters > 1200) mode = "대중교통 또는 택시 이동";
+      return `${distance}, ${mode}`;
+    }
+
+    const nameKo = {
+      "博多ごまさば屋": "하카타 고마사바야",
+      "元祖博多めんたい重": "간소 하카타 멘타이쥬",
+      "ひょうたん寿司": "효탄스시",
+      "もつ鍋 田しゅう 福岡大名本店": "모츠나베 타슈 후쿠오카 다이묘 본점",
+      "博多だるま 総本店": "하카타 다루마 총본점",
+      "オールデイダイニング グランカフェ": "올데이 다이닝 그랑카페",
+      "牛カツ京都勝牛 天神西通り店": "규카츠 교토카츠규 텐진 니시도리점",
+      "Horumon Yakiniku Buchi Hakata Daimyo": "호르몬 야키니쿠 부치 하카타 다이묘점",
+      "博多料亭 稚加榮 福岡店": "하카타 료테이 치카에 후쿠오카점",
+      "スシロー 福岡親富孝通り店": "스시로 후쿠오카 오야후코도리점",
+      "もつ鍋・水炊き 四番館": "모츠나베·미즈타키 욘반칸",
+      "니시테츠 그랜드 호텔 조식": "西鉄グランドホテル 朝食",
+      "魚吉 天神": "우오키치 텐진",
+      "たんや HAKATA": "탄야 하카타",
+      "가라토 시장 이키이키 바칸가이": "唐戸市場 活きいき馬関街",
+      "市場食堂 よし": "이치바쇼쿠도 요시",
+      "からと屋 / ふくの関": "가라토야 / 후쿠노세키",
+      "小倉鉄なべ": "고쿠라 철나베",
+      "資さんうどん 魚町店": "스케상 우동 우오마치점",
+      "고쿠라 야키우동": "小倉焼うどん",
+      "サン・フカヤ 新天町本店": "상 후카야 신텐초 본점",
+      "후쿠오카공항 HAKATA FOOD HALL": "福岡空港 HAKATA FOOD HALL",
+      "텐진 지하상가 카페/디저트": "天神地下街 카페/디저트",
+      "공항/하카타역 도시락·명란 선물": "空港/博多駅 도시락·명란 선물",
+      "il FORNO del MIGNON": "일 포르노 델 미뇽",
+      "鈴懸 Suzukake": "스즈카케",
+      "MACCHA HOUSE": "맛차 하우스",
+      "Age.3 HAKATA": "아게산 하카타",
+      "REC COFFEE 天神南店": "렉 커피 텐진미나미점",
+      "シロヤベーカリー 小倉店": "시로야 베이커리 고쿠라점"
+      ,"食堂 光": "식당 히카리"
+      ,"GARAM": "가람"
+      ,"食堂 煮魚少年": "식당 니자카나 쇼넨"
+      ,"魚ト肴いとおかし": "사카나토사카나 이토오카시"
+      ,"だしいなり海木 本店": "다시이나리 카이보쿠 본점"
+      ,"博多もつ鍋 徳永屋 総本店": "하카타 모츠나베 도쿠나가야 총본점"
+      ,"唐戸市場 活きいき馬関街": "가라토시장 이키이키 바칸가이"
+      ,"焼うどん専門店 きつね": "야키우동 전문점 키츠네"
+    };
+
+    function nameBlock(name, tag = "h4") {
+      const ko = nameKo[name];
+      if (!ko) return `<${tag}>${name}</${tag}>`;
+      return `<${tag}><span class="jp-name">${name}</span><span class="ko-name">${ko}</span></${tag}>`;
+    }
+
+    const googleStats = {
+      "博多ごまさば屋": { google: 4.4, reviews: "2,283", tabelog: "3.66" },
+      "元祖博多めんたい重": { google: 3.9, reviews: "매장 정보 확인", tabelog: "3.50" },
+      "ひょうたん寿司": { google: 4.2, reviews: "5,024" },
+      "もつ鍋 田しゅう 福岡大名本店": { google: 4.7, reviews: "2,223" },
+      "食堂 光": { google: 4.5, reviews: "723", tabelog: "3.51" },
+      "GARAM": { google: 4.5, reviews: "417" },
+      "食堂 煮魚少年": { google: 4.6, reviews: "729" },
+      "博多だるま 総本店": { google: null, reviews: "매장 정보 확인", tabelog: "3.47" }
+    };
+
+    const storeDetails = {
+      "il FORNO del MIGNON": {
+        hours: "07:00-23:00, 연중무휴",
+        fullMenu: "プレーン ミニクロワッサン(플레인 미니 크루아상) 중량 판매 / チョコ ミニクロワッサン(초코 미니 크루아상) 중량 판매 / さつまいも ミニクロワッサン(고구마 미니 크루아상) 중량 판매 / 明太子 ミニクロワッサン(명란 미니 크루아상) 기간·매장 확인 / アーモンド ミニクロワッサン(아몬드 미니 크루아상) 기간·매장 확인 / アップルパイ(애플파이) 가격 현장 확인 / シフォンケーキ(시폰 케이크) 가격 현장 확인"
+      },
+      "鈴懸 Suzukake": {
+        hours: "과자 판매 09:00-19:00, 찻집 11:00-19:00 (식사 L.O. 18:00, 감미 L.O. 18:30)",
+        fullMenu: "季節の和菓子(계절 화과자) 300-700엔대 / 鈴乃最中(스즈노 모나카) 가격 현장 확인 / 生菓子と飲み物セット(생과자+음료 세트) 가격 현장 확인 / すずのパフェ(스즈 파르페) 1,080엔대 / 白玉(시라타마) 860엔대 / 日替わりランチ(일일 런치) 11:00-13:30, 가격 현장 확인 / カリーライス(카레라이스) 1,180엔대"
+      },
+      "MACCHA HOUSE": {
+        hours: "10:00-21:00 (L.O. 20:30), 시설 휴무에 따름",
+        fullMenu: "抹茶ティラミス(말차 티라미수) 700-900엔대 / 抹茶パフェ(말차 파르페) 1,000-1,300엔대 / 抹茶ラテ(말차 라테) 500-800엔대 / 抹茶ソフトクリーム(말차 소프트크림) 640엔대 / ミックスソフトクリーム(믹스 소프트크림) 640엔대 / 抹茶ドリンク各種(말차 음료) 가격 현장 확인 / 日本国内限定メニュー(일본 한정 메뉴) 가격 현장 확인"
+      },
+      "シロヤベーカリー 小倉店": {
+        hours: "10:00-18:00, 상품 소진 시 조기 종료 가능",
+        fullMenu: "サニーパン(연유빵) 100-200엔대 / オムレット(오믈렛 케이크) 100-200엔대 / バタークリームパン(버터크림빵) 가격 현장 확인 / 食パン(식빵) 가격 현장 확인 / 菓子パン各種(단과자빵) 100-300엔대 / サンドイッチ(샌드위치) 가격 현장 확인 / ケーキ類(케이크류) 가격 현장 확인"
+      },
+      "REC COFFEE 天神南店": {
+        hours: "월-목·일 10:00-22:00, 금·토 10:00-24:00",
+        fullMenu: "カフェラテ(카페라테) 600-800엔대 / ハンドドリップコーヒー(핸드드립 커피) 가격 현장 확인 / バスクチーズケーキ(바스크 치즈케이크) 500-700엔대 / ハニートースト(허니토스트) 900-1,300엔대 / コーヒーソフト(커피 소프트) 가격 현장 확인 / 焼き菓子(구움과자) 가격 현장 확인"
+      }
+    };
+
+    const closedNames = new Set([
+      "Age.3 HAKATA",
+      "サン・フカヤ 新天町本店"
+    ]);
+
+    function googleRatingText(item) {
+      const stat = googleStats[item.name];
+      const minimum = storeDetails[item.name] ? "★4.0+" : "★4.5+";
+      if (!stat || stat.google == null) return minimum;
+      return `★${stat.google}`;
+    }
+
+    function isRecommendedByGoogle(item) {
+      if (closedNames.has(item.name)) return false;
+      const stat = googleStats[item.name];
+      const minimum = storeDetails[item.name] ? 4.0 : 4.5;
+      return !stat || stat.google == null || stat.google >= minimum;
+    }
+
+    function allItems() {
+      return [
+        ...days.flatMap(day => day.meals.flatMap(meal => meal.options)),
+        ...Object.values(extraRecommendations).flat(),
+        ...desserts,
+        ...Object.values(dessertSlots).flatMap(slots => Object.values(slots).flat())
+      ];
+    }
+
+    function findItemByMapUrl(url) {
+      const parsed = new URL(url, window.location.href);
+      const query = parsed.searchParams.get("query") || parsed.searchParams.get("destination") || "";
+      return allItems().find(item => item.mapQuery === query || encodeURIComponent(item.mapQuery || "") === encodeURIComponent(query));
+    }
+
+    const extraRecommendations = {
+      "d1-lunch": [
+        {
+          name: "博多料亭 稚加榮 福岡店",
+          rank: "재추천",
+          image: "",
+          location: "호텔에서 약 500m. 다이묘 방향.",
+          menu: "和定食(일식 정식) 2,000-3,000엔대 / 海鮮丼(해산덮밥) 2,000-3,500엔대 / 明太子料理(명란 요리) 1,500-2,500엔대",
+          price: "점심 2,000-3,500엔대",
+          budget: 2800,
+          why: "호텔에서 걸어서 갈 수 있는 일식/해산물 대안입니다.",
+          reserveStatus: "예약 가능",
+          reserveClass: "reserve",
+          links: {},
+          mapQuery: "博多料亭 稚加榮 福岡店"
+        },
+        {
+          name: "スシロー 福岡親富孝通り店",
+          rank: "재추천",
+          image: "",
+          location: "호텔에서 약 250m. 오야후코도리 쪽.",
+          menu: "回転寿司(회전초밥) 접시당 120-300엔대 / まぐろ(참치) 120-300엔대 / 茶碗蒸し(차완무시) 300엔대",
+          price: "점심 1,000-2,000엔대",
+          budget: 1600,
+          why: "가성비와 접근성을 우선할 때 쓰기 좋은 도보권 후보입니다.",
+          reserveStatus: "예약 불필요",
+          reserveClass: "no",
+          links: {},
+          mapQuery: "スシロー 福岡親富孝通り店"
+        }
+      ],
+      "d1-dinner": [
+        {
+          name: "魚ト肴いとおかし",
+          rank: "재추천",
+          image: "",
+          location: "春吉. 해산물 이자카야.",
+          menu: "刺身盛り(사시미 모둠) 2,000엔대 / 海鮮つまみ(해산물 안주) 800-1,500엔대 / 焼き魚(구이 생선) 1,000엔대",
+          price: "저녁 3,000-5,000엔대",
+          budget: 4000,
+          why: "모츠나베 대신 해산물 저녁으로 바꾸고 싶을 때 좋습니다.",
+          reserveStatus: "예약 가능",
+          reserveClass: "reserve",
+          links: {},
+          mapQuery: "魚ト肴いとおかし 福岡 春吉"
+        },
+        {
+          name: "博多もつ鍋 徳永屋 総本店",
+          rank: "재추천",
+          image: "",
+          location: "博多/祇園권. 모츠나베 대안.",
+          menu: "もつ鍋 味噌(미소 모츠나베) 1,500-2,000엔대 / もつ鍋 醤油(쇼유 모츠나베) 1,500-2,000엔대 / ちゃんぽん麺(챔폰면 추가) 300-500엔대",
+          price: "저녁 3,000-4,500엔대",
+          budget: 3800,
+          why: "첫날 저녁 모츠나베 후보를 유지하면서 다른 가게로 바꾸는 선택입니다.",
+          reserveStatus: "예약 가능",
+          reserveClass: "reserve",
+          links: {},
+          mapQuery: "博多もつ鍋 徳永屋 総本店"
+        }
+      ],
+      "d2-breakfast": [
+        {
+          name: "il FORNO del MIGNON",
+          rank: "재추천",
+          image: "",
+          location: "하카타역. 이동 전 포장 아침.",
+          menu: "プレーン(플레인) 300-800엔대 / チョコ(초코) 300-800엔대 / さつまいも(고구마) 300-800엔대",
+          price: "300-800엔대",
+          budget: 600,
+          why: "가라토 시장 전 과식하지 않기 좋은 포장 아침입니다.",
+          reserveStatus: "예약 불필요",
+          reserveClass: "no",
+          links: {},
+          mapQuery: "il FORNO del MIGNON 博多駅"
+        }
+      ],
+      "d2-lunch": [
+        {
+          name: "唐戸市場 活きいき馬関街",
+          rank: "재추천",
+          image: "",
+          location: "가라토 시장. 시장 초밥 중심.",
+          menu: "ふく寿司(복어 초밥) 500-1,500엔 / 海鮮寿司(해산물 초밥) 1,500-2,500엔 / ふく汁(복어국) 400-700엔대",
+          price: "1,500-3,500엔대",
+          budget: 2500,
+          why: "2일차 메인 목적지라 최우선 후보입니다.",
+          reserveStatus: "예약 없음",
+          reserveClass: "no",
+          links: {},
+          mapQuery: "唐戸市場 下関市"
+        }
+      ],
+      "d2-dinner": [
+        {
+          name: "焼うどん専門店 きつね",
+          rank: "재추천",
+          image: "",
+          location: "고쿠라. 야키우동 후보.",
+          menu: "小倉焼うどん(고쿠라 야키우동) 800-1,200엔대 / 鉄板焼き(철판 안주) 600-1,200엔대 / 飲み物セット(음료 포함) 1,500-2,500엔대",
+          price: "1,000-2,500엔대",
+          budget: 1600,
+          why: "교자가 부담될 때 고쿠라 명물로 바꾸기 좋습니다.",
+          reserveStatus: "확인 필요",
+          reserveClass: "wait",
+          links: {},
+          mapQuery: "小倉 焼うどん 専門店 きつね"
+        }
+      ]
+    };
+
+    const recommendationPool = {
+      "d1-lunch": [
+        { name: "天神食堂 ハル", rank: "후보", image: "", location: "호텔 도보권. 가정식 정식 후보.", menu: "日替わり定食(일일 정식) 1,000-1,500엔대 / 魚定食(생선 정식) 1,200-1,800엔대 / 唐揚げ定食(가라아게 정식) 1,000-1,500엔대", price: "점심 1,000-1,800엔대", budget: 1400, why: "호텔 근처에서 간단한 정식으로 바꾸고 싶을 때.", reserveStatus: "확인 필요", reserveClass: "wait", links: {}, mapQuery: "天神食堂 ハル 福岡" },
+        { name: "因幡うどん ソラリアステージ店", rank: "후보", image: "", location: "텐진역/솔라리아스테이지.", menu: "ごぼう天うどん(우엉튀김 우동) 700-1,000엔대 / 丸天うどん(마루텐 우동) 700-1,000엔대 / かしわ飯(카시와밥) 300-500엔대", price: "800-1,500엔대", budget: 1100, why: "도착 직후 가볍게 먹기 좋은 우동 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "因幡うどん ソラリアステージ店" },
+        { name: "ガスト 天神サザン通り店", rank: "후보", image: "", location: "호텔 근처 패밀리레스토랑.", menu: "ハンバーグ(햄버그) 800-1,300엔대 / オムライス(오므라이스) 800-1,300엔대 / ドリンクバー(드링크바) 300엔대", price: "800-1,500엔대", budget: 1200, why: "대기 적고 메뉴 선택 폭이 넓은 안전한 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "ガスト 天神サザン通り店" },
+        { name: "釜喜利うどん", rank: "후보", image: "", location: "다이묘/아카사카 방향.", menu: "うどん(우동) 800-1,200엔대 / 天ぷら(튀김) 300-800엔대 / かしわ飯(카시와밥) 300-500엔대", price: "1,000-1,800엔대", budget: 1400, why: "걷기 부담이 적은 우동 대안.", reserveStatus: "대기 추천", reserveClass: "wait", links: {}, mapQuery: "釜喜利うどん 福岡" },
+        { name: "THE CITY BAKERY 天神ソラリアプラザ", rank: "후보", image: "", location: "솔라리아플라자.", menu: "サンドイッチ(샌드위치) 700-1,200엔대 / パン各種(빵류) 300-800엔대 / コーヒー(커피) 400-700엔대", price: "900-1,800엔대", budget: 1300, why: "쇼핑 동선 안에서 가볍게 해결하기 좋습니다.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "THE CITY BAKERY 天神ソラリアプラザ" }
+        ,{ name: "天神地下街 軽食カフェ", rank: "후보", image: "", location: "텐진 지하상가.", menu: "サンドイッチ(샌드위치) 600-1,000엔대 / パスタ(파스타) 1,000-1,500엔대 / コーヒー(커피) 400-700엔대", price: "800-1,600엔대", budget: 1200, why: "날씨와 상관없이 이동하기 쉬운 지하상가 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "天神地下街 カフェ ランチ" }
+      ],
+      "d1-dinner": [
+        { name: "博多水炊き とり田 天神店", rank: "후보", image: "", location: "텐진권 미즈타키.", menu: "水炊き(미즈타키) 3,000-5,000엔대 / 親子丼(오야코동) 가격 확인 / 鶏料理(닭요리) 1,000-2,000엔대", price: "저녁 3,000-5,000엔대", budget: 4200, why: "모츠나베 대신 닭국물 계열로 바꾸는 후보.", reserveStatus: "예약 추천", reserveClass: "reserve", links: {}, mapQuery: "博多水炊き とり田 天神店" },
+        { name: "博多華味鳥 天神店", rank: "후보", image: "", location: "텐진권 미즈타키 체인.", menu: "水たき(미즈타키) 3,000-5,000엔대 / 唐揚げ(가라아게) 800-1,200엔대 / 鶏炭火焼(닭 숯불구이) 1,000-2,000엔대", price: "저녁 3,000-5,500엔대", budget: 4500, why: "예약 가능한 안정적인 저녁 대안.", reserveStatus: "예약 가능", reserveClass: "reserve", links: {}, mapQuery: "博多華味鳥 天神店" },
+        { name: "餃子李 大名店", rank: "후보", image: "", location: "다이묘. 만두/중식.", menu: "焼餃子(군만두) 600-900엔대 / 水餃子(물만두) 600-900엔대 / 炒飯(볶음밥) 800-1,200엔대", price: "저녁 1,500-3,000엔대", budget: 2400, why: "나베가 무거우면 캐주얼하게 바꾸기 좋습니다.", reserveStatus: "대기 추천", reserveClass: "wait", links: {}, mapQuery: "餃子李 大名店 福岡" },
+        { name: "焼鳥の八兵衛 天神店", rank: "후보", image: "", location: "텐진권 야키토리.", menu: "焼鳥各種(꼬치류) 200-500엔대 / 串盛り(꼬치 모둠) 1,500-2,500엔대 / 一品料理(일품요리) 500-1,200엔대", price: "저녁 3,000-5,000엔대", budget: 3800, why: "후쿠오카식 야키토리로 바꾸고 싶을 때.", reserveStatus: "예약 추천", reserveClass: "reserve", links: {}, mapQuery: "焼鳥の八兵衛 天神店" },
+        { name: "磯っこ商店 福岡天神店", rank: "후보", image: "", location: "텐진 해산물 이자카야.", menu: "浜焼き(하마야키) 1,000-2,000엔대 / 刺身(사시미) 1,000-2,500엔대 / 海鮮丼(해산덮밥) 1,500-2,500엔대", price: "저녁 3,000-5,000엔대", budget: 3800, why: "해산물 저녁으로 바꾸기 좋은 후보.", reserveStatus: "예약 가능", reserveClass: "reserve", links: {}, mapQuery: "磯っこ商店 福岡天神店" }
+      ],
+      "d2-breakfast": [
+        { name: "シアトルズベストコーヒー 博多筑紫口店", rank: "후보", image: "", location: "하카타역 근처.", menu: "コーヒー(커피) 400-700엔대 / サンドイッチ(샌드위치) 500-900엔대 / モーニングセット(모닝 세트) 600-1,000엔대", price: "600-1,200엔대", budget: 900, why: "신칸센 전 빠르게 먹기 좋은 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "シアトルズベストコーヒー 博多筑紫口店" },
+        { name: "プロント 博多駅地下街店", rank: "후보", image: "", location: "하카타역 지하.", menu: "モーニングセット(모닝 세트) 500-900엔대 / トースト(토스트) 400-700엔대 / コーヒー(커피) 400-700엔대", price: "600-1,100엔대", budget: 850, why: "역 안에서 이동 부담이 적은 아침 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "プロント 博多駅地下街店" },
+        { name: "博多一番街 朝食", rank: "후보", image: "", location: "하카타역 지하상가.", menu: "和朝食(일식 아침) 800-1,300엔대 / うどん(우동) 600-1,000엔대 / カフェ朝食(카페 조식) 600-1,000엔대", price: "600-1,300엔대", budget: 1000, why: "당일 컨디션에 따라 고르기 쉬운 역내 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "博多一番街 朝食" }
+      ],
+      "d2-lunch": [
+        { name: "カモンワーフ 海鮮丼", rank: "후보", image: "", location: "카몬와프.", menu: "海鮮丼(해산덮밥) 1,500-3,000엔대 / ふく料理(복어 요리) 1,500-3,500엔대 / 定食(정식) 1,200-2,500엔대", price: "1,500-3,500엔대", budget: 2400, why: "가라토 시장이 붐빌 때 앉아서 먹는 대안.", reserveStatus: "확인 필요", reserveClass: "wait", links: {}, mapQuery: "カモンワーフ 海鮮丼 下関" },
+        { name: "海転からと市場寿司", rank: "후보", image: "", location: "가라토 시장 주변 회전초밥.", menu: "寿司(초밥) 접시별 상이 / ふく寿司(복어 초밥) 가격 확인 / 海鮮汁(해산물 국) 가격 확인", price: "1,500-3,500엔대", budget: 2500, why: "시장 초밥 대신 앉아서 초밥을 먹는 선택.", reserveStatus: "대기 추천", reserveClass: "wait", links: {}, mapQuery: "海転からと市場寿司 下関" },
+        { name: "唐戸食堂", rank: "후보", image: "", location: "가라토 시장 주변.", menu: "海鮮定食(해산물 정식) 1,500-2,500엔대 / 焼魚定食(생선구이 정식) 1,200-2,000엔대 / ふく料理(복어 요리) 가격 확인", price: "1,200-3,000엔대", budget: 2200, why: "정식 위주로 편하게 먹는 대안.", reserveStatus: "확인 필요", reserveClass: "wait", links: {}, mapQuery: "唐戸食堂 下関" }
+        ,{ name: "門司港レトロ 海鮮ランチ", rank: "후보", image: "", location: "모지코 레트로 주변.", menu: "海鮮丼(해산덮밥) 1,500-2,500엔대 / 焼きカレー(야키카레) 1,000-1,800엔대 / 定食(정식) 1,200-2,000엔대", price: "1,000-2,500엔대", budget: 1800, why: "가라토 대신 모지코 쪽에서 점심을 해결할 때.", reserveStatus: "확인 필요", reserveClass: "wait", links: {}, mapQuery: "門司港レトロ 海鮮ランチ" }
+      ],
+      "d2-dinner": [
+        { name: "焼うどん専門店 きつね 小倉エキナカ店", rank: "후보", image: "", location: "고쿠라역 안.", menu: "小倉焼うどん(고쿠라 야키우동) 800-1,200엔대 / セット(세트) 1,200-2,000엔대 / 鉄板料理(철판요리) 가격 확인", price: "1,000-2,500엔대", budget: 1600, why: "역 안에서 고쿠라 명물을 먹는 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "焼うどん専門店 きつね 小倉エキナカ店" },
+        { name: "天ぷら定食ふじしま", rank: "후보", image: "", location: "고쿠라역 주변.", menu: "天ぷら定食(튀김 정식) 800-1,300엔대 / 海老天定食(새우튀김 정식) 1,000-1,600엔대 / 追加天ぷら(튀김 추가) 가격 확인", price: "800-1,800엔대", budget: 1300, why: "가볍고 가성비 좋은 저녁 대안.", reserveStatus: "대기 추천", reserveClass: "wait", links: {}, mapQuery: "天ぷら定食ふじしま 小倉" },
+        { name: "旦過うどん", rank: "후보", image: "", location: "단가시장 주변.", menu: "うどん(우동) 600-1,000엔대 / おでん(오뎅) 100-300엔대 / かしわ飯(카시와밥) 가격 확인", price: "700-1,500엔대", budget: 1000, why: "늦은 일정에 부담 없는 우동 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "旦過うどん 小倉" },
+        { name: "小倉駅ラーメン", rank: "후보", image: "", location: "고쿠라역 주변.", menu: "豚骨ラーメン(돈코츠 라멘) 800-1,200엔대 / 餃子(교자) 400-700엔대 / 替玉(면 추가) 100-200엔대", price: "900-1,600엔대", budget: 1200, why: "철나베가 붐비면 빠르게 먹기 좋은 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "小倉駅 ラーメン" }
+      ],
+      "d3-breakfast": [
+        { name: "スターバックス 天神西通り店", rank: "후보", image: "", location: "호텔 근처.", menu: "コーヒー(커피) 400-700엔대 / サンドイッチ(샌드위치) 500-900엔대 / ペストリー(페이스트리) 300-700엔대", price: "700-1,500엔대", budget: 1000, why: "체크아웃 전후 간단히 먹는 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "スターバックス 天神西通り店" },
+        { name: "VIE DE FRANCE 天神地下街店", rank: "후보", image: "", location: "텐진 지하상가.", menu: "パン各種(빵류) 200-600엔대 / サンドイッチ(샌드위치) 400-800엔대 / コーヒー(커피) 300-600엔대", price: "600-1,200엔대", budget: 900, why: "쇼핑 전 가볍게 먹기 좋습니다.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "VIE DE FRANCE 天神地下街店" },
+        { name: "ベーカリーハカタ 天神", rank: "후보", image: "", location: "텐진권 베이커리 후보.", menu: "パン各種(빵류) 200-700엔대 / クロワッサン(크루아상) 가격 확인 / コーヒー(커피) 가격 확인", price: "600-1,300엔대", budget: 900, why: "호텔 조식 대신 빵과 커피로 가볍게.", reserveStatus: "확인 필요", reserveClass: "wait", links: {}, mapQuery: "天神 ベーカリー 朝食" }
+        ,{ name: "天神地下街 モーニング", rank: "후보", image: "", location: "텐진 지하상가.", menu: "トースト(토스트) 400-700엔대 / コーヒー(커피) 400-700엔대 / モーニングセット(모닝 세트) 600-1,000엔대", price: "600-1,200엔대", budget: 850, why: "귀국일 쇼핑 전에 지하상가에서 가볍게 시작하는 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "天神地下街 モーニング" }
+      ],
+      "d3-lunch": [
+        { name: "博多一幸舎 福岡空港国内線ターミナル店", rank: "후보", image: "", location: "후쿠오카공항.", menu: "豚骨ラーメン(돈코츠 라멘) 900-1,300엔대 / 味玉ラーメン(맛달걀 라멘) 1,000-1,500엔대 / 餃子(교자) 가격 확인", price: "1,000-1,800엔대", budget: 1400, why: "공항에서 마지막 라멘으로 마무리.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "博多一幸舎 福岡空港国内線ターミナル店" },
+        { name: "因幡うどん 福岡空港店", rank: "후보", image: "", location: "후쿠오카공항.", menu: "ごぼう天うどん(우엉튀김 우동) 700-1,000엔대 / 丸天うどん(마루텐 우동) 700-1,000엔대 / かしわ飯(카시와밥) 가격 확인", price: "800-1,500엔대", budget: 1100, why: "출국 전 부담 없는 우동 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "因幡うどん 福岡空港店" },
+        { name: "三日月屋 福岡空港店", rank: "후보", image: "", location: "후쿠오카공항.", menu: "クロワッサン(크루아상) 300-600엔대 / サンド(샌드) 가격 확인 / コーヒー(커피) 가격 확인", price: "500-1,500엔대", budget: 1000, why: "시간이 애매할 때 포장하기 좋은 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "三日月屋 福岡空港店" },
+        { name: "SOLAE DINING HANA 福岡空港", rank: "후보", image: "", location: "후쿠오카공항.", menu: "定食(정식) 1,200-2,000엔대 / 丼(덮밥) 1,000-1,800엔대 / 軽食(가벼운 식사) 가격 확인", price: "1,000-2,000엔대", budget: 1500, why: "공항에서 앉아서 먹는 안정적인 후보.", reserveStatus: "예약 불필요", reserveClass: "no", links: {}, mapQuery: "SOLAE DINING HANA 福岡空港" }
+      ]
+    };
+
+    function refreshGoogleInfo() {
+      document.querySelectorAll("[data-google-rating]").forEach(node => {
+        const name = node.getAttribute("data-google-rating");
+        node.textContent = googleRatingText({ name });
+      });
+    }
+
+    function rankedOptions(options) {
+      return options.map((option, index) => ({
+        ...option,
+        rank: `${index + 1}순위`
+      }));
+    }
+
+    function uniqueOptions(options) {
+      const seen = new Set();
+      return options.filter(option => {
+        if (seen.has(option.name)) return false;
+        seen.add(option.name);
+        return true;
+      });
+    }
+
+    const recommendationProfiles = {
+      "d1-lunch": { label: "텐진 호텔 도보권", query: "西鉄グランドホテル 天神 徒歩 ランチ", price: "점심 1,000-3,000엔대", budget: 1800 },
+      "d1-dinner": { label: "텐진 다이묘 저녁", query: "天神 大名 ディナー", price: "저녁 2,500-5,000엔대", budget: 3600 },
+      "d2-breakfast": { label: "하카타역 아침", query: "博多駅 朝食", price: "아침 600-1,500엔대", budget: 1000 },
+      "d2-lunch": { label: "가라토 모지코 점심", query: "唐戸市場 門司港 ランチ", price: "점심 1,500-3,500엔대", budget: 2400 },
+      "d2-dinner": { label: "고쿠라 저녁", query: "小倉駅 ディナー", price: "저녁 1,000-3,500엔대", budget: 2200 },
+      "d3-breakfast": { label: "텐진 귀국일 아침", query: "天神 朝食 カフェ", price: "아침 600-1,500엔대", budget: 1000 },
+      "d3-lunch": { label: "후쿠오카공항 점심", query: "福岡空港 ランチ", price: "점심 800-2,000엔대", budget: 1400 }
+    };
+
+    const recommendationKinds = [
+      "和食 定食", "海鮮丼", "寿司", "うどん", "ラーメン", "焼鳥", "水炊き", "もつ鍋", "餃子", "天ぷら",
+      "カレー", "カフェ ランチ", "ベーカリー", "サンドイッチ", "喫茶店", "居酒屋", "焼肉", "鉄板焼き", "とんかつ", "牛カツ",
+      "そば", "おでん", "明太子", "丼もの", "駅ナカ 食事", "地下街 食事", "予約可", "高評価", " 가성비", "대기 적은 식당"
+    ];
+
+    function generatedRecommendations(mealId) {
+      const profile = recommendationProfiles[mealId];
+      if (!profile) return [];
+      return recommendationKinds.map(kind => ({
+        name: `${profile.label} ${kind}`,
+        rank: "후보",
+        image: "",
+        location: profile.label,
+        menu: `${kind} 메뉴 현장 확인 / 세트 메뉴 현장 확인 / 음료·사이드 현장 확인`,
+        price: profile.price,
+        budget: profile.budget,
+        why: "추천 다시하기 후보풀 보강용입니다. 구글 지도에서 실제 매장 정보를 확인하세요.",
+        reserveStatus: "확인 필요",
+        reserveClass: "wait",
+        links: {},
+        mapQuery: `${profile.query} ${kind}`
+      }));
+    }
+
+    function expandedRecommendationPool(mealId) {
+      return uniqueOptions([
+        ...(recommendationPool[mealId] || []),
+        ...(extraRecommendations[mealId] || []),
+        ...generatedRecommendations(mealId)
+      ]);
+    }
+
+    function selectedMealOption(mealId) {
+      const meal = findMeal(mealId);
+      if (!meal) return null;
+      const index = selected[mealId] ?? firstRecommendedIndex(meal);
+      return meal.options[index] || meal.options[0] || null;
+    }
+
+    function dessertEntriesForSlot(slot) {
+      const [dayId, mealId] = slot.split(":");
+      const snacks = dessertSlots[dayId]?.[mealId] || [];
+      const previousMeal = selectedMealOption(mealId);
+      if (!previousMeal) return [];
+      const selectedIndexes = new Set(selectedDesserts[slot] || []);
+      return snacks
+        .map((item, index) => ({ item, index, meters: distanceMeters(previousMeal.mapQuery, item.mapQuery) }))
+        .filter(entry => selectedIndexes.has(entry.index) || (entry.meters != null && entry.meters < 1000));
+    }
+
+    function cleanDessertSelection(slot) {
+      const [dayId, mealId] = slot.split(":");
+      const snacks = dessertSlots[dayId]?.[mealId] || [];
+      selectedDesserts[slot] = (selectedDesserts[slot] || []).filter(index => snacks[index]);
+    }
+
+    function rerollMeal(mealId) {
+      for (const day of days) {
+        const meal = day.meals.find(item => item.id === mealId);
+        if (!meal) continue;
+
+        const current = meal.options[selected[mealId]] || meal.options[0];
+        const visibleNames = new Set(meal.options.map(option => option.name));
+        const candidates = uniqueOptions([
+          ...expandedRecommendationPool(mealId),
+          ...meal.options
+        ]).filter(option => option.name !== current.name && isRecommendedByGoogle(option));
+        const unseen = candidates.filter(option => !visibleNames.has(option.name));
+        const pool = unseen.length >= 2 ? unseen : candidates;
+
+        if (!pool.length) return;
+
+        rerollCursor[mealId] = (rerollCursor[mealId] || 0) + 1;
+        const start = rerollCursor[mealId] % pool.length;
+        const picked = [];
+        for (let i = 0; i < Math.min(2, pool.length); i += 1) {
+          picked.push(pool[(start + i) % pool.length]);
+        }
+
+        meal.options = rankedOptions([current, ...picked]);
+        selected[mealId] = 0;
+      renderDays();
+      syncAllDessertSelections();
+      suppressFocus = true;
+      choose(mealId, 0);
+      suppressFocus = false;
+      saveState();
+      return;
+      }
+    }
+
+    function rerollDessert(slot) {
+      const [dayId, mealId] = slot.split(":");
+      const entries = dessertEntriesForSlot(slot);
+      if (entries.length < 2) return;
+      cleanDessertSelection(slot);
+
+      const currentIndexes = selectedDesserts[slot] || [];
+      const currentItems = currentIndexes
+        .map(index => dessertSlots[dayId]?.[mealId]?.[index])
+        .filter(Boolean);
+      const currentNames = new Set(currentItems.map(item => item.name));
+      const pool = entries.map(entry => entry.item).filter(item => !currentNames.has(item.name));
+      rerollCursor[slot] = (rerollCursor[slot] || 0) + 1;
+      const start = rerollCursor[slot] % pool.length;
+      const picked = [];
+      const pickCount = Math.max(0, 3 - currentItems.length);
+      for (let i = 0; i < Math.min(pickCount, pool.length); i += 1) {
+        picked.push(pool[(start + i) % pool.length]);
+      }
+
+      dessertSlots[dayId][mealId] = [...currentItems, ...picked];
+      selectedDesserts[slot] = currentItems.map((_, index) => index);
+      renderDays();
+      syncDessertSelection(slot);
+      renderSelected();
+      saveState();
+    }
+
+    function menuBlock(item, compact = false) {
+      const menuItems = String(item.menu || "")
+        .split(" / ")
+        .map(text => text.trim())
+        .filter(Boolean);
+      return `
+        <div class="menu">
+          <span class="menu-title">추천 메뉴</span>
+          <ul class="menu-list">
+            ${menuItems.map(text => `<li>${text}</li>`).join("")}
+          </ul>
+          ${compact ? "" : `<span class="price-line"><b>가격:</b> ${item.price}</span>`}
+        </div>
+      `;
+    }
+
+    function koreanMenuText(text) {
+      const match = text.match(/\(([^)]+)\)/);
+      if (match) return text.replace(/^.*?\(([^)]+)\)/, "$1").trim();
+      return text.replace(/[A-Za-zぁ-んァ-ン一-龥々ー]+/g, "").replace(/\s+/g, " ").trim() || text;
+    }
+
+    function koreanMenuBlock(item) {
+      const menuItems = String(item.menu || "")
+        .split(" / ")
+        .map(text => koreanMenuText(text.trim()))
+        .filter(Boolean);
+      return `
+        <div class="menu">
+          <span class="menu-title">추천 메뉴</span>
+          <ul class="menu-list">
+            ${menuItems.map(text => `<li>${text}</li>`).join("")}
+          </ul>
+        </div>
+      `;
+    }
+
+    function attr(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function linkButtons(option) {
+      const buttons = [];
+      if (option.links?.reserve) buttons.push(`<a class="btn primary" href="${option.links.reserve}" target="_blank" rel="noreferrer">예약</a>`);
+      if (option.links?.altReserve) buttons.push(`<a class="btn primary" href="${option.links.altReserve}" target="_blank" rel="noreferrer">예약2</a>`);
+      buttons.push(`<a class="btn light" href="${mapUrl(option.mapQuery)}" target="_blank" rel="noreferrer">매장 정보</a>`);
+      return buttons.join("");
+    }
+
+    function optionCard(meal, option, index) {
+      if (!isRecommendedByGoogle(option)) return "";
+      return `
+        <article class="card" data-meal="${meal.id}" data-index="${index}" title="자세히 보기">
+          <div class="card-body">
+            <div class="card-title">
+              <span class="rank">${option.rank}</span>
+              ${nameBlock(option.name)}
+            </div>
+            <p class="google-rating" data-google-rating="${option.name}">${googleRatingText(option)}</p>
+            <div class="chips">
+              <span class="chip ${option.reserveClass}">${option.reserveStatus}</span>
+              <span class="chip">예산 ${option.price}</span>
+            </div>
+            ${menuBlock(option)}
+            <p class="why">${option.why}</p>
+            <div class="links">${linkButtons(option)}</div>
+            <button class="choose primary" type="button" data-meal="${meal.id}" data-index="${index}">이걸로 선택</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function snackStrip(day, meal) {
+      const slot = `${day.id}:${meal.id}`;
+      const snacks = dessertEntriesForSlot(slot);
+      if (!dessertSlots[day.id]?.[meal.id]) return "";
+      return `
+        <div class="snack-strip">
+          <div class="snack-head">
+            <div class="meal-title-left">
+              <h3>디저트</h3>
+              <button class="reroll" type="button" data-reroll-dessert="${slot}">추천 다시하기</button>
+            </div>
+            <button class="none-dessert" type="button" data-dessert-slot="${slot}" data-dessert-index="-1">없음</button>
+          </div>
+          <div class="snack-grid">
+            ${snacks.length ? snacks.map(({ item, index, meters }) => `
+              <article class="snack-card" data-snack-day="${day.id}" data-snack-meal="${meal.id}" data-snack-index="${index}" title="자세히 보기">
+                <div>
+                  ${nameBlock(item.name)}
+                  <p class="google-rating" data-google-rating="${item.name}">${googleRatingText(item)}</p>
+                  <p><b>${formatDistance(meters)}, 도보 이동</b></p>
+                  ${menuBlock(item)}
+                  <div class="links">
+                    ${item.mapQuery ? `<a class="btn light" href="${mapUrl(item.mapQuery)}" target="_blank" rel="noreferrer">매장 정보</a>` : ""}
+                  </div>
+                  <button class="choose primary" type="button" data-dessert-slot="${slot}" data-dessert-index="${index}">이 디저트 선택</button>
+                </div>
+              </article>
+            `).join("") : `<div class="notice">도보 1km 이내 후보 없음</div>`}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDays() {
+      const html = days.map(day => `
+        <section id="${day.id}" class="day">
+          <div class="day-head">
+            <div>
+              <h2>${day.title}</h2>
+              <p>${day.subtitle}</p>
+            </div>
+            <span class="tag">${day.tag}</span>
+          </div>
+          ${day.route ? `<div class="route">${day.route.map(step => `<div class="step"><b>${step[0]}</b>${step[1]}</div>`).join("")}</div>` : ""}
+          ${day.meals.map(meal => `
+            <div class="meal">
+              <div class="meal-title">
+                <div class="meal-title-left">
+                  <h3>${meal.title}</h3>
+                  <button class="reroll" type="button" data-reroll-meal="${meal.id}">추천 다시하기</button>
+                </div>
+                <span>${meal.note}</span>
+              </div>
+              <div class="grid">
+                ${meal.options.some(option => isRecommendedByGoogle(option))
+                  ? meal.options.map((option, index) => optionCard(meal, option, index)).join("")
+                  : ``}
+              </div>
+            </div>
+            ${snackStrip(day, meal)}
+          `).join("")}
+        </section>
+      `).join("");
+
+      document.querySelector("#content").innerHTML = html;
+    }
+
+    function mealLabel(mealId) {
+      for (const day of days) {
+        const meal = day.meals.find(item => item.id === mealId);
+        if (meal) return `${day.title.split(":")[0]} · ${meal.title}`;
+      }
+      return mealId;
+    }
+
+    function findOption(mealId, index) {
+      for (const day of days) {
+        const meal = day.meals.find(item => item.id === mealId);
+        if (meal) return meal.options[index];
+      }
+      return null;
+    }
+
+    function findMeal(mealId) {
+      for (const day of days) {
+        const meal = day.meals.find(item => item.id === mealId);
+        if (meal) return meal;
+      }
+      return null;
+    }
+
+    function firstRecommendedIndex(meal) {
+      const index = meal.options.findIndex(option => isRecommendedByGoogle(option));
+      return index >= 0 ? index : 0;
+    }
+
+    function choose(mealId, index) {
+      const meal = findMeal(mealId);
+      const option = meal && meal.options[Number(index)];
+      if (meal && option && Number(index) !== 0) {
+        meal.options = rankedOptions([
+          option,
+          ...meal.options.filter((_, optionIndex) => optionIndex !== Number(index))
+        ]);
+        selected[mealId] = 0;
+        renderDays();
+        syncAllDessertSelections();
+      } else {
+        selected[mealId] = Number(index);
+      }
+      document.querySelectorAll(`.card[data-meal="${mealId}"]`).forEach(card => card.classList.remove("is-selected"));
+      const card = document.querySelector(`.card[data-meal="${mealId}"][data-index="${selected[mealId]}"]`);
+      if (card) card.classList.add("is-selected");
+      renderSelected();
+      saveState();
+      if (!suppressFocus) focusSelected(mealId);
+    }
+
+    function syncDessertSelection(slot) {
+      const selectedIndexes = selectedDesserts[slot] || [];
+      document.querySelectorAll(`[data-dessert-slot="${slot}"]`).forEach(button => {
+        const card = button.closest(".snack-card");
+        if (card) card.classList.remove("is-selected");
+        if (button.classList.contains("none-dessert")) button.classList.remove("is-selected");
+      });
+      if (!selectedIndexes.length) {
+        const noneButton = document.querySelector(`[data-dessert-slot="${slot}"][data-dessert-index="-1"]`);
+        if (noneButton) noneButton.classList.add("is-selected");
+        return;
+      }
+      selectedIndexes.forEach(index => {
+        const button = document.querySelector(`[data-dessert-slot="${slot}"][data-dessert-index="${index}"]`);
+        const card = button && button.closest(".snack-card");
+        if (card) card.classList.add("is-selected");
+      });
+    }
+
+    function syncAllDessertSelections() {
+      Object.keys(selectedDesserts).forEach(slot => syncDessertSelection(slot));
+    }
+
+    function chooseDessert(slot, index) {
+      const dessertIndex = Number(index);
+      if (dessertIndex < 0) {
+        selectedDesserts[slot] = [];
+      } else {
+        const current = new Set(selectedDesserts[slot] || []);
+        if (current.has(dessertIndex)) current.delete(dessertIndex);
+        else current.add(dessertIndex);
+        selectedDesserts[slot] = Array.from(current).sort((a, b) => a - b);
+      }
+      syncDessertSelection(slot);
+      renderSelected();
+      saveState();
+      if (!suppressFocus) {
+        const selectedIndexes = selectedDesserts[slot] || [];
+        const focusSlot = dessertIndex >= 0 && selectedIndexes.includes(dessertIndex)
+          ? `${slot}:${dessertIndex}`
+          : (selectedIndexes.length ? `${slot}:${selectedIndexes[0]}` : slot.split(":")[1]);
+        focusSelected(focusSlot);
+      }
+    }
+
+    function focusSelected(slot) {
+      const item = document.querySelector(`[data-selected-slot="${slot}"]`);
+      const target = item || document.querySelector("#my-plan");
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.add("focused");
+      window.setTimeout(() => target.classList.remove("focused"), 1200);
+    }
+
+    function renderSelected() {
+      const rows = days.map(day => {
+        const selectedStops = [];
+        day.meals.forEach(meal => {
+          const option = findOption(meal.id, selected[meal.id]);
+          if (option && isRecommendedByGoogle(option)) selectedStops.push({ type: "meal", slot: meal.id, meal, option });
+          const slot = `${day.id}:${meal.id}`;
+          const dessertIndexes = selectedDesserts[slot] || [];
+          dessertIndexes.forEach(dessertIndex => {
+            const dessert = dessertSlots[day.id]?.[meal.id]?.[dessertIndex];
+            if (dessert) selectedStops.push({ type: "dessert", slot, index: dessertIndex, meal: { title: "디저트" }, option: dessert });
+          });
+        });
+
+        const anchor = dayAnchors[day.id];
+        const routePoints = [
+          anchor.start.query,
+          ...selectedStops.map(stop => stop.option.mapQuery),
+          anchor.end.query
+        ];
+
+        const dayRoute = `
+          <div class="day-route-actions">
+            <a class="btn primary" href="${multiStopMapUrl(routePoints)}" target="_blank" rel="noreferrer">이날 전체 동선</a>
+            <a class="btn light" href="${mapUrl(anchor.start.query)}" target="_blank" rel="noreferrer">출발지 지도</a>
+          </div>
+        `;
+
+        const items = selectedStops.map((stop, index) => {
+          const { meal, option, type } = stop;
+          if (!option) return "";
+          const reserveButton = option.links && option.links.reserve
+            ? `<a class="btn primary" href="${option.links.reserve}" target="_blank" rel="noreferrer">예약</a>`
+            : "";
+          const prev = index === 0
+            ? anchor.start
+            : { label: selectedStops[index - 1].option.name, query: selectedStops[index - 1].option.mapQuery };
+          const routeMode = "transit";
+          const routeText = routeSummary(prev.query, option.mapQuery, day.id);
+          const routeBetween = `
+            <div class="route-link">
+              <span>→</span>
+              <div>
+                ${routeText}
+                <div class="selected-actions">
+                  <a class="btn light" href="${directionsUrl(prev.query, option.mapQuery, routeMode)}" target="_blank" rel="noreferrer" data-route-link="true" data-route-title="구간 경로" data-route-from="${attr(prev.label)}" data-route-to="${attr(option.name)}" data-route-summary="${attr(routeText)}">구간 경로</a>
+                </div>
+              </div>
+            </div>
+          `;
+          return `
+            ${routeBetween}
+            <div class="selected-item" data-selected-slot="${type === "dessert" ? `${stop.slot}:${stop.index}` : stop.slot}">
+              <b>${type === "dessert" ? "디저트" : meal.title}</b>
+              ${nameBlock(option.name, "strong")}
+              ${type === "dessert" ? menuBlock(option, true) : koreanMenuBlock(option)}
+              <div class="selected-actions">
+                ${reserveButton}
+                <a class="btn light" href="${mapUrl(option.mapQuery)}" target="_blank" rel="noreferrer">매장 정보</a>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="selected-day">
+            <h3>${day.title.split(":")[0]}</h3>
+            ${dayRoute}
+            ${items}
+            <div class="route-link">
+              <span>→</span>
+              <div>
+                ${routeSummary(selectedStops[selectedStops.length - 1].option.mapQuery, anchor.end.query, day.id)}
+                <div class="selected-actions">
+                  <a class="btn light" href="${directionsUrl(selectedStops[selectedStops.length - 1].option.mapQuery, anchor.end.query, "transit")}" target="_blank" rel="noreferrer" data-route-link="true" data-route-title="복귀/이동 경로" data-route-from="${attr(selectedStops[selectedStops.length - 1].option.name)}" data-route-to="${attr(anchor.end.label)}" data-route-summary="${attr(routeSummary(selectedStops[selectedStops.length - 1].option.mapQuery, anchor.end.query, day.id))}">복귀/이동 경로</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      const total = days.reduce((sum, day) => {
+        return sum + day.meals.reduce((daySum, meal) => {
+          const option = findOption(meal.id, selected[meal.id]);
+          return daySum + (option ? option.budget : 0);
+        }, 0);
+      }, 0);
+
+      document.querySelector("#selected-list").innerHTML = rows;
+      document.querySelector("#total").innerHTML = `선택 식비 예상: 1인 약 ${total.toLocaleString("ko-KR")}엔 + 디저트/교통비 별도`;
+    }
+
+    function actionButtons(item) {
+      const links = item.links || {};
+      const buttons = [];
+      if (links.reserve) buttons.push(`<a class="btn primary" href="${links.reserve}" target="_blank" rel="noreferrer">예약</a>`);
+      if (links.altReserve) buttons.push(`<a class="btn primary" href="${links.altReserve}" target="_blank" rel="noreferrer">예약2</a>`);
+      if (item.mapQuery) buttons.push(`<a class="btn light" href="${mapUrl(item.mapQuery)}" target="_blank" rel="noreferrer">매장 정보</a>`);
+      return buttons.join("");
+    }
+
+    function openModal(item) {
+      const modal = document.querySelector("#detail-modal");
+      document.querySelector("#modal-title").innerHTML = nameBlock(item.name, "span");
+      document.querySelector("#modal-location").textContent = item.location || item.time || "";
+      document.querySelector("#modal-menu").innerHTML = String(item.menu || "")
+        .split(" / ")
+        .map(text => `<li>${text}</li>`)
+        .join("");
+      document.querySelector("#modal-why").textContent = item.why || item.time || "";
+      document.querySelector("#modal-actions").innerHTML = actionButtons(item);
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+      const modal = document.querySelector("#detail-modal");
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    function embedMapUrl(rawUrl) {
+      const url = new URL(rawUrl, window.location.href);
+      if (url.pathname.includes("/search")) {
+        const query = url.searchParams.get("query") || "";
+        return "https://maps.google.com/maps?q=" + encodeURIComponent(query) + "&z=17&iwloc=A&output=embed";
+      }
+      if (url.pathname.includes("/dir")) {
+        const origin = url.searchParams.get("origin") || "";
+        const destination = url.searchParams.get("destination") || "";
+        const waypoints = url.searchParams.get("waypoints");
+        const pieces = [destination];
+        if (waypoints) pieces.unshift(...waypoints.split("|"));
+        return "https://www.google.com/maps?output=embed"
+          + "&saddr=" + encodeURIComponent(origin)
+          + "&daddr=" + encodeURIComponent(pieces.filter(Boolean).join(" to "));
+      }
+      url.searchParams.set("output", "embed");
+      return url.toString();
+    }
+
+    function fullGoogleMapUrl(rawUrl) {
+      const url = new URL(rawUrl, window.location.href);
+      url.searchParams.delete("output");
+      url.searchParams.set("hl", "ko-KR");
+      if (url.pathname.includes("/search")) {
+        const query = url.searchParams.get("query") || "";
+        return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query) + "&hl=ko-KR";
+      }
+      return url.toString();
+    }
+
+    function storeInfoHtml(item, googleUrl = "") {
+      if (!item) return `<div>구글 지도 팝업</div>`;
+      const detail = storeDetails[item.name] || {};
+      const merged = { ...detail, ...item };
+      const menuItems = String(merged.fullMenu || merged.menu || "")
+        .split(" / ")
+        .map(text => text.trim())
+        .filter(Boolean);
+      const reserveText = merged.reserveStatus ? `<div class="info-line"><span class="info-label">예약</span><span>${merged.reserveStatus}</span></div>` : "";
+      const hoursText = merged.hours || "구글 매장정보에서 확인";
+      const addressText = merged.address || merged.location || merged.time || "";
+      return `
+        <strong>${merged.name}</strong>
+        ${nameKo[merged.name] ? `<span class="ko-name">${nameKo[merged.name]}</span>` : ""}
+        <div class="info-line"><span class="info-label">평점</span><span>${googleRatingText(merged)}</span></div>
+        <div class="info-line"><span class="info-label">영업</span><span>${hoursText}</span></div>
+        <div class="info-line"><span class="info-label">가격</span><span>${merged.price || "지도에서 확인"}</span></div>
+        ${reserveText}
+        <div class="info-line"><span class="info-label">위치</span><span>${addressText}</span></div>
+        ${menuItems.length ? `
+          <div class="menu">
+            <span class="menu-title">매장 메뉴</span>
+            <ul class="menu-list">${menuItems.map(text => `<li>${text}</li>`).join("")}</ul>
+          </div>
+        ` : ""}
+      `;
+    }
+
+    function openMapModal(url, title = "지도", item = null) {
+      const modal = document.querySelector("#map-modal");
+      const targetItem = item || findItemByMapUrl(url);
+      const googleUrl = fullGoogleMapUrl(url);
+      document.querySelector("#map-title").textContent = targetItem ? "매장 정보" : title;
+      document.querySelector("#store-info").innerHTML = storeInfoHtml(targetItem, googleUrl);
+      document.querySelector("#map-frame").src = embedMapUrl(url);
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function routePlanItems(summary) {
+      const kmMatch = String(summary || "").match(/약 ([0-9.]+)km/);
+      const metersMatch = String(summary || "").match(/약 ([0-9,]+)m/);
+      const km = kmMatch ? Number(kmMatch[1]) : (metersMatch ? Number(metersMatch[1].replace(/,/g, "")) / 1000 : 0);
+      if (summary.includes("JR/페리") || km >= 5) {
+        return [
+          "1안 대중교통 우선: 구글 추천 경로 기준으로 이동합니다. 장거리 구간은 JR, 페리, 버스 조합을 우선 확인하세요.",
+          "2안 환승 적게: 시간이 조금 늘어도 갈아타는 횟수가 적은 경로를 선택합니다. 동행이 많을 때 가장 무난합니다.",
+          "3안 택시 병행: 역·항구·시장 사이 짧은 연결 구간은 택시를 섞어 걷는 시간을 줄입니다."
+        ];
+      }
+      if (km >= 1.2) {
+        return [
+          "1안 대중교통 우선: 가까운 역이나 버스 정류장까지 걸은 뒤 한 구간 이동합니다.",
+          "2안 택시 우선: 짐이 있거나 날씨가 좋지 않으면 바로 택시로 이동합니다.",
+          "3안 도보 병행: 쇼핑가나 지하상가를 지나갈 수 있으면 천천히 걸어 이동합니다."
+        ];
+      }
+      return [
+        "1안 도보 최단: 지도상 가장 짧은 도보 경로로 바로 이동합니다.",
+        "2안 큰길 우선: 거리는 조금 늘어도 큰길과 횡단보도 위주로 이동합니다.",
+        "3안 실내/상가 경유: 지하상가나 쇼핑몰 통로를 이용할 수 있으면 비·추위를 피해서 이동합니다."
+      ];
+    }
+
+    function routeInfoHtml(link) {
+      const plans = routePlanItems(link.dataset.routeSummary || "");
+      return `
+        <strong>${link.dataset.routeTitle || "이동 경로"}</strong>
+        <div class="info-line"><span class="info-label">출발</span><span>${link.dataset.routeFrom || "출발지"}</span></div>
+        <div class="info-line"><span class="info-label">도착</span><span>${link.dataset.routeTo || "도착지"}</span></div>
+        <div class="info-line"><span class="info-label">이동</span><span>${link.dataset.routeSummary || "구글 지도에서 확인"}</span></div>
+        <div class="info-line"><span class="info-label">기준</span><span>대중교통 우선, 가까운 구간은 도보</span></div>
+        <div class="menu">
+          <span class="menu-title">추천 경로 3가지</span>
+          <ul class="menu-list">${plans.map(text => `<li>${text}</li>`).join("")}</ul>
+        </div>
+      `;
+    }
+
+    function openRouteModal(link) {
+      const modal = document.querySelector("#map-modal");
+      document.querySelector("#map-title").textContent = link.dataset.routeTitle || "이동 경로";
+      document.querySelector("#store-info").innerHTML = routeInfoHtml(link);
+      document.querySelector("#map-frame").src = embedMapUrl(link.href);
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeMapModal() {
+      const modal = document.querySelector("#map-modal");
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.querySelector("#map-frame").src = "about:blank";
+    }
+
+    for (const day of days) {
+      for (const meal of day.meals) selected[meal.id] = firstRecommendedIndex(meal);
+    }
+    for (const [dayId, slots] of Object.entries(dessertSlots)) {
+      for (const mealId of Object.keys(slots)) selectedDesserts[`${dayId}:${mealId}`] = [];
+    }
+    restoreState();
+    renderDays();
+
+    document.addEventListener("click", event => {
+      const mapLink = event.target.closest('a[href*="google.com/maps"]');
+      if (mapLink) {
+        event.preventDefault();
+        if (mapLink.dataset.routeLink === "true") {
+          openRouteModal(mapLink);
+          return;
+        }
+        openMapModal(mapLink.href, mapLink.textContent.trim() || "지도", findItemByMapUrl(mapLink.href));
+        return;
+      }
+
+      const button = event.target.closest("button[data-meal]");
+      if (button) {
+        choose(button.dataset.meal, button.dataset.index);
+        return;
+      }
+
+      const dessertButton = event.target.closest("button[data-dessert-slot]");
+      if (dessertButton) {
+        chooseDessert(dessertButton.dataset.dessertSlot, dessertButton.dataset.dessertIndex);
+        return;
+      }
+
+      const rerollButton = event.target.closest("button[data-reroll-meal]");
+      if (rerollButton) {
+        rerollMeal(rerollButton.dataset.rerollMeal);
+        return;
+      }
+
+      const rerollDessertButton = event.target.closest("button[data-reroll-dessert]");
+      if (rerollDessertButton) {
+        rerollDessert(rerollDessertButton.dataset.rerollDessert);
+        return;
+      }
+
+      if (event.target.closest("a, button")) return;
+
+      const snack = event.target.closest(".snack-card[data-snack-day]");
+      if (snack) {
+        const snackIndex = Number(snack.dataset.snackIndex);
+        const item = dessertSlots[snack.dataset.snackDay]?.[snack.dataset.snackMeal]?.[snackIndex];
+        if (item) openModal(item);
+        return;
+      }
+
+      const dessertCard = event.target.closest(".card[data-dessert-index]");
+      if (dessertCard) {
+        const item = desserts[Number(dessertCard.dataset.dessertIndex)];
+        if (item) openModal(item);
+        return;
+      }
+
+      const card = event.target.closest(".card[data-meal]");
+      if (card) {
+        const item = findOption(card.dataset.meal, Number(card.dataset.index));
+        if (item) openModal(item);
+      }
+    });
+
+    document.querySelector("#modal-close").addEventListener("click", closeModal);
+    document.querySelector("#detail-modal").addEventListener("click", event => {
+      if (event.target.id === "detail-modal") closeModal();
+    });
+    document.querySelector("#map-close").addEventListener("click", closeMapModal);
+    document.querySelector("#map-modal").addEventListener("click", event => {
+      if (event.target.id === "map-modal") closeMapModal();
+    });
+    document.querySelector("#refresh-info").addEventListener("click", () => {
+      refreshGoogleInfo();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeModal();
+        closeMapModal();
+      }
+    });
+
+    suppressFocus = true;
+    for (const [mealId, index] of Object.entries(selected)) choose(mealId, index);
+    syncAllDessertSelections();
+    renderSelected();
+    suppressFocus = false;
+    loadCloudState().finally(() => {
+      isBooting = false;
+    });
+  </script>
+</body>
+</html>
