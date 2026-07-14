@@ -773,13 +773,6 @@
       margin-top: auto;
     }
 
-    .search-card button {
-      padding: 7px 10px;
-      border-radius: 7px;
-      font-weight: 700;
-      font-size: 12px;
-    }
-
     .candidate-editor {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1988,8 +1981,7 @@
     function googleRatingText(item) {
       if (item.rating) return item.rating;
       const stat = googleStats[item.name];
-      const minimum = storeDetails[item.name] ? "★4.0+" : "★4.5+";
-      if (!stat || stat.google == null) return minimum;
+      if (!stat || stat.google == null) return "평점 확인 필요";
       return `★${stat.google}`;
     }
 
@@ -2245,31 +2237,10 @@
       "대기 적은 식당": "대기 적은 식당"
     };
 
-    function generatedRecommendations(mealId) {
-      const profile = recommendationProfiles[mealId];
-      if (!profile) return [];
-      return recommendationKinds.map(kind => ({
-        name: `${profile.query} ${kind}`,
-        ko: `${profile.label} ${recommendationKindKo[kind] || kind}`,
-        rank: "후보",
-        image: "",
-        location: profile.label,
-        menu: `${kind} 메뉴 현장 확인 / 세트 메뉴 현장 확인 / 음료·사이드 현장 확인`,
-        price: profile.price,
-        budget: profile.budget,
-        why: "추천 다시하기 후보풀 보강용입니다. 구글 지도에서 실제 매장 정보를 확인하세요.",
-        reserveStatus: "확인 필요",
-        reserveClass: "wait",
-        links: {},
-        mapQuery: `${profile.query} ${kind}`
-      }));
-    }
-
     function expandedRecommendationPool(mealId) {
       return uniqueOptions([
         ...(recommendationPool[mealId] || []),
-        ...(extraRecommendations[mealId] || []),
-        ...generatedRecommendations(mealId)
+        ...(extraRecommendations[mealId] || [])
       ]);
     }
 
@@ -2301,41 +2272,6 @@
       openRecommendModal(mealId);
     }
 
-    function legacyRerollMeal(mealId) {
-      for (const day of days) {
-        const meal = day.meals.find(item => item.id === mealId);
-        if (!meal) continue;
-
-        const current = meal.options[selected[mealId]] || meal.options[0];
-        const visibleNames = new Set(meal.options.map(option => option.name));
-        const candidates = uniqueOptions([
-          ...expandedRecommendationPool(mealId),
-          ...meal.options
-        ]).filter(option => option.name !== current.name && isRecommendedByGoogle(option));
-        const unseen = candidates.filter(option => !visibleNames.has(option.name));
-        const pool = unseen.length >= 2 ? unseen : candidates;
-
-        if (!pool.length) return;
-
-        rerollCursor[mealId] = (rerollCursor[mealId] || 0) + 1;
-        const start = rerollCursor[mealId] % pool.length;
-        const picked = [];
-        for (let i = 0; i < Math.min(2, pool.length); i += 1) {
-          picked.push(pool[(start + i) % pool.length]);
-        }
-
-        meal.options = rankedOptions([current, ...picked]);
-        selected[mealId] = 0;
-      renderDays();
-      syncAllDessertSelections();
-      suppressFocus = true;
-      choose(mealId, 0);
-      suppressFocus = false;
-      saveState();
-      return;
-      }
-    }
-
     function mealSearchBase(mealId) {
       const profile = recommendationProfiles[mealId];
       const meal = findMeal(mealId);
@@ -2356,25 +2292,19 @@
         ? menu.split(/[,，/ ]+/).map(item => item.trim()).filter(Boolean)
         : ["정식", "해산물", "라멘", "야키니쿠", "초밥"];
       const coreCards = [
-        { ko: `${location} ${menu || title} 고평점 후보`, jp: `${base} ${menu || title} Google 評価 ${rating} 以上 ${distance} ${price}`, menu: menu || title, note: "고평점" },
-        { ko: `${location} 리뷰 많은 후보`, jp: `${base} ${menu || title} 口コミ 多い ${distance}`, menu: menu || title, note: "리뷰수" },
-        { ko: `${location} 예약 가능한 후보`, jp: `${base} ${menu || title} 予約可 ${price}`, menu: menu || title, note: "예약 가능" },
-        { ko: `${location} 영업중 후보`, jp: `${base} ${menu || title} 営業中 ${distance}`, menu: menu || title, note: "영업중" },
-        { ko: `${location} 대기 적은 후보`, jp: `${base} ${menu || title} 待ち時間 少ない ${price}`, menu: menu || title, note: "대기 적음" }
+        { label: "기본 검색", jp: `${base} ${menu || title}` },
+        { label: "평점 조건 검색", jp: `${base} ${menu || title} Google 評価 ${rating} 以上` },
+        { label: "거리 조건 검색", jp: `${base} ${menu || title} ${distance} 近く` },
+        { label: "가격 조건 검색", jp: `${base} ${menu || title} ${price}` },
+        { label: "영업중 검색", jp: `${base} ${menu || title} 営業中` }
       ];
-      const menuCards = menus.flatMap(item => {
-        const menuKo = recommendationKindKo[item] || item;
-        return [
-          { ko: `${location} ${menuKo}`, jp: `${base} ${item} 評価 ${rating} 以上`, menu: menuKo, note: "평점 기준" },
-          { ko: `${location} ${menuKo} 가까운 곳`, jp: `${base} ${item} ${distance} 近く`, menu: menuKo, note: "거리 기준" },
-          { ko: `${location} ${menuKo} ${price}`, jp: `${base} ${item} ${price} おすすめ`, menu: menuKo, note: "가격 기준" }
-        ];
-      });
+      const menuCards = menus.map(item => ({
+        label: `${recommendationKindKo[item] || item} 검색`,
+        jp: `${base} ${item}`
+      }));
       const kindCards = recommendationKinds.map(kind => ({
-        ko: `${location} ${recommendationKindKo[kind] || kind}`,
-        jp: `${base} ${kind} 評価 ${rating} 以上 ${distance}`,
-        menu: recommendationKindKo[kind] || kind,
-        note: "카테고리"
+        label: `${recommendationKindKo[kind] || kind} 검색`,
+        jp: `${base} ${kind}`
       }));
       const seen = new Set();
       return [...coreCards, ...menuCards, ...kindCards].filter(card => {
@@ -2384,9 +2314,11 @@
       }).slice(0, 20).map((card, index) => ({
         ...card,
         index,
-        rating: `★${rating}+`,
+        location,
+        rating,
         distance,
         price,
+        menu: menu || card.label.replace(" 검색", ""),
         url: mapUrl(card.jp)
       }));
     }
@@ -2397,55 +2329,26 @@
       const cards = recommendSearchCards(currentRecommendMealId);
       box.innerHTML = cards.map(card => `
         <div class="search-card">
-          <strong>${card.index + 1}. ${attr(card.ko)}</strong>
+          <strong>${card.index + 1}. ${attr(card.label)}</strong>
           <div class="jp-query">${attr(card.jp)}</div>
           <div class="search-meta">
-            <span>메뉴 ${attr(card.menu)}</span>
-            <span>평점 ${attr(card.rating)}</span>
-            <span>${attr(card.distance)}</span>
-            <span>${attr(card.price)}</span>
+            <span>확인 필요</span>
+            <span>구글맵에서 실제 매장 선택</span>
           </div>
           <div class="search-card-actions">
             <a href="${card.url}" target="_blank" rel="noreferrer" data-google-search-link="popup" data-search-index="${card.index}">구글맵 팝업</a>
-            <button type="button" data-add-search-card="${card.index}">후보칸에 추가</button>
           </div>
         </div>
       `).join("");
     }
 
-    function addSearchCardToCandidate(index) {
-      const card = recommendSearchCards(currentRecommendMealId)[Number(index)];
-      if (!card) return;
-      const rows = [...document.querySelectorAll("#candidate-editor .candidate-row")];
-      const target = rows.find(row => !row.querySelector('[data-candidate-field="name"]')?.value.trim()) || rows[0];
-      if (!target) return;
-      const setField = (field, value) => {
-        const node = target.querySelector(`[data-candidate-field="${field}"]`);
-        if (node) node.value = value;
-      };
-      setField("name", card.jp);
-      setField("ko", card.ko);
-      setField("mapQuery", card.jp);
-      setField("rating", card.rating);
-      setField("menu", `${card.menu} 메뉴 확인 / 세트 메뉴 확인 / 음료·사이드 확인`);
-      setField("price", card.price);
-      setField("why", `${card.distance}, ${card.rating}, ${card.note} 조건으로 구글맵에서 확인할 검색 후보`);
-      document.querySelector("#recommend-status").textContent = `${card.ko} 검색 조건을 아래 입력칸에 넣었습니다. 실제 매장명과 평점은 구글맵에서 확인 후 수정하세요.`;
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
     function searchCardInfoHtml(card) {
       if (!card) return `<div>구글맵 검색</div>`;
       return `
-        <strong>${attr(card.ko)}</strong>
-        <span class="ko-name">실제 매장 정보는 오른쪽 구글맵에서 확인</span>
-        <div class="info-line"><span class="info-label">메뉴</span><span>${attr(card.menu)}</span></div>
-        <div class="info-line"><span class="info-label">평점 조건</span><span>${attr(card.rating)}</span></div>
-        <div class="info-line"><span class="info-label">거리 조건</span><span>${attr(card.distance)}</span></div>
-        <div class="info-line"><span class="info-label">가격 조건</span><span>${attr(card.price)}</span></div>
+        <strong>${attr(card.label)}</strong>
+        <span class="ko-name">오른쪽 구글맵에서 실제 매장명, 평점, 리뷰수, 영업정보를 확인하세요.</span>
         <div class="info-line"><span class="info-label">검색어</span><span>${attr(card.jp)}</span></div>
         <div class="selected-actions">
-          <button class="primary" type="button" data-add-search-card="${card.index}">후보칸에 추가</button>
           <a class="btn light" href="${card.url}" target="_blank" rel="noreferrer" data-google-search-link="external">새 탭으로 열기</a>
         </div>
       `;
@@ -3095,12 +2998,6 @@
           return;
         }
         openMapModal(mapLink.href, mapLink.textContent.trim() || "지도", findItemByMapUrl(mapLink.href));
-        return;
-      }
-
-      const addSearchButton = event.target.closest("button[data-add-search-card]");
-      if (addSearchButton) {
-        addSearchCardToCandidate(addSearchButton.dataset.addSearchCard);
         return;
       }
 
