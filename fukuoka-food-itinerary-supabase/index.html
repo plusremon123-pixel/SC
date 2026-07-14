@@ -811,6 +811,7 @@
 
     .recommend-search-item {
       width: 100%;
+      display: block;
       text-align: left;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -828,6 +829,7 @@
       display: block;
       font-weight: 800;
       margin-bottom: 4px;
+      word-break: keep-all;
     }
 
     .recommend-search-query {
@@ -1107,9 +1109,8 @@
           <label class="recommend-field">별점
             <select id="recommend-rating">
               <option value="4.5">4.5 이상</option>
-              <option value="4.3">4.3 이상</option>
               <option value="4.0">4.0 이상</option>
-              <option value="4.7">4.7 이상</option>
+              <option value="3.5">3.5 이상</option>
             </select>
           </label>
           <label class="recommend-field">거리
@@ -1125,10 +1126,10 @@
           </label>
           <label class="recommend-field">가격대
             <select id="recommend-price">
-              <option value="가성비">가성비</option>
-              <option value="1000엔대">1,000엔대</option>
-              <option value="2000엔대">2,000엔대</option>
-              <option value="3000엔대">3,000엔대</option>
+              <option value="1000円 2000円">1,000~2,000엔</option>
+              <option value="1000円以下">1,000엔 이하</option>
+              <option value="2000円 3000円">2,000~3,000엔</option>
+              <option value="3000円 5000円">3,000~5,000엔</option>
             </select>
           </label>
         </div>
@@ -2284,7 +2285,7 @@
     }
 
     const recommendationProfiles = {
-      "d1-lunch": { label: "텐진 호텔 도보권", query: "西鉄グランドホテル 天神 徒歩 ランチ", price: "점심 1,000-3,000엔대", budget: 1800 },
+      "d1-lunch": { label: "텐진 호텔 도보권", query: "天神 大名 ランチ 飲食店", price: "점심 1,000-3,000엔대", budget: 1800 },
       "d1-dinner": { label: "텐진 다이묘 저녁", query: "天神 大名 ディナー", price: "저녁 2,500-5,000엔대", budget: 3600 },
       "d2-breakfast": { label: "하카타역 아침", query: "博多駅 朝食", price: "아침 600-1,500엔대", budget: 1000 },
       "d2-lunch": { label: "가라토 모지코 점심", query: "唐戸市場 門司港 ランチ", price: "점심 1,500-3,500엔대", budget: 2400 },
@@ -2296,10 +2297,11 @@
     const recommendationKinds = [
       "和食 定食", "海鮮丼", "寿司", "うどん", "ラーメン", "焼鳥", "水炊き", "もつ鍋", "餃子", "天ぷら",
       "カレー", "カフェ ランチ", "ベーカリー", "サンドイッチ", "喫茶店", "居酒屋", "焼肉", "鉄板焼き", "とんかつ", "牛カツ",
-      "そば", "おでん", "明太子", "丼もの", "駅ナカ 食事", "地下街 食事", "予約可", "高評価", " 가성비", "대기 적은 식당"
+      "そば", "おでん", "明太子", "丼もの", "駅ナカ 食事", "地下街 食事", "予約可", "高評価", "待ち時間 少ない"
     ];
 
     const recommendationKindKo = {
+      "飲食店": "음식점",
       "和食 定食": "일식 정식",
       "海鮮丼": "해산물 덮밥",
       "寿司": "초밥",
@@ -2328,8 +2330,14 @@
       "地下街 食事": "지하상가 식사",
       "予約可": "예약 가능",
       "高評価": "고평점",
-      " 가성비": "가성비",
-      "대기 적은 식당": "대기 적은 식당"
+      "待ち時間 少ない": "대기 적은 식당"
+    };
+
+    const priceSearchLabels = {
+      "1000円以下": "1,000엔 이하",
+      "1000円 2000円": "1,000~2,000엔",
+      "2000円 3000円": "2,000~3,000엔",
+      "3000円 5000円": "3,000~5,000엔"
     };
 
     function expandedRecommendationPool(mealId) {
@@ -2381,17 +2389,18 @@
       const rating = document.querySelector("#recommend-rating")?.value || "4.5";
       const distance = document.querySelector("#recommend-distance")?.value || "500m";
       const menu = document.querySelector("#recommend-menu")?.value.trim() || "";
-      const price = document.querySelector("#recommend-price")?.value || "가성비";
+      const price = document.querySelector("#recommend-price")?.value || "1000円 2000円";
+      const priceLabel = priceSearchLabels[price] || price;
       const location = profile?.label || base;
       const menus = menu
         ? menu.split(/[,，/ ]+/).map(item => item.trim()).filter(Boolean)
-        : ["음식점", "정식", "해산물", "라멘", "야키니쿠", "초밥"];
-      const condition = `Google 評価 ${rating} 以上 徒歩 ${distance}`;
+        : ["飲食店", "和食 定食", "海鮮丼", "ラーメン", "焼肉", "寿司"];
+      const condition = `Google 評価 ${rating} 以上 徒歩 ${distance} ${price}`;
       const coreCards = [
         { label: "음식점", jp: `${base} ${menu || "飲食店"} ${condition}` },
         { label: "평점 기준 음식점", jp: `${base} ${menu || title} Google 評価 ${rating} 以上` },
         { label: "도보 거리 기준", jp: `${base} ${menu || title} 徒歩 ${distance}` },
-        { label: "가성비 음식점", jp: `${base} ${menu || title} ${price}` },
+        { label: "가격 기준 음식점", jp: `${base} ${menu || title} ${price}` },
         { label: "영업중 음식점", jp: `${base} ${menu || title} 営業中 ${condition}` }
       ];
       const menuCards = menus.map(item => ({
@@ -2414,6 +2423,7 @@
         rating,
         distance,
         price,
+        priceLabel,
         menu: menu || card.label,
         url: mapUrl(card.jp)
       }));
@@ -2445,7 +2455,7 @@
           <span class="recommend-search-meta">
             <span>평점 ${attr(card.rating)} 이상</span>
             <span>도보 ${attr(card.distance)}</span>
-            <span>${attr(card.price)}</span>
+            <span>${attr(card.priceLabel)}</span>
           </span>
         </button>
       `).join("");
