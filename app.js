@@ -1513,7 +1513,7 @@ function monthlyOpenGrades(rows) {
 function monthlyOpenDetail(rows) {
   const detailGroups = monthlyDetailGroups(rows);
   return detailGroups.map(({ label, rows: groupRows }) => {
-    const useGradeLineBreak = rows[0]?.__sheet === "학교공부";
+    const useGradeLineBreak = ["학교공부", "수학마스터"].includes(rows[0]?.__sheet);
     const scope = monthlyScopeTextWithGradeSplit(groupRows, useGradeLineBreak);
     return label ? `${label} - ${scope}` : scope;
   }).join("\n");
