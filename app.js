@@ -17,6 +17,7 @@ const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
 const LEGACY_SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config-v3.json";
 const SUPABASE_PUBLISHER_CONFIG_PATH = "open-publisher-config-v1.json";
+const WEEKLY_MATH_MASTER_LABELS = ["고고! 상위권 수학", "AI 유형클리어"];
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -1098,6 +1099,7 @@ function compareWeeklyDetailLabel(a, b) {
     "고고! 상위권 수학",
     "AI유형클리어",
     "AI 유형 클리어",
+    "도전!경시문제",
     "단원요점정리",
     "단원 요점정리",
     "단원평가",
@@ -1121,7 +1123,14 @@ function compareWeeklyScopeOrder(a, b) {
 
 function weeklyReportDetailGroups(rows) {
   const sheet = rows[0]?.__sheet || "";
-  if (sheet === "학교시험" || sheet === "수학마스터") {
+  if (sheet === "수학마스터") {
+    const targetRows = rows.filter((row) => WEEKLY_MATH_MASTER_LABELS.includes(sortGroup(row)));
+    const grouped = groupBy(targetRows, (row) => sortGroup(row) || "미분류");
+    return Object.keys(grouped)
+      .sort(compareWeeklyDetailLabel)
+      .map((label) => ({ label, rows: grouped[label] }));
+  }
+  if (sheet === "학교시험") {
     const grouped = groupBy(rows, (row) => sortGroup(row) || "미분류");
     return Object.keys(grouped)
       .sort(compareWeeklyDetailLabel)
@@ -1182,7 +1191,7 @@ function weeklyFullLessonKey(row) {
 
 function weeklyUnitValue(row) {
   const subject = sortSubject(row);
-  if (["국어", "사회", "영어"].includes(subject)) {
+  if (["국어", "사회", "영어"].includes(subject) || row.__sheet === "수학마스터") {
     return leadingNumberText(row["단원명"]) || monthlyUnitValue(row);
   }
   return monthlyUnitValue(row);
@@ -1525,7 +1534,7 @@ function monthlyUnitValue(row) {
 }
 
 function leadingNumberText(value) {
-  const match = String(value || "").trim().match(/^['"]?(\d+(?:-\d+)?)/);
+  const match = String(value || "").trim().match(/^['"]?(\d+(?:-\d+)?)(?=\s*(?:[.)]|단원))/);
   return match ? match[1] : "";
 }
 
@@ -3174,7 +3183,8 @@ function normalizeMathMasterGroup(value) {
   const text = String(value || "").trim();
   const compact = text.replace(/\s+/g, "");
   if (compact.includes("유형클리어")) return "AI 유형클리어";
-  if (compact.includes("상위권") || compact.includes("경시") || compact.includes("도전")) return "고고! 상위권 수학";
+  if (compact.includes("상위권")) return "고고! 상위권 수학";
+  if (compact.includes("경시") || compact.includes("도전")) return "도전!경시문제";
   return text;
 }
 
