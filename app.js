@@ -17,7 +17,7 @@ const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
 const LEGACY_SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config-v3.json";
 const SUPABASE_PUBLISHER_CONFIG_PATH = "open-publisher-config-v1.json";
-const WEEKLY_MATH_MASTER_LABELS = ["고고! 상위권 수학", "AI 유형클리어"];
+const WEEKLY_MATH_MASTER_LABELS = ["고고! 상위권 수학", "AI 유형클리어", "도전!경시문제"];
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
 const OPEN_DATE = "운영 오픈 날짜";
 const OPEN_DATE_LABEL = "운영 오픈 일정";
@@ -1066,7 +1066,7 @@ function weeklyReportCategoryName(sheet) {
 
 function weeklyReportCategoryDetail(rows) {
   const details = weeklyReportDetailGroups(rows).map(({ label, rows: groupRows }) => {
-    const scope = weeklyReportScopeTextWithGradeSplit(groupRows);
+    const scope = weeklyReportScopeTextWithGradeSplit(groupRows, rows);
     return { label, scope };
   });
   if (rows[0]?.__sheet === "수학마스터") {
@@ -1151,12 +1151,17 @@ function weeklyReportScopeText(rows) {
   const unitParts = Object.keys(unitGroups)
     .sort(compareUnitValue)
     .map((unit) => weeklyUnitScopeText(unit, unitGroups[unit]));
-  return unitParts.join(", ");
+  return compressWeeklyUnitParts(unitParts).join(", ");
 }
 
-function weeklyReportScopeTextWithGradeSplit(rows) {
+function weeklyReportScopeTextWithGradeSplit(rows, contextRows = rows) {
   const grades = unique(rows.map((row) => row["학년"]).filter(Boolean)).sort((a, b) => toNumber(a) - toNumber(b));
-  if (grades.length <= 1) return weeklyReportScopeText(rows);
+  const contextGrades = unique(contextRows.map((row) => row["학년"]).filter(Boolean));
+  if (grades.length <= 1) {
+    const scope = weeklyReportScopeText(rows);
+    if (grades.length === 1 && contextGrades.length > 1) return `${grades[0]} ${scope}`;
+    return scope;
+  }
 
   const gradeScopes = grades.map((grade) => {
     const gradeRows = rows.filter((row) => row["학년"] === grade);
@@ -1172,6 +1177,18 @@ function weeklyReportScopeTextWithGradeSplit(rows) {
   return gradeScopes
     .map((item) => `${item.grade} ${item.scope}`)
     .join(" / ");
+}
+
+function compressWeeklyUnitParts(unitParts) {
+  if (unitParts.length < 3) return unitParts;
+  const numbers = unitParts.map((part) => {
+    const match = String(part || "").match(/^(\d+)단원$/);
+    return match ? Number(match[1]) : null;
+  });
+  if (numbers.some((value) => value === null)) return unitParts;
+  const contiguous = numbers.every((number, index) => index === 0 || number === numbers[index - 1] + 1);
+  if (!contiguous) return unitParts;
+  return [`${numbers[0]}~${numbers[numbers.length - 1]}단원`];
 }
 
 function weeklyGradeLabel(rows) {
