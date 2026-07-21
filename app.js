@@ -1513,7 +1513,7 @@ function monthlyOpenGrades(rows) {
 function monthlyOpenDetail(rows) {
   const detailGroups = monthlyDetailGroups(rows);
   return detailGroups.map(({ label, rows: groupRows }) => {
-    const scope = monthlyScopeText(groupRows);
+    const scope = monthlyScopeTextWithGradeSplit(groupRows);
     return label ? `${label} - ${scope}` : scope;
   }).join("\n");
 }
@@ -1544,6 +1544,36 @@ function monthlyScopeText(rows) {
   const unitText = monthlyRangeLabel(units, "단원");
   const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
   return [grades, terms, unitText, lessonText].filter(Boolean).join(" ");
+}
+
+function monthlyScopeTextWithGradeSplit(rows) {
+  const grades = unique(rows.map((row) => row["학년"]).filter(Boolean)).sort((a, b) => toNumber(a) - toNumber(b));
+  if (grades.length <= 1) return monthlyScopeText(rows);
+
+  const gradeScopes = grades.map((grade) => {
+    const gradeRows = rows.filter((row) => row["학년"] === grade);
+    return {
+      grade,
+      scope: monthlyScopeTextWithoutGrade(gradeRows),
+    };
+  }).filter((item) => item.scope);
+
+  const scopes = unique(gradeScopes.map((item) => item.scope));
+  if (scopes.length <= 1) return monthlyScopeText(rows);
+
+  return gradeScopes
+    .map((item) => `${item.grade} ${item.scope}`)
+    .join(" / ");
+}
+
+function monthlyScopeTextWithoutGrade(rows) {
+  const sortedRows = [...rows].sort(compareRows);
+  const terms = unique(sortedRows.map((row) => row["학기"])).sort(localeSort).join(", ");
+  const units = unique(sortedRows.map(monthlyUnitValue).filter((value) => value !== "")).sort(compareUnitValue);
+  const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
+  const unitText = monthlyRangeLabel(units, "단원");
+  const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
+  return [terms, unitText, lessonText].filter(Boolean).join(" ");
 }
 
 function monthlyScopeUsesUnitOnly(rows) {
