@@ -1513,7 +1513,8 @@ function monthlyOpenGrades(rows) {
 function monthlyOpenDetail(rows) {
   const detailGroups = monthlyDetailGroups(rows);
   return detailGroups.map(({ label, rows: groupRows }) => {
-    const scope = monthlyScopeTextWithGradeSplit(groupRows);
+    const useGradeLineBreak = rows[0]?.__sheet === "학교공부";
+    const scope = monthlyScopeTextWithGradeSplit(groupRows, useGradeLineBreak);
     return label ? `${label} - ${scope}` : scope;
   }).join("\n");
 }
@@ -1546,7 +1547,7 @@ function monthlyScopeText(rows) {
   return [grades, terms, unitText, lessonText].filter(Boolean).join(" ");
 }
 
-function monthlyScopeTextWithGradeSplit(rows) {
+function monthlyScopeTextWithGradeSplit(rows, useLineBreak = false) {
   const grades = unique(rows.map((row) => row["학년"]).filter(Boolean)).sort((a, b) => toNumber(a) - toNumber(b));
   if (grades.length <= 1) return monthlyScopeText(rows);
 
@@ -1563,7 +1564,7 @@ function monthlyScopeTextWithGradeSplit(rows) {
 
   return gradeScopes
     .map((item) => `${item.grade} ${item.scope}`)
-    .join("\n");
+    .join(useLineBreak ? "\n" : " / ");
 }
 
 function monthlyScopeTextWithoutGrade(rows) {
