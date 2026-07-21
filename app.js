@@ -1066,7 +1066,7 @@ function weeklyReportCategoryName(sheet) {
 
 function weeklyReportCategoryDetail(rows) {
   const details = weeklyReportDetailGroups(rows).map(({ label, rows: groupRows }) => {
-    const scope = weeklyReportScopeText(groupRows);
+    const scope = weeklyReportScopeTextWithGradeSplit(groupRows);
     return { label, scope };
   });
   if (rows[0]?.__sheet === "수학마스터") {
@@ -1152,6 +1152,26 @@ function weeklyReportScopeText(rows) {
     .sort(compareUnitValue)
     .map((unit) => weeklyUnitScopeText(unit, unitGroups[unit]));
   return unitParts.join(", ");
+}
+
+function weeklyReportScopeTextWithGradeSplit(rows) {
+  const grades = unique(rows.map((row) => row["학년"]).filter(Boolean)).sort((a, b) => toNumber(a) - toNumber(b));
+  if (grades.length <= 1) return weeklyReportScopeText(rows);
+
+  const gradeScopes = grades.map((grade) => {
+    const gradeRows = rows.filter((row) => row["학년"] === grade);
+    return {
+      grade,
+      scope: weeklyReportScopeText(gradeRows),
+    };
+  }).filter((item) => item.scope);
+
+  const scopes = unique(gradeScopes.map((item) => item.scope));
+  if (scopes.length <= 1) return scopes[0] || "";
+
+  return gradeScopes
+    .map((item) => `${item.grade} ${item.scope}`)
+    .join(" / ");
 }
 
 function weeklyGradeLabel(rows) {
