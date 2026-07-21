@@ -1068,6 +1068,13 @@ function weeklyReportCategoryDetail(rows) {
     const scope = weeklyReportScopeText(groupRows);
     return { label, scope };
   });
+  if (rows[0]?.__sheet === "수학마스터") {
+    return details
+      .filter((detail) => detail.scope)
+      .sort((a, b) => compareWeeklyDetailLabel(a.label, b.label) || compareWeeklyScopeOrder(a.scope, b.scope))
+      .map((detail) => [detail.label, detail.scope].filter(Boolean).join(" "))
+      .join(", ");
+  }
   return mergeWeeklyReportDetails(details).join(", ");
 }
 
@@ -1087,7 +1094,18 @@ function mergeWeeklyReportDetails(details) {
 }
 
 function compareWeeklyDetailLabel(a, b) {
-  const order = ["단원요점정리", "단원 요점정리", "단원평가", "단원핵심특강", "서술형 트레이닝", "AI 서술형 평가", "실력완성문제"];
+  const order = [
+    "고고! 상위권 수학",
+    "AI유형클리어",
+    "AI 유형 클리어",
+    "단원요점정리",
+    "단원 요점정리",
+    "단원평가",
+    "단원핵심특강",
+    "서술형 트레이닝",
+    "AI 서술형 평가",
+    "실력완성문제",
+  ];
   const aIndex = order.indexOf(a);
   const bIndex = order.indexOf(b);
   const aOrder = aIndex === -1 ? order.length : aIndex;
@@ -1103,10 +1121,10 @@ function compareWeeklyScopeOrder(a, b) {
 
 function weeklyReportDetailGroups(rows) {
   const sheet = rows[0]?.__sheet || "";
-  if (sheet === "학교시험") {
+  if (sheet === "학교시험" || sheet === "수학마스터") {
     const grouped = groupBy(rows, (row) => sortGroup(row) || "미분류");
     return Object.keys(grouped)
-      .sort(localeSort)
+      .sort(compareWeeklyDetailLabel)
       .map((label) => ({ label, rows: grouped[label] }));
   }
   if (usesRepresentativeUnitAsSubject(sheet) || sheet === "성취도평가") {
@@ -3142,14 +3160,22 @@ function sortSubject(row) {
 function sortGroup(row) {
   if (usesRepresentativeUnitAsSubject(row.__sheet) || row.__sheet === "성취도평가") return String(row["과목"] || "");
   if (row.__sheet === "수학마스터") {
-    return firstMeaningfulValue([
-      row["과목"],
+    return normalizeMathMasterGroup(firstMeaningfulValue([
       row["구분"],
       row["대표단원(한글/국어)"],
       row["진입 과목명"],
-    ], ["수학", "AI수학", "All수학"]) || "수학마스터";
+      row["과목"],
+    ], ["수학", "AI수학", "All수학"])) || "수학마스터";
   }
   return String(row.__sheet || "");
+}
+
+function normalizeMathMasterGroup(value) {
+  const text = String(value || "").trim();
+  const compact = text.replace(/\s+/g, "");
+  if (compact.includes("유형클리어")) return "AI 유형클리어";
+  if (compact.includes("상위권") || compact.includes("경시") || compact.includes("도전")) return "고고! 상위권 수학";
+  return text;
 }
 
 function gradeValue(row) {
