@@ -1122,7 +1122,7 @@ function weeklyReportScopeText(rows) {
   const sortedRows = [...rows].sort(compareRows);
   const unitGroups = groupBy(sortedRows, (row) => weeklyUnitValue(row) || "미분류");
   const unitParts = Object.keys(unitGroups)
-    .sort((a, b) => toNumber(a) - toNumber(b) || localeSort(a, b))
+    .sort(compareUnitValue)
     .map((unit) => weeklyUnitScopeText(unit, unitGroups[unit]));
   return unitParts.join(", ");
 }
@@ -1475,7 +1475,7 @@ function monthlyScopeText(rows) {
   const sortedRows = [...rows].sort(compareRows);
   const grades = compressGradeLabels(unique(sortedRows.map((row) => row["학년"])).sort((a, b) => toNumber(a) - toNumber(b)));
   const terms = unique(sortedRows.map((row) => row["학기"])).sort(localeSort).join(", ");
-  const units = unique(sortedRows.map(monthlyUnitValue).filter((value) => value !== "")).sort((a, b) => toNumber(a) - toNumber(b));
+  const units = unique(sortedRows.map(monthlyUnitValue).filter((value) => value !== "")).sort(compareUnitValue);
   const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
   const unitText = monthlyRangeLabel(units, "단원");
   const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
@@ -1507,8 +1507,25 @@ function monthlyUnitValue(row) {
 }
 
 function leadingNumberText(value) {
-  const match = String(value || "").trim().match(/^['"]?(\d+)/);
+  const match = String(value || "").trim().match(/^['"]?(\d+(?:-\d+)?)/);
   return match ? match[1] : "";
+}
+
+function compareUnitValue(a, b) {
+  const aParts = unitValueParts(a);
+  const bParts = unitValueParts(b);
+  if (aParts && bParts) {
+    return aParts[0] - bParts[0] || aParts[1] - bParts[1] || localeSort(a, b);
+  }
+  if (aParts) return -1;
+  if (bParts) return 1;
+  return localeSort(a, b);
+}
+
+function unitValueParts(value) {
+  const match = String(value || "").trim().match(/^(\d+)(?:-(\d+))?$/);
+  if (!match) return null;
+  return [Number(match[1]), match[2] ? Number(match[2]) : 0];
 }
 
 function monthlyRangeLabel(values, suffix) {
