@@ -1120,7 +1120,7 @@ function weeklyReportDetailGroups(rows) {
 
 function weeklyReportScopeText(rows) {
   const sortedRows = [...rows].sort(compareRows);
-  const unitGroups = groupBy(sortedRows, (row) => monthlyUnitValue(row) || "미분류");
+  const unitGroups = groupBy(sortedRows, (row) => weeklyUnitValue(row) || "미분류");
   const unitParts = Object.keys(unitGroups)
     .sort((a, b) => toNumber(a) - toNumber(b) || localeSort(a, b))
     .map((unit) => weeklyUnitScopeText(unit, unitGroups[unit]));
@@ -1158,8 +1158,16 @@ function weeklyFullLessonKey(row) {
     weeklyReportSubject(row),
     sortGroup(row) || "",
     row["학년"] || "",
-    monthlyUnitValue(row) || "",
+    weeklyUnitValue(row) || "",
   ].join("||");
+}
+
+function weeklyUnitValue(row) {
+  const subject = sortSubject(row);
+  if (["국어", "사회", "영어"].includes(subject)) {
+    return leadingNumberText(row["단원명"]) || monthlyUnitValue(row);
+  }
+  return monthlyUnitValue(row);
 }
 
 function lessonOrderSet(rows) {
