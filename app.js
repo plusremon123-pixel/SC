@@ -1563,7 +1563,7 @@ function monthlyScopeTextWithGradeSplit(rows) {
 
   return gradeScopes
     .map((item) => `${item.grade} ${item.scope}`)
-    .join(" / ");
+    .join("\n");
 }
 
 function monthlyScopeTextWithoutGrade(rows) {
