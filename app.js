@@ -334,6 +334,15 @@ function bindEvents() {
       showToast("주간보고 정보를 복사하지 못했습니다.");
     });
   });
+
+  els.weeklyReportContent.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-weekly-subject-copy]");
+    if (!button) return;
+    copyWeeklyReportSubject(Number(button.dataset.weeklySubjectCopy)).catch((error) => {
+      console.error(error);
+      showToast("과목별 주간보고를 복사하지 못했습니다.");
+    });
+  });
 }
 
 function confirmUploadPassword() {
@@ -1262,9 +1271,12 @@ function weeklyReportPreviewHtml(report) {
         `).join("")}
       </ul>
     </div>
-    ${report.sections.map((section) => `
+    ${report.sections.map((section, index) => `
       <section class="weekly-report-card">
-        <h3>[${escapeHtml(section.subject)}]</h3>
+        <div class="weekly-report-card-head">
+          <h3>[${escapeHtml(section.subject)}]</h3>
+          <button type="button" data-weekly-subject-copy="${index}">과목 복사</button>
+        </div>
         ${section.blocks.map(weeklyReportBlockHtml).join("")}
       </section>
     `).join("")}
@@ -1296,6 +1308,17 @@ async function copyWeeklyReportSummary() {
   showToast("주간보고 정보를 복사했습니다.");
 }
 
+async function copyWeeklyReportSubject(sectionIndex) {
+  const report = weeklyReportData();
+  const section = report.sections[sectionIndex];
+  if (!section) {
+    showToast("복사할 과목별 주간보고 정보가 없습니다.");
+    return;
+  }
+  await copyTableToClipboard(weeklyReportSectionClipboardHtml(section), weeklyReportSectionText(section));
+  showToast(`${section.subject} 주간보고를 복사했습니다.`);
+}
+
 function weeklyReportClipboardHtml(report) {
   return `
     <ul>
@@ -1321,6 +1344,28 @@ function weeklyReportClipboardHtml(report) {
   `;
 }
 
+function weeklyReportSectionClipboardHtml(section) {
+  return `
+    <ul>
+      <li><strong>[${escapeHtml(section.subject)}]</strong>
+        <ul>
+          ${section.blocks.map((block) => weeklyReportBlockClipboardHtml(block)).join("")}
+        </ul>
+      </li>
+    </ul>
+  `;
+}
+
+function weeklyReportBlockClipboardHtml(block) {
+  return `
+    <li><strong>${escapeHtml(block.grades)} ${escapeHtml(block.categoryNames.join("/"))} ${escapeHtml(block.action)} / 공정률 ${block.progress}% (${escapeHtml(formatShortSlashDate(block.openDate))})</strong>
+      <ul>
+        ${block.lines.map((line) => `<li><strong>${escapeHtml(line.label)}</strong> : ${escapeHtml(line.detail)}</li>`).join("")}
+      </ul>
+    </li>
+  `;
+}
+
 function weeklyReportText(report) {
   return [
     report.headline,
@@ -1334,6 +1379,16 @@ function weeklyReportText(report) {
       ]),
     ].join("\n")),
   ].join("\n\n");
+}
+
+function weeklyReportSectionText(section) {
+  return [
+    `[${section.subject}]`,
+    ...section.blocks.flatMap((block) => [
+      `${block.grades} ${block.categoryNames.join("/")} ${block.action} / 공정률 ${block.progress}% (${formatShortSlashDate(block.openDate)})`,
+      ...block.lines.map((line) => `- ${line.label} : ${line.detail}`),
+    ]),
+  ].join("\n");
 }
 
 function renderMonthlyOpenInfo() {

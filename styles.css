@@ -1101,10 +1101,35 @@ body.lesson-only .lesson-action-bar .file-button {
   background: #fff;
 }
 
-.weekly-report-card h3 {
-  margin: 0 0 8px;
+.weekly-report-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.weekly-report-card-head h3 {
+  margin: 0;
   color: var(--brand-strong);
   font-size: 17px;
+}
+
+.weekly-report-card-head button {
+  min-height: 30px;
+  padding: 5px 12px;
+  border: 1px solid #b8d4df;
+  border-radius: 7px;
+  background: #f0f8fb;
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.weekly-report-card-head button:hover {
+  border-color: var(--brand);
+  background: #e6f4f8;
 }
 
 .weekly-report-block {
