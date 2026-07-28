@@ -1581,6 +1581,10 @@ function monthlyScopeUsesUnitOnly(rows) {
   const sheet = rows[0]?.__sheet || "";
   const group = sortGroup(rows[0] || {});
   if (sheet === "검정교과서") return true;
+  return isSchoolTestUnitOnlyGroup(sheet, group);
+}
+
+function isSchoolTestUnitOnlyGroup(sheet, group) {
   return sheet === "학교시험" && [
     "서술형 트레이닝",
     "AI 서술형 평가",
@@ -1592,6 +1596,9 @@ function monthlyScopeUsesUnitOnly(rows) {
 }
 
 function monthlyUnitValue(row) {
+  if (isSchoolTestUnitOnlyGroup(row.__sheet, sortGroup(row))) {
+    return leadingNumberText(row["차시명"]) || leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
+  }
   if (row.__sheet === "학교공부") {
     return leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
   }
