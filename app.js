@@ -1654,11 +1654,14 @@ function monthlyUnitValue(row) {
   if (isSchoolTestUnitOnlyGroup(row.__sheet, sortGroup(row))) {
     return leadingNumberText(row["차시명"]) || leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
   }
-  if (row.__sheet === "학교공부") {
+  if (row.__sheet === "학교시험") {
+    if (sortSubject(row) === "영어") {
+      return leadingNumberText(row["차시명"]) || leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
+    }
     return leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
   }
-  if (row.__sheet === "학교시험" && sortSubject(row) === "영어") {
-    return leadingNumberText(row["차시명"]) || row[UNIT_ORDER];
+  if (row.__sheet === "학교공부") {
+    return leadingNumberText(row["단원명"]) || row[UNIT_ORDER];
   }
   return row[UNIT_ORDER];
 }
