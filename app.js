@@ -1595,11 +1595,8 @@ function monthlyScopeText(rows) {
   const sortedRows = [...rows].sort(compareRows);
   const grades = compressGradeLabels(unique(sortedRows.map((row) => row["학년"])).sort((a, b) => toNumber(a) - toNumber(b)));
   const terms = unique(sortedRows.map((row) => row["학기"])).sort(localeSort).join(", ");
-  const units = unique(sortedRows.map(monthlyUnitValue).filter((value) => value !== "")).sort(compareUnitValue);
-  const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
-  const unitText = monthlyRangeLabel(units, "단원");
-  const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
-  return [grades, terms, unitText, lessonText].filter(Boolean).join(" ");
+  const scopeText = monthlyUnitScopeText(sortedRows);
+  return [grades, terms, scopeText].filter(Boolean).join(" ");
 }
 
 function monthlyScopeTextWithGradeSplit(rows, useLineBreak = false) {
@@ -1625,11 +1622,48 @@ function monthlyScopeTextWithGradeSplit(rows, useLineBreak = false) {
 function monthlyScopeTextWithoutGrade(rows) {
   const sortedRows = [...rows].sort(compareRows);
   const terms = unique(sortedRows.map((row) => row["학기"])).sort(localeSort).join(", ");
-  const units = unique(sortedRows.map(monthlyUnitValue).filter((value) => value !== "")).sort(compareUnitValue);
-  const lessons = sortedRows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999);
-  const unitText = monthlyRangeLabel(units, "단원");
-  const lessonText = monthlyScopeUsesUnitOnly(sortedRows) ? "" : monthlyLessonRangeText(sortedRows, lessons);
-  return [terms, unitText, lessonText].filter(Boolean).join(" ");
+  const scopeText = monthlyUnitScopeText(sortedRows);
+  return [terms, scopeText].filter(Boolean).join(" ");
+}
+
+function monthlyUnitScopeText(rows) {
+  const unitGroups = groupBy(rows, (row) => monthlyUnitValue(row) || "미분류");
+  return Object.keys(unitGroups)
+    .sort(compareUnitValue)
+    .map((unit) => monthlyUnitScopePart(unit, unitGroups[unit]))
+    .filter(Boolean)
+    .join(", ");
+}
+
+function monthlyUnitScopePart(unit, rows) {
+  const unitLabel = unit === "미분류" ? "단원 미분류" : `${unit}단원`;
+  if (monthlyScopeUsesUnitOnly(rows) || monthlyUnitHasFullLessons(rows)) return unitLabel;
+  const lessons = unique(rows.map((row) => row.__lessonOrder).filter((value) => Number.isFinite(value) && value !== 999999))
+    .sort((a, b) => a - b);
+  const lessonText = monthlyLessonRangeText(rows, lessons);
+  return lessonText ? `${unitLabel} ${lessonText}` : unitLabel;
+}
+
+function monthlyUnitHasFullLessons(rows) {
+  const selectedGroups = groupBy(rows, monthlyFullLessonKey);
+  return Object.keys(selectedGroups).every((key) => {
+    const selectedLessons = lessonOrderSet(selectedGroups[key]);
+    if (!selectedLessons.size) return false;
+    const allLessons = lessonOrderSet(state.rows.filter((row) => monthlyFullLessonKey(row) === key));
+    if (!allLessons.size) return false;
+    return [...allLessons].every((lesson) => selectedLessons.has(lesson));
+  });
+}
+
+function monthlyFullLessonKey(row) {
+  return [
+    row.__sheet || "",
+    sortSubject(row) || "",
+    sortGroup(row) || "",
+    row["학년"] || "",
+    row["출판사"] || "",
+    monthlyUnitValue(row) || "",
+  ].join("||");
 }
 
 function monthlyScopeUsesUnitOnly(rows) {
