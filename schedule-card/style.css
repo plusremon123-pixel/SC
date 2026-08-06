@@ -34,7 +34,7 @@ body {
 /* 사용 데이터 전환 */
 .term-switch-card {
   display: grid;
-  grid-template-columns: auto minmax(240px, 420px) 1fr;
+  grid-template-columns: auto minmax(240px, 420px) 1fr auto;
   align-items: center;
   gap: 0.75rem;
   background: #fff;
@@ -89,6 +89,25 @@ body {
   min-width: 0;
   font-size: 0.82rem;
   color: #718096;
+}
+
+.unit-image-entry-btn {
+  min-height: 40px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid #805ad5;
+  border-radius: 7px;
+  background: #faf5ff;
+  color: #6b46c1;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.unit-image-entry-btn:hover,
+.unit-image-entry-btn.active {
+  background: #6b46c1;
+  color: #fff;
 }
 
 /* 카드 */
@@ -586,6 +605,129 @@ body {
   font-weight: 500;
 }
 
+/* 단원별 이미지 차시목록 */
+.unit-image-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.unit-image-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.unit-image-header h2 {
+  margin-bottom: 0.35rem;
+  color: #44337a;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.unit-image-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.unit-image-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.unit-image-status {
+  min-height: 22px;
+  color: #4a5568;
+  font-size: 0.84rem;
+}
+
+.unit-image-status.error {
+  color: #c53030;
+  font-weight: 600;
+}
+
+.unit-image-month-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.unit-image-month-tab {
+  min-width: 92px;
+  padding: 0.52rem 0.75rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unit-image-month-tab.active {
+  border-color: #6b46c1;
+  background: #6b46c1;
+  color: #fff;
+}
+
+.unit-image-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.unit-image-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.unit-image-table {
+  table-layout: fixed;
+  min-width: 1120px;
+}
+
+.unit-image-table th {
+  background: #24364a;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.unit-image-table td {
+  text-align: center;
+  vertical-align: middle;
+  word-break: keep-all;
+}
+
+.unit-image-table th:nth-child(1) { width: 70px; }
+.unit-image-table th:nth-child(2) { width: 90px; }
+.unit-image-table th:nth-child(3) { width: 80px; }
+.unit-image-table th:nth-child(4) { width: 90px; }
+.unit-image-table th:nth-child(5) { width: 250px; }
+.unit-image-table th:nth-child(6) { width: 125px; }
+.unit-image-table th:nth-child(7) { width: 110px; }
+.unit-image-table th:nth-child(8) { width: auto; }
+
+.unit-image-table td:nth-child(5),
+.unit-image-table td:nth-child(8) {
+  text-align: left;
+  word-break: break-word;
+}
+
+.unit-image-reuse {
+  color: #6b46c1;
+  font-weight: 700;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #718096;
+}
+
 .diff-badge {
   display: inline-block;
   background: #fff5f5;
@@ -626,6 +768,10 @@ body {
   background: #e2e8f0;
   border-radius: 12px;
   padding: 0.3rem;
+}
+
+.tab-nav[hidden] {
+  display: none;
 }
 
 .tab-btn {
@@ -1076,6 +1222,14 @@ body {
 @media (max-width: 480px) {
   .term-switch-card {
     grid-template-columns: 1fr;
+  }
+  .unit-image-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .unit-image-actions {
+    width: 100%;
+    flex-wrap: wrap;
   }
   .form-row {
     flex-direction: column;

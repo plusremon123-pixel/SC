@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>스케쥴 카드</title>
-  <link rel="stylesheet" href="style.css?v=20260707-1" />
+  <link rel="stylesheet" href="style.css?v=20260806-1" />
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
@@ -16,6 +16,7 @@
         <button type="button" class="term-switch-btn" data-term="vacation">방학학기</button>
       </div>
       <div class="term-switch-note" id="term-switch-note">정규학기는 2학기 데이터 기준으로 검색합니다.</div>
+      <button type="button" class="unit-image-entry-btn" id="unit-image-entry-btn">단원별 이미지 차시목록</button>
     </section>
 
     <!-- 데이터 파일 섹션 (공통) -->
@@ -190,10 +191,51 @@
       </section>
     </div>
 
+    <div id="unit-image-view" class="unit-image-view" hidden>
+      <section class="card unit-image-header">
+        <div>
+          <h2>단원별 이미지 차시목록</h2>
+          <p id="unit-image-source-summary" class="hint">저장된 일정 정보를 불러오는 중입니다.</p>
+        </div>
+        <div class="unit-image-actions">
+          <label class="btn btn-outline" for="unit-image-file-input">일정 엑셀 업로드/교체</label>
+          <input type="file" id="unit-image-file-input" accept=".xlsx" hidden />
+          <button type="button" class="btn btn-ghost" id="unit-image-back-btn">검색 화면</button>
+        </div>
+      </section>
+
+      <section class="card unit-image-status-card">
+        <div id="unit-image-status" class="unit-image-status">데이터를 확인하고 있습니다.</div>
+        <div id="unit-image-month-tabs" class="unit-image-month-tabs" aria-label="월 선택"></div>
+      </section>
+
+      <section class="card unit-image-table-card">
+        <div class="unit-image-table-wrap">
+          <table class="result-table unit-image-table">
+            <thead>
+              <tr>
+                <th>학년</th>
+                <th>정규/방학</th>
+                <th>학기명</th>
+                <th>단원번호</th>
+                <th>단원명</th>
+                <th>단원이미지번호</th>
+                <th>출판사</th>
+                <th>차시번호</th>
+              </tr>
+            </thead>
+            <tbody id="unit-image-table-body"></tbody>
+          </table>
+        </div>
+        <div id="unit-image-empty" class="empty-state" hidden>선택한 월에 표시할 데이터가 없습니다.</div>
+      </section>
+    </div>
+
   </div>
 
   <script src="config.js?v=20260703-3"></script>
   <script src="data.js?v=20260703-3"></script>
-  <script src="app.js?v=20260707-1"></script>
+  <script src="../vendor/exceljs.min.js?v=20260703-39"></script>
+  <script src="app.js?v=20260806-1"></script>
 </body>
 </html>

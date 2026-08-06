@@ -8,6 +8,10 @@ const SUPABASE_URL = 'https://vmebzlinboxmgcrrorwv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR';
 const SUPABASE_BUCKET = 'schedule-data';
 const SUPABASE_SCHEDULE_CARD_PATH = 'schedule-card-data.json';
+const UNIT_IMAGE_SCHEDULE_SHEET_PREFIX = '2026 스케줄';
+const UNIT_IMAGE_RED = '신규';
+const UNIT_IMAGE_PURPLE = '재사용';
+const UNIT_IMAGE_GRADE_START_COLUMNS = [2, 10, 18, 26, 34, 42];
 
 const TERM_CONFIG = {
   regular: {
@@ -82,6 +86,21 @@ const EDIT_INPUTS = {
   '금': document.getElementById('edit-fri'),
 };
 
+// ─── DOM 참조 (단원별 이미지 차시목록) ──────────────────
+const unitImageEntryBtn = document.getElementById('unit-image-entry-btn');
+const unitImageBackBtn = document.getElementById('unit-image-back-btn');
+const unitImageView = document.getElementById('unit-image-view');
+const unitImageFileInput = document.getElementById('unit-image-file-input');
+const unitImageSourceSummary = document.getElementById('unit-image-source-summary');
+const unitImageStatus = document.getElementById('unit-image-status');
+const unitImageMonthTabs = document.getElementById('unit-image-month-tabs');
+const unitImageTableBody = document.getElementById('unit-image-table-body');
+const unitImageEmpty = document.getElementById('unit-image-empty');
+
+let unitImageMode = false;
+let unitImageMonthlyRows = [];
+let selectedUnitImageMonth = '';
+
 // ─── 데이터 파일 섹션 토글 ───────────────────────────────
 (function initFileToggle() {
   const toggle = document.getElementById('file-section-toggle');
@@ -108,12 +127,14 @@ const termFiles = { regular: [], vacation: [] };
   await loadSharedScheduleCardData();
   updateTermSwitchUI();
   switchTerm(activeTerm, true);
+  initUnitImageFeature();
 })().catch(error => {
   console.error(error);
   loadDataJs();
   loadSavedUploadedData();
   updateTermSwitchUI();
   switchTerm(activeTerm, true);
+  initUnitImageFeature();
 });
 
 termButtons.forEach(btn => {
@@ -453,6 +474,489 @@ function getTodayPassword() {
   const month = parts.find(part => part.type === 'month')?.value || '01';
   const day = parts.find(part => part.type === 'day')?.value || '01';
   return `${month}${day}`;
+}
+
+// ─── 단원별 이미지 차시목록 ─────────────────────────────
+function initUnitImageFeature() {
+  if (!unitImageEntryBtn || !unitImageView) return;
+
+  unitImageEntryBtn.addEventListener('click', async () => {
+    setUnitImageMode(true);
+    await loadUnitImageScheduleFromSupabase();
+  });
+
+  unitImageBackBtn?.addEventListener('click', () => setUnitImageMode(false));
+  unitImageFileInput?.addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!confirmUploadPassword()) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+    await uploadUnitImageSchedule(file);
+  });
+}
+
+function setUnitImageMode(enabled) {
+  unitImageMode = enabled;
+  unitImageEntryBtn?.classList.toggle('active', enabled);
+  if (unitImageView) unitImageView.hidden = !enabled;
+  const fileSection = document.getElementById('file-section');
+  const tabNav = document.querySelector('.tab-nav');
+  if (fileSection) fileSection.hidden = enabled;
+  if (tabNav) tabNav.hidden = enabled;
+  document.querySelectorAll('.tab-content').forEach(element => {
+    if (enabled) {
+      element.dataset.unitImageWasHidden = String(element.hidden);
+      element.hidden = true;
+    } else if (element.dataset.unitImageWasHidden != null) {
+      element.hidden = element.dataset.unitImageWasHidden === 'true';
+      delete element.dataset.unitImageWasHidden;
+    }
+  });
+  requestFrameResize();
+}
+
+function setUnitImageStatus(message, isError = false) {
+  if (!unitImageStatus) return;
+  unitImageStatus.textContent = message;
+  unitImageStatus.classList.toggle('error', isError);
+}
+
+function supabaseHeaders(contentType = false) {
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+  };
+  if (contentType) headers['Content-Type'] = 'application/json; charset=utf-8';
+  return headers;
+}
+
+async function supabaseRest(path, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      ...supabaseHeaders(Boolean(options.body)),
+      ...(options.headers || {}),
+    },
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`${response.status} ${detail}`.trim());
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadUnitImageScheduleFromSupabase() {
+  setUnitImageStatus('저장된 단원 이미지 일정을 불러오고 있습니다.');
+  try {
+    const [versions, monthly] = await Promise.all([
+      supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
+      supabaseRest('v_unit_image_schedule_monthly?select=*&order=schedule_month.asc,grade.asc,unit_number.asc,image_number.asc'),
+    ]);
+    unitImageMonthlyRows = Array.isArray(monthly) ? monthly : [];
+    const activeVersion = Array.isArray(versions) ? versions[0] : null;
+    renderUnitImageVersion(activeVersion);
+    renderUnitImageMonthTabs();
+    renderUnitImageTable();
+    if (!activeVersion) {
+      setUnitImageStatus('아직 저장된 일정이 없습니다. 엑셀을 업로드해 주세요.');
+    } else {
+      const unmatched = Number(activeVersion.unmatched_count || 0);
+      setUnitImageStatus(unmatched
+        ? `저장 완료 · 매칭 확인 필요 ${unmatched}건`
+        : '저장된 일정과 차시번호 매칭이 모두 완료되었습니다.', unmatched > 0);
+    }
+  } catch (error) {
+    console.error(error);
+    setUnitImageStatus(`Supabase 데이터 조회 실패: ${error.message}`, true);
+    renderUnitImageVersion(null);
+  }
+}
+
+function renderUnitImageVersion(version) {
+  if (!unitImageSourceSummary) return;
+  if (!version) {
+    unitImageSourceSummary.textContent = '등록된 원본 엑셀이 없습니다.';
+    return;
+  }
+  const metadata = version.metadata || {};
+  const uploaded = version.uploaded_at
+    ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(version.uploaded_at))
+    : '';
+  unitImageSourceSummary.textContent = [
+    version.source_file_name,
+    `일정 ${Number(version.source_count || 0).toLocaleString('ko-KR')}건`,
+    `신규 ${Number(metadata.redCount || metadata.red_count || 0).toLocaleString('ko-KR')}건`,
+    `재사용 ${Number(metadata.purpleCount || metadata.purple_count || 0).toLocaleString('ko-KR')}건`,
+    uploaded,
+  ].filter(Boolean).join(' · ');
+}
+
+async function uploadUnitImageSchedule(file) {
+  if (!window.ExcelJS) {
+    setUnitImageStatus('엑셀 처리 기능을 불러오지 못했습니다. 화면을 새로고침해 주세요.', true);
+    return;
+  }
+  setUnitImageStatus('엑셀의 날짜와 신규/재사용 표시를 읽고 있습니다.');
+  try {
+    const bytes = await file.arrayBuffer();
+    const hash = await sha256Hex(bytes);
+    const parsed = await parseUnitImageWorkbook(bytes);
+    if (!parsed.sources.length) throw new Error('빨강 또는 보라색으로 표시된 일정이 없습니다.');
+
+    setUnitImageStatus(`일정 ${parsed.sources.length.toLocaleString('ko-KR')}건을 차시 데이터와 연결하고 있습니다.`);
+    const matches = buildUnitImageMatches(parsed.sources);
+    assignUnitImageNumbers(matches);
+    const unmatchedSourceCount = new Set(matches
+      .filter(item => item.match_status !== 'matched')
+      .map(item => `${item.source_sheet}|${item.source_cell}`)).size;
+
+    setUnitImageStatus('Supabase에 저장하고 있습니다.');
+    await supabaseRest('rpc/save_unit_image_schedule', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_password: getTodayPassword(),
+        p_source_file_name: file.name,
+        p_source_file_hash: hash,
+        p_source_file_size: file.size,
+        p_rows: parsed.sources,
+        p_matches: matches,
+        p_metadata: {
+          sheetName: parsed.sheetName,
+          redCount: parsed.redCount,
+          purpleCount: parsed.purpleCount,
+          ignoredMarkedCellCount: parsed.ignoredMarkedCellCount,
+          unmatchedSourceCount,
+          parsedAt: new Date().toISOString(),
+        },
+      }),
+    });
+    await loadUnitImageScheduleFromSupabase();
+    alert(`저장 완료\n신규 ${parsed.redCount}건 · 재사용 ${parsed.purpleCount}건\n매칭 확인 필요 ${unmatchedSourceCount}건${parsed.ignoredMarkedCellCount ? `\n일정 형식이 아닌 색상 셀 제외 ${parsed.ignoredMarkedCellCount}건` : ''}`);
+  } catch (error) {
+    console.error(error);
+    setUnitImageStatus(`저장 실패: ${error.message}`, true);
+    alert(`단원별 이미지 일정 저장에 실패했습니다.\n${error.message}`);
+  }
+}
+
+async function sha256Hex(buffer) {
+  const digest = await crypto.subtle.digest('SHA-256', buffer.slice(0));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function parseUnitImageWorkbook(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer.slice(0));
+  const worksheet = workbook.worksheets.find(sheet => sheet.name.startsWith(UNIT_IMAGE_SCHEDULE_SHEET_PREFIX));
+  if (!worksheet) throw new Error(`'${UNIT_IMAGE_SCHEDULE_SHEET_PREFIX}' 시트를 찾을 수 없습니다.`);
+
+  const sources = [];
+  let redCount = 0;
+  let purpleCount = 0;
+  let ignoredMarkedCellCount = 0;
+  UNIT_IMAGE_GRADE_START_COLUMNS.forEach((startColumn, gradeIndex) => {
+    const grade = gradeIndex + 1;
+    for (let weekRow = 3; weekRow <= worksheet.rowCount; weekRow += 6) {
+      const headerText = excelCellText(worksheet.getCell(weekRow, startColumn));
+      const weekInfo = parseScheduleWeekHeader(headerText);
+      if (!weekInfo) continue;
+
+      for (let rowNumber = weekRow + 1; rowNumber <= Math.min(weekRow + 5, worksheet.rowCount); rowNumber += 1) {
+        for (let dayOffset = 0; dayOffset < 5; dayOffset += 1) {
+          const columnNumber = startColumn + 1 + dayOffset;
+          const cell = worksheet.getCell(rowNumber, columnNumber);
+          const inputValue = excelCellText(cell).trim();
+          if (!inputValue) continue;
+          const fillColor = excelCellFillColor(cell);
+          const contentStatus = classifyUnitImageFill(fillColor);
+          if (!contentStatus) continue;
+          const parsedCode = parseUnitImageInput(inputValue);
+          if (!parsedCode.subject || !parsedCode.lessonCode) {
+            ignoredMarkedCellCount += 1;
+            continue;
+          }
+          if (contentStatus === UNIT_IMAGE_RED) redCount += 1;
+          if (contentStatus === UNIT_IMAGE_PURPLE) purpleCount += 1;
+
+          const scheduleDate = addUtcDays(weekInfo.monday, dayOffset);
+          sources.push({
+            source_sheet: worksheet.name,
+            source_cell: cell.address,
+            schedule_date: formatIsoDate(scheduleDate),
+            grade,
+            term_type: weekInfo.termType,
+            semester: weekInfo.semester,
+            input_value: inputValue,
+            content_status: contentStatus,
+            subject: parsedCode.subject,
+            unit_lesson_code: parsedCode.lessonCode,
+            fill_color: fillColor,
+            raw_data: {
+              weekHeader: headerText,
+              row: rowNumber,
+              column: columnNumber,
+              day: DAYS[dayOffset],
+            },
+          });
+        }
+      }
+    }
+  });
+
+  sources.sort((a, b) => a.schedule_date.localeCompare(b.schedule_date)
+    || a.grade - b.grade
+    || naturalCompare(a.source_cell, b.source_cell));
+  return { sheetName: worksheet.name, sources, redCount, purpleCount, ignoredMarkedCellCount };
+}
+
+function excelCellText(cell) {
+  if (cell.text != null && cell.text !== '') return String(cell.text);
+  if (cell.value == null) return '';
+  if (typeof cell.value === 'object') {
+    if (cell.value.richText) return cell.value.richText.map(item => item.text || '').join('');
+    if (cell.value.result != null) return String(cell.value.result);
+  }
+  return String(cell.value);
+}
+
+function excelCellFillColor(cell) {
+  const color = cell.fill?.fgColor || cell.fill?.bgColor || {};
+  return String(color.argb || color.rgb || '').toUpperCase();
+}
+
+function classifyUnitImageFill(argb) {
+  const hex = String(argb || '').replace(/^#/, '').slice(-6);
+  if (!/^[0-9A-F]{6}$/.test(hex)) return '';
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+  if (hex === 'FF0000' || (red >= 200 && green <= 80 && blue <= 80)) return UNIT_IMAGE_RED;
+  if (hex === 'E2A7FF' || (red >= 100 && blue >= 100 && red - green >= 35 && blue - green >= 35)) return UNIT_IMAGE_PURPLE;
+  return '';
+}
+
+function parseScheduleWeekHeader(value) {
+  const text = String(value || '');
+  const weekMatch = text.match(/(\d{2,4})년\s*(\d+)주/);
+  if (!weekMatch) return null;
+  const year = Number(weekMatch[1]) < 100 ? 2000 + Number(weekMatch[1]) : Number(weekMatch[1]);
+  const week = Number(weekMatch[2]);
+  const semesterMatch = text.match(/([12])학기/);
+  const termType = /여름방학|겨울방학|방학/.test(text) ? '방학' : '정규';
+  return {
+    monday: isoWeekMonday(year, week),
+    semester: semesterMatch ? Number(semesterMatch[1]) : null,
+    termType,
+  };
+}
+
+function isoWeekMonday(year, week) {
+  const januaryFourth = new Date(Date.UTC(year, 0, 4));
+  const day = januaryFourth.getUTCDay() || 7;
+  const monday = new Date(januaryFourth);
+  monday.setUTCDate(januaryFourth.getUTCDate() - day + 1 + (week - 1) * 7);
+  return monday;
+}
+
+function addUtcDays(date, days) {
+  const result = new Date(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+function formatIsoDate(date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function parseUnitImageInput(value) {
+  const clean = String(value || '').trim().replace(/\s+/g, '').replace(/[‐‑‒–—―]/g, '-');
+  const keys = Object.keys(SUBJECT_MAP).sort((a, b) => b.length - a.length);
+  const key = keys.find(candidate => clean.startsWith(candidate)) || '';
+  const subject = key ? SUBJECT_MAP[key] : '';
+  const lessonCode = normalizeUnitImageLessonCode(key ? clean.slice(key.length) : clean);
+  return { subject, lessonCode };
+}
+
+function normalizeUnitImageLessonCode(value) {
+  return String(value || '')
+    .trim()
+    .replace(/['\s]/g, '')
+    .replace(/[‐‑‒–—―]/g, '-')
+    .replace(/단원평가/g, '단평')
+    .replace(/^(\d+)-툰$/, '$1-국어툰')
+    .replace(/^(\d+)-국어툰$/, '$1-국어툰');
+}
+
+function buildUnitImageMatches(sources) {
+  const result = [];
+  sources.forEach(source => {
+    const term = source.term_type === '방학' ? 'vacation' : 'regular';
+    const candidates = (termRows[term] || []).filter(row =>
+      normalizeGrade(row.학년) === String(source.grade)
+      && (!source.semester || Number(normalizeGrade(row.학기)) === Number(source.semester))
+      && row.과목 === source.subject
+      && normalizeUnitImageLessonCode(row.과목차시_clean) === source.unit_lesson_code
+    );
+    const sourceDate = source.schedule_date.replace(/-/g, '');
+    const exact = candidates.filter(row => normalizeScheduleDate(row.노출일) === sourceDate);
+    let selected = exact;
+    let matchStatus = 'matched';
+    let matchMessage = '';
+
+    if (!selected.length && candidates.length) {
+      const candidateDates = [...new Set(candidates.map(row => normalizeScheduleDate(row.노출일)).filter(Boolean))];
+      if (candidateDates.length === 1) {
+        selected = candidates;
+        matchMessage = `원본 날짜 ${source.schedule_date} 대신 등록 날짜 ${candidateDates[0]}로 연결`;
+      } else {
+        matchStatus = 'ambiguous';
+        matchMessage = `같은 차시가 여러 날짜에 있습니다: ${candidateDates.join(', ')}`;
+      }
+    } else if (!selected.length) {
+      matchStatus = 'unmatched';
+      matchMessage = '학년·학기·과목·과목차시에 맞는 등록 차시가 없습니다.';
+    }
+
+    if (!selected.length) {
+      result.push(makeUnitImageMatch(source, null, matchStatus, matchMessage));
+      return;
+    }
+    selected.forEach(row => result.push(makeUnitImageMatch(source, row, matchStatus, matchMessage)));
+  });
+  return result;
+}
+
+function normalizeScheduleDate(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 6) return `20${digits}`;
+  return digits.slice(0, 8);
+}
+
+function makeUnitImageMatch(source, row, matchStatus, matchMessage) {
+  const unit = parseUnitInformation(row?.단원명 || '', source.unit_lesson_code);
+  return {
+    source_sheet: source.source_sheet,
+    source_cell: source.source_cell,
+    lesson_id: row?.차시고유번호 || null,
+    lesson_order: extractUnitImageLessonOrder(row?.과목차시_clean || source.unit_lesson_code),
+    lesson_date: row?.노출일 ? isoDateFromDigits(normalizeScheduleDate(row.노출일)) : source.schedule_date,
+    lesson_name: row?.차시명 || null,
+    grade: source.grade,
+    term_type: source.term_type,
+    semester: source.semester,
+    subject: source.subject,
+    unit_number: unit.number,
+    unit_name: unit.name,
+    publisher: row?.교과서 || '공통',
+    image_number: null,
+    image_name: null,
+    is_reuse: source.content_status === UNIT_IMAGE_PURPLE,
+    match_status: matchStatus,
+    match_message: matchMessage || null,
+  };
+}
+
+function extractUnitImageLessonOrder(value) {
+  const match = normalizeUnitImageLessonCode(value).match(/-(\d+)$/);
+  return match ? Number(match[1]) : null;
+}
+
+function parseUnitInformation(unitName, lessonCode) {
+  const text = String(unitName || '').trim();
+  const match = text.match(/^\s*(\d+(?:-\d+)?)\s*[.．]\s*(.*)$/);
+  if (match) return { number: match[1], name: match[2].trim() || text };
+  const fallback = String(lessonCode || '').match(/^(\d+(?:-\d+)?)/)?.[1] || '';
+  return { number: fallback, name: text || '단원명 확인 필요' };
+}
+
+function isoDateFromDigits(value) {
+  const digits = String(value || '');
+  return digits.length === 8 ? `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}` : null;
+}
+
+function assignUnitImageNumbers(matches) {
+  const sourceGroups = new Map();
+  matches.forEach(match => {
+    const sourceKey = `${match.source_sheet}|${match.source_cell}`;
+    const groupKey = [match.grade, match.term_type, match.semester || '', match.unit_number || '', match.unit_name || '', match.publisher || '공통'].join('|');
+    if (!sourceGroups.has(groupKey)) sourceGroups.set(groupKey, []);
+    const sourceList = sourceGroups.get(groupKey);
+    if (!sourceList.includes(sourceKey)) sourceList.push(sourceKey);
+  });
+
+  const numberMap = new Map();
+  sourceGroups.forEach(sourceKeys => {
+    sourceKeys.forEach((sourceKey, index) => numberMap.set(sourceKey, (index % 2) + 1));
+  });
+  matches.forEach(match => {
+    const sourceKey = `${match.source_sheet}|${match.source_cell}`;
+    const number = numberMap.get(sourceKey) || 1;
+    match.image_number = number;
+    const publisher = match.publisher || '공통';
+    const semesterName = match.semester ? `${match.semester}학기` : match.term_type;
+    const unitNumber = match.unit_number ? `${match.unit_number}단원` : '단원확인';
+    match.image_name = `${match.grade}학년_${semesterName}_${unitNumber}_단원이미지${number}_${publisher}`;
+  });
+}
+
+function renderUnitImageMonthTabs() {
+  if (!unitImageMonthTabs) return;
+  const months = [...new Set(unitImageMonthlyRows.map(row => String(row.schedule_month || '').slice(0, 7)).filter(Boolean))];
+  if (!months.includes(selectedUnitImageMonth)) selectedUnitImageMonth = months[0] || '';
+  unitImageMonthTabs.innerHTML = months.map(month => {
+    const [year, monthNumber] = month.split('-').map(Number);
+    const active = month === selectedUnitImageMonth;
+    return `<button type="button" class="unit-image-month-tab${active ? ' active' : ''}" data-month="${escapeHtml(month)}">${year}년 ${monthNumber}월</button>`;
+  }).join('');
+  unitImageMonthTabs.querySelectorAll('[data-month]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedUnitImageMonth = button.dataset.month;
+      renderUnitImageMonthTabs();
+      renderUnitImageTable();
+    });
+  });
+}
+
+function renderUnitImageTable() {
+  if (!unitImageTableBody || !unitImageEmpty) return;
+  const filtered = unitImageMonthlyRows
+    .filter(row => String(row.schedule_month || '').startsWith(selectedUnitImageMonth))
+    .sort((a, b) => Number(a.grade) - Number(b.grade)
+      || naturalCompare(a.term_type, b.term_type)
+      || Number(a.semester || 0) - Number(b.semester || 0)
+      || naturalCompare(a.unit_number, b.unit_number)
+      || naturalCompare(a.unit_name, b.unit_name)
+      || naturalCompare(a.publisher, b.publisher)
+      || Number(a.image_number || 0) - Number(b.image_number || 0));
+  unitImageEmpty.hidden = filtered.length > 0;
+  unitImageTableBody.innerHTML = filtered.map(row => `
+    <tr>
+      <td>${escapeHtml(`${row.grade}학년`)}</td>
+      <td>${escapeHtml(row.term_type || '')}</td>
+      <td>${escapeHtml(row.semester ? `${row.semester}학기` : '')}</td>
+      <td>${escapeHtml(row.unit_number || '')}</td>
+      <td>${escapeHtml(row.unit_name || '')}</td>
+      <td>${escapeHtml(row.image_number || '')}</td>
+      <td>${escapeHtml(row.publisher || '')}</td>
+      <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
+    </tr>`).join('');
+  requestFrameResize();
+}
+
+function renderUnitImageLessonNumbers(value) {
+  return String(value || '').split(',').map(item => item.trim()).filter(Boolean).map(item => {
+    const escaped = escapeHtml(item);
+    return item.includes('(재사용)') ? `<span class="unit-image-reuse">${escaped}</span>` : escaped;
+  }).join(', ');
+}
+
+function naturalCompare(left, right) {
+  return String(left || '').localeCompare(String(right || ''), 'ko', { numeric: true, sensitivity: 'base' });
 }
 
 // ─── 상세 분석 결과 ──────────────────────────────────────
@@ -854,7 +1358,7 @@ function requestFrameResize() {
 
 window.addEventListener('load', requestFrameResize);
 window.addEventListener('resize', requestFrameResize);
-if (window.MutationObserver) {
+if (window.MutationObserver && document.body) {
   new MutationObserver(requestFrameResize).observe(document.body, {
     childList: true,
     subtree: true,
