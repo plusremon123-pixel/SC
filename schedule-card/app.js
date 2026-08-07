@@ -1069,25 +1069,21 @@ function unitImageDisplayMonth(value) {
 function mergeUnitImageDisplayRows(rowsToMerge) {
   const grouped = new Map();
   rowsToMerge.forEach(row => {
-    const key = [
-      row.grade,
-      row.term_type || '',
-      row.semester || '',
-      row.subject || '',
-      row.unit_number || '',
-      row.unit_name || '',
-    ].join('|');
+    const imageFileName = row.image_name
+      || createUnitImageFileName(row.grade, row.subject, row.unit_number, row.image_number);
+    const key = imageFileName;
     if (!grouped.has(key)) {
       grouped.set(key, {
         ...row,
-        _imageNumbers: new Set(),
+        image_file_names: imageFileName,
+        _unitNames: new Set(),
         _publishers: new Set(),
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
       });
     }
     const item = grouped.get(key);
-    if (row.image_number != null && row.image_number !== '') item._imageNumbers.add(String(row.image_number));
+    if (row.unit_name) item._unitNames.add(String(row.unit_name));
     if (row.publisher) item._publishers.add(String(row.publisher));
     String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonNumbers.add(value));
@@ -1095,15 +1091,13 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       .forEach(value => item._lessonOrders.add(value));
   });
   return [...grouped.values()].map(item => {
-    const imageNumbers = [...item._imageNumbers].sort(naturalCompare);
     return {
       ...item,
-      image_numbers: imageNumbers.join(', '),
-      image_file_names: imageNumbers.map(number => createUnitImageFileName(item.grade, item.subject, item.unit_number, number)).join(', '),
+      unit_name: [...item._unitNames].sort(naturalCompare).join(' / '),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-      _imageNumbers: undefined,
+      _unitNames: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
       _lessonOrders: undefined,
