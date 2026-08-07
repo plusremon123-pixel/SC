@@ -1577,7 +1577,8 @@ function formatUnitImageShortDate(value) {
 
 function renderUnitImageLessonNumbers(value) {
   return String(value || '').split(',').map(item => item.trim()).filter(Boolean).map(item => {
-    const escaped = escapeHtml(item);
+    const lessonId = item.replace(/\(재사용\)$/u, '').trim();
+    const escaped = escapeHtml(lessonId);
     return item.includes('(재사용)') ? `<span class="unit-image-reuse">${escaped}</span>` : escaped;
   }).join(', ');
 }
@@ -1586,7 +1587,7 @@ function renderUnitImageLessonNumbersWithCopy(value) {
   return String(value || '').split(',').map(item => item.trim()).filter(Boolean).map(item => {
     const lessonId = item.replace(/\(재사용\)$/u, '').trim();
     const textClass = item.includes('(재사용)') ? 'unit-image-copy-text unit-image-reuse' : 'unit-image-copy-text';
-    return renderUnitImageCopyLine(item, lessonId, '차시고유번호', textClass);
+    return renderUnitImageCopyLine(lessonId, lessonId, '차시고유번호', textClass);
   }).join('');
 }
 
