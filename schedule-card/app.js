@@ -12,6 +12,7 @@ const IS_UNIT_IMAGE_ONLY = new URLSearchParams(window.location.search).get('view
 const UNIT_IMAGE_SCHEDULE_SHEET_PREFIX = '2026 스케줄';
 const UNIT_IMAGE_RED = '신규';
 const UNIT_IMAGE_PURPLE = '재사용';
+const UNIT_IMAGE_COPIED_LESSON_IDS_KEY = 'unit-image-copied-lesson-ids-v1';
 const UNIT_IMAGE_GRADE_START_COLUMNS = [2, 10, 18, 26, 34, 42];
 const UNIT_IMAGE_CONTENT_VARIANT_RULES = {
   '3|수학|2': [['나눗셈'], ['원']],
@@ -539,6 +540,11 @@ function initUnitImageFeature() {
     if (!value) return;
     const defaultText = button.dataset.copyLabel || button.textContent || '복사';
     clipboardWrite(value);
+    if (button.dataset.copyTrack === 'lesson-id') {
+      saveUnitImageCopiedLessonId(value);
+      const status = button.closest('.unit-image-copy-line')?.querySelector('.unit-image-copy-status');
+      if (status) status.hidden = false;
+    }
     button.textContent = '완료';
     button.classList.add('copied');
     clearTimeout(button._copyResetTimer);
@@ -1586,14 +1592,42 @@ function renderUnitImageFileName(value) {
 }
 
 function renderUnitImageCopyLine(displayValue, copyValue, label, textClass = 'unit-image-copy-text') {
+  const isCopied = isUnitImageLessonIdCopied(copyValue);
   return `<div class="unit-image-copy-line">
     <span class="${textClass}">${escapeHtml(displayValue)}</span>
-    ${renderUnitImageCopyButton(copyValue, '복사', label)}
+    ${renderUnitImageCopyButton(copyValue, '복사', label, true)}
+    <span class="unit-image-copy-status"${isCopied ? '' : ' hidden'}>복사완료</span>
   </div>`;
 }
 
-function renderUnitImageCopyButton(copyValue, buttonLabel, ariaLabel) {
-  return `<button type="button" class="unit-image-inline-copy" data-unit-image-copy data-copy-label="${escapeHtml(buttonLabel)}" data-copy-value="${escapeHtml(copyValue)}" title="${escapeHtml(ariaLabel)} 복사" aria-label="${escapeHtml(ariaLabel)} ${escapeHtml(copyValue)} 복사">${escapeHtml(buttonLabel)}</button>`;
+function renderUnitImageCopyButton(copyValue, buttonLabel, ariaLabel, trackLessonId = false) {
+  const trackAttribute = trackLessonId ? ' data-copy-track="lesson-id"' : '';
+  return `<button type="button" class="unit-image-inline-copy" data-unit-image-copy${trackAttribute} data-copy-label="${escapeHtml(buttonLabel)}" data-copy-value="${escapeHtml(copyValue)}" title="${escapeHtml(ariaLabel)} 복사" aria-label="${escapeHtml(ariaLabel)} ${escapeHtml(copyValue)} 복사">${escapeHtml(buttonLabel)}</button>`;
+}
+
+function getUnitImageCopiedLessonIds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(UNIT_IMAGE_COPIED_LESSON_IDS_KEY) || '[]');
+    return new Set(Array.isArray(saved) ? saved.map(value => String(value)) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function isUnitImageLessonIdCopied(value) {
+  return getUnitImageCopiedLessonIds().has(String(value || '').trim());
+}
+
+function saveUnitImageCopiedLessonId(value) {
+  const lessonId = String(value || '').trim();
+  if (!lessonId) return;
+  const copiedIds = getUnitImageCopiedLessonIds();
+  copiedIds.add(lessonId);
+  try {
+    localStorage.setItem(UNIT_IMAGE_COPIED_LESSON_IDS_KEY, JSON.stringify([...copiedIds]));
+  } catch {
+    // Browsing privacy settings can disable local storage; copying still works.
+  }
 }
 
 function naturalCompare(left, right) {

@@ -977,6 +977,14 @@ body.unit-image-only {
   color: #276749;
 }
 
+.unit-image-copy-status {
+  flex: 0 0 auto;
+  color: #2f855a;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .unit-image-week-divider th,
 .unit-image-date-divider th {
   text-align: left;
