@@ -598,7 +598,7 @@ async function loadUnitImageScheduleFromSupabase() {
   try {
     const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_month,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_month.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
     unitImageActiveDetails = Array.isArray(details) ? details : [];
     const contentResolution = applyUnitImageContentVariants(unitImageActiveDetails, unitImageActiveDetails);
@@ -633,6 +633,7 @@ function aggregateUnitImageDetailRows(details) {
   (details || []).forEach(row => {
     const key = [
       String(row.schedule_month || '').slice(0, 10),
+      String(row.schedule_date || row.lesson_date || '').slice(0, 10),
       row.grade,
       row.term_type || '',
       row.semester || '',
@@ -1250,8 +1251,9 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       .forEach(value => item._lessonOrders.add(value));
     String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => {
-        if (!item._lessonOrderDates.has(value) && row.schedule_month) {
-          item._lessonOrderDates.set(value, row.schedule_month);
+        const displayDate = row.schedule_date || row.lesson_date;
+        if (!item._lessonOrderDates.has(value) && displayDate) {
+          item._lessonOrderDates.set(value, displayDate);
         }
       });
   });
