@@ -13,6 +13,7 @@ const UNIT_IMAGE_SCHEDULE_SHEET_PREFIX = '2026 스케줄';
 const UNIT_IMAGE_RED = '신규';
 const UNIT_IMAGE_PURPLE = '재사용';
 const UNIT_IMAGE_COPIED_LESSON_IDS_KEY = 'unit-image-copied-lesson-ids-v1';
+const UNIT_IMAGE_REUSE_VISIBILITY_KEY = 'unit-image-reuse-visibility-v1';
 const UNIT_IMAGE_GRADE_START_COLUMNS = [2, 10, 18, 26, 34, 42];
 const UNIT_IMAGE_CONTENT_VARIANT_RULES = {
   '3|수학|2': [['나눗셈'], ['원']],
@@ -125,6 +126,7 @@ const unitImageDateSummary = document.getElementById('unit-image-date-summary');
 const unitImageTableHead = document.getElementById('unit-image-table-head');
 const unitImageGradeTabs = document.getElementById('unit-image-grade-tabs');
 const unitImageSubjectTabs = document.getElementById('unit-image-subject-tabs');
+const unitImageReuseToggle = document.getElementById('unit-image-reuse-toggle');
 const unitImageTableBody = document.getElementById('unit-image-table-body');
 const unitImageEmpty = document.getElementById('unit-image-empty');
 
@@ -138,6 +140,7 @@ let selectedUnitImageGrade = 'all';
 let selectedUnitImageSubject = 'all';
 let selectedUnitImageView = 'data';
 let selectedUnitImageWeek = 'all';
+let showUnitImageReuseContent = localStorage.getItem(UNIT_IMAGE_REUSE_VISIBILITY_KEY) !== 'hide';
 
 // ─── 데이터 파일 섹션 토글 ───────────────────────────────
 (function initFileToggle() {
@@ -542,6 +545,15 @@ function initUnitImageFeature() {
       renderUnitImageTable();
     });
   });
+  unitImageReuseToggle?.querySelectorAll('[data-reuse-highlight]').forEach(button => {
+    button.addEventListener('click', () => {
+      showUnitImageReuseContent = button.dataset.reuseHighlight !== 'hide';
+      localStorage.setItem(UNIT_IMAGE_REUSE_VISIBILITY_KEY, showUnitImageReuseContent ? 'show' : 'hide');
+      renderUnitImageReuseToggle();
+      renderUnitImageTable();
+    });
+  });
+  renderUnitImageReuseToggle();
   unitImageTableBody?.addEventListener('click', event => {
     const button = event.target.closest?.('[data-unit-image-copy]');
     if (!button || !unitImageTableBody.contains(button)) return;
@@ -690,6 +702,7 @@ function aggregateUnitImageDetailRows(details) {
       row.image_number || '',
       row.publisher || '',
       row.image_name || '',
+      row.is_reuse ? 'reuse' : 'new',
     ].join('|');
     if (!grouped.has(key)) {
       grouped.set(key, {
@@ -1229,6 +1242,7 @@ function renderUnitImageViewTabs() {
   });
   if (unitImageWeekTabs) unitImageWeekTabs.hidden = selectedUnitImageView !== 'date';
   if (unitImageDateSummary) unitImageDateSummary.hidden = selectedUnitImageView !== 'date';
+  if (unitImageReuseToggle) unitImageReuseToggle.hidden = selectedUnitImageView !== 'data';
 }
 
 function renderUnitImageWeekTabs() {
@@ -1354,7 +1368,8 @@ function renderUnitImageDataTable() {
   const filtered = mergeUnitImageDisplayRows(getUnitImageTermRows()
     .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
       && (selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
-      && (selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)))
+      && (selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)
+      && (showUnitImageReuseContent || row.is_reuse !== true)))
     .sort((a, b) => naturalCompare(a.image_file_names, b.image_file_names)
       || naturalCompare(a.unit_number, b.unit_number)
       || naturalCompare(a.subject, b.subject)
@@ -1365,7 +1380,7 @@ function renderUnitImageDataTable() {
       <td>${escapeHtml(`${row.grade}학년`)}</td>
       <td class="unit-image-subject-cell">${renderUnitImageSubjectCode(row.subject)}</td>
       <td>${escapeHtml(row.unit_number || '')}</td>
-      <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
+      <td class="unit-image-lesson-orders">${renderUnitImageLessonOrders(row.lesson_order_display)}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
       <td class="unit-image-file-cell">${renderUnitImageFileName(row.image_file_names)}</td>
       <td class="unit-image-publisher-cell">${renderUnitImagePublishersForLessons(row.publisher, row.lesson_numbers)}</td>
@@ -1559,14 +1574,21 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
     const lessonOrderDisplay = [...item._lessonOrders].sort(naturalCompare)
       .map(order => {
         const formattedDate = formatUnitImageShortDate(item._lessonOrderDates.get(order));
-        return formattedDate ? `${order}(${formattedDate})` : order;
+        const label = formattedDate ? `${order}(${formattedDate})` : order;
+        const matchingLessons = [...item._lessonNumbers].filter(value => {
+          const lessonId = value.replace(/\(재사용\)$/u, '').trim();
+          return String(unitImageLessonSortInfo.get(lessonId)?.lessonOrder ?? '') === String(order);
+        });
+        const reused = matchingLessons.length > 0 && matchingLessons.every(value => value.includes('(재사용)'));
+        return reused ? `${label}(재사용)` : label;
       });
     [...item._orderlessDateLabels.entries()].sort(([left], [right]) => naturalCompare(left, right))
       .forEach(([value, labels]) => {
         const formattedDate = formatUnitImageShortDate(value);
         if (!formattedDate) return;
         const label = [...labels].sort(naturalCompare).join(', ');
-        lessonOrderDisplay.push(label ? `${label}(${formattedDate})` : formattedDate);
+        const display = label ? `${label}(${formattedDate})` : formattedDate;
+        lessonOrderDisplay.push(isUnitImageFullyReused([...item._lessonNumbers].join(',')) ? `${display}(재사용)` : display);
       });
     return {
       ...item,
@@ -1615,9 +1637,25 @@ function renderUnitImageLessonNumbers(value) {
   }).join(', ');
 }
 
+function renderUnitImageLessonOrders(value) {
+  return String(value || '').split('\n').map(item => item.trim()).filter(Boolean).map(item => {
+    const label = item.replace(/\(재사용\)$/u, '').trim();
+    const className = item.includes('(재사용)') ? 'unit-image-lesson-order-line unit-image-reuse' : 'unit-image-lesson-order-line';
+    return `<div class="${className}">${escapeHtml(label)}</div>`;
+  }).join('');
+}
+
 function isUnitImageFullyReused(value) {
   const items = String(value || '').split(',').map(item => item.trim()).filter(Boolean);
   return items.length > 0 && items.every(item => item.includes('(재사용)'));
+}
+
+function renderUnitImageReuseToggle() {
+  unitImageReuseToggle?.querySelectorAll('[data-reuse-highlight]').forEach(button => {
+    const active = (button.dataset.reuseHighlight === 'show') === showUnitImageReuseContent;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
 }
 
 function renderUnitImageLessonNumbersWithCopy(value) {

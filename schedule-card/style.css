@@ -828,6 +828,62 @@ body.unit-image-only {
   font-weight: 700;
 }
 
+.unit-image-reuse-toggle {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.7rem;
+}
+
+.unit-image-reuse-toggle[hidden] {
+  display: none;
+}
+
+.unit-image-reuse-toggle-label {
+  color: #4a5568;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.unit-image-reuse-toggle-buttons {
+  display: inline-flex;
+}
+
+.unit-image-reuse-toggle-button {
+  min-height: 30px;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid #cbd5e0;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unit-image-reuse-toggle-button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.unit-image-reuse-toggle-button:last-child {
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+}
+
+.unit-image-reuse-toggle-button.active {
+  position: relative;
+  z-index: 1;
+  border-color: #805ad5;
+  background: #6b46c1;
+  color: #fff;
+}
+
+.unit-image-reuse-toggle-button[data-reuse-highlight="hide"].active {
+  border-color: #94a3b8;
+  background: #e2e8f0;
+  color: #334155;
+}
+
 @media (max-width: 900px) {
   .unit-image-subfilters {
     grid-template-columns: 1fr;
