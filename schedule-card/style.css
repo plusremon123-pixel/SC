@@ -630,7 +630,7 @@ body {
 }
 
 .unit-image-only .term-switch-card {
-  justify-content: flex-start;
+  display: none;
 }
 
 .unit-image-header h2 {
