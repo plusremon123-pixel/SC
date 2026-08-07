@@ -1444,10 +1444,11 @@ function renderUnitImageDateTable() {
         }
         const key = unitImageValidationKey(row, date);
         const issue = validation.get(key);
+        const fullyReused = isUnitImageFullyReused(row.lesson_numbers);
         if (issue) issueCount += 1;
         else normalCount += 1;
         html.push(`
-          <tr class="${issue ? 'unit-image-review-row' : ''}">
+          <tr class="${[issue ? 'unit-image-review-row' : '', fullyReused ? 'unit-image-date-reuse-row' : ''].filter(Boolean).join(' ')}">
             <td>${escapeHtml(`${row.grade}학년`)}</td>
             <td>${escapeHtml(row.subject || '')}</td>
             <td>${escapeHtml(row.unit_number || '')}</td>
@@ -1612,6 +1613,11 @@ function renderUnitImageLessonNumbers(value) {
     const escaped = escapeHtml(lessonId);
     return item.includes('(재사용)') ? `<span class="unit-image-reuse">${escaped}</span>` : escaped;
   }).join(', ');
+}
+
+function isUnitImageFullyReused(value) {
+  const items = String(value || '').split(',').map(item => item.trim()).filter(Boolean);
+  return items.length > 0 && items.every(item => item.includes('(재사용)'));
 }
 
 function renderUnitImageLessonNumbersWithCopy(value) {

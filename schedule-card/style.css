@@ -1062,6 +1062,11 @@ body.unit-image-only {
   font-weight: 700;
 }
 
+.unit-image-table.date-mode .unit-image-date-reuse-row td {
+  color: #8e24aa;
+  font-weight: 700;
+}
+
 .empty-state {
   padding: 2rem;
   text-align: center;
