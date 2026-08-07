@@ -1041,19 +1041,14 @@ function renderUnitImageTable() {
     .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
       && (selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
       && (selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)))
-    .sort((a, b) => Number(a.grade) - Number(b.grade)
-      || naturalCompare(a.term_type, b.term_type)
-      || Number(a.semester || 0) - Number(b.semester || 0)
+    .sort((a, b) => naturalCompare(a.image_file_names, b.image_file_names)
       || naturalCompare(a.unit_number, b.unit_number)
-      || naturalCompare(a.unit_name, b.unit_name)
-      || naturalCompare(a.publisher, b.publisher)
-      || Number(a.image_number || 0) - Number(b.image_number || 0));
+      || naturalCompare(a.subject, b.subject)
+      || Number(a.grade) - Number(b.grade));
   unitImageEmpty.hidden = filtered.length > 0;
   unitImageTableBody.innerHTML = filtered.map(row => `
     <tr>
       <td>${escapeHtml(`${row.grade}학년`)}</td>
-      <td>${escapeHtml(row.term_type || '')}</td>
-      <td>${escapeHtml(row.semester ? `${row.semester}학기` : '')}</td>
       <td>${escapeHtml(row.subject || '')}</td>
       <td>${escapeHtml(row.unit_number || '')}</td>
       <td>${escapeHtml(row.lesson_orders ? `${row.lesson_orders}차시` : '')}</td>
