@@ -833,7 +833,7 @@ body.unit-image-only {
   justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
-  padding-top: 0.7rem;
+  margin: -6px 2px;
 }
 
 .unit-image-reuse-toggle[hidden] {
