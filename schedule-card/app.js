@@ -1215,18 +1215,14 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       grouped.set(key, {
         ...row,
         image_file_names: imageFileName,
-        _unitPublishers: new Map(),
+        _unitNames: new Set(),
         _publishers: new Set(),
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
       });
     }
     const item = grouped.get(key);
-    if (row.unit_name) {
-      const unitName = String(row.unit_name);
-      if (!item._unitPublishers.has(unitName)) item._unitPublishers.set(unitName, new Set());
-      if (row.publisher) item._unitPublishers.get(unitName).add(String(row.publisher));
-    }
+    if (row.unit_name) item._unitNames.add(String(row.unit_name));
     if (row.publisher) item._publishers.add(String(row.publisher));
     String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonNumbers.add(value));
@@ -1236,14 +1232,11 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
   return [...grouped.values()].map(item => {
     return {
       ...item,
-      unit_name: [...item._unitPublishers.entries()]
-        .sort(([left], [right]) => naturalCompare(left, right))
-        .map(([name, publishers]) => `${name}${publishers.size ? ` (${[...publishers].sort(naturalCompare).join(', ')})` : ''}`)
-        .join(' / '),
+      unit_name: [...item._unitNames].sort(naturalCompare).join(' / '),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-      _unitPublishers: undefined,
+      _unitNames: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
       _lessonOrders: undefined,
