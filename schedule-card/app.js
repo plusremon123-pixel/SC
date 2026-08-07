@@ -132,6 +132,7 @@ let unitImageMode = false;
 let unitImageMonthlyRows = [];
 let unitImageActiveDetails = [];
 let unitImageContentWarnings = [];
+let unitImageLessonSortInfo = new Map();
 let selectedUnitImageMonth = '';
 let selectedUnitImageGrade = 'all';
 let selectedUnitImageSubject = 'all';
@@ -644,6 +645,7 @@ async function loadUnitImageScheduleFromSupabase() {
       loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
     unitImageActiveDetails = Array.isArray(details) ? details : [];
+    unitImageLessonSortInfo = buildUnitImageLessonSortInfo(unitImageActiveDetails);
     const contentResolution = applyUnitImageContentVariants(unitImageActiveDetails, unitImageActiveDetails);
     unitImageContentWarnings = contentResolution.warnings;
     unitImageMonthlyRows = aggregateUnitImageDetailRows(contentResolution.rows);
@@ -702,11 +704,40 @@ function aggregateUnitImageDetailRows(details) {
   });
   return [...grouped.values()].map(item => ({
     ...item,
-    lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
+    lesson_numbers: sortUnitImageLessonNumbers([...item._lessonNumbers]).join(', '),
     lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
     _lessonNumbers: undefined,
     _lessonOrders: undefined,
   }));
+}
+
+function buildUnitImageLessonSortInfo(details) {
+  const result = new Map();
+  (details || []).forEach(row => {
+    const lessonId = String(row.lesson_id || '').trim();
+    if (!lessonId || result.has(lessonId)) return;
+    result.set(lessonId, {
+      lessonOrder: row.lesson_order,
+      publisher: String(row.publisher || ''),
+    });
+  });
+  return result;
+}
+
+function sortUnitImageLessonNumbers(values) {
+  return [...values].sort((left, right) => {
+    const leftId = String(left || '').replace(/\(재사용\)$/u, '').trim();
+    const rightId = String(right || '').replace(/\(재사용\)$/u, '').trim();
+    const leftInfo = unitImageLessonSortInfo.get(leftId) || {};
+    const rightInfo = unitImageLessonSortInfo.get(rightId) || {};
+    const leftHasOrder = leftInfo.lessonOrder != null && leftInfo.lessonOrder !== '';
+    const rightHasOrder = rightInfo.lessonOrder != null && rightInfo.lessonOrder !== '';
+    if (leftHasOrder !== rightHasOrder) return leftHasOrder ? -1 : 1;
+    const orderDifference = naturalCompare(String(leftInfo.lessonOrder ?? ''), String(rightInfo.lessonOrder ?? ''));
+    if (orderDifference) return orderDifference;
+    const publisherDifference = naturalCompare(leftInfo.publisher || '', rightInfo.publisher || '');
+    return publisherDifference || naturalCompare(leftId, rightId);
+  });
 }
 
 function renderUnitImageVersion(version) {
@@ -1540,7 +1571,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       ...item,
       unit_name: [...item._unitNames].sort(naturalCompare).join('\n'),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
-      lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
+      lesson_numbers: sortUnitImageLessonNumbers([...item._lessonNumbers]).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
       lesson_order_display: lessonOrderDisplay.join('\n'),
       _unitNames: undefined,
