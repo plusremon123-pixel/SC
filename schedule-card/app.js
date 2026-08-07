@@ -807,7 +807,8 @@ async function parseUnitImageWorkbook(buffer) {
           const inputValue = excelCellText(cell).trim();
           if (!inputValue) continue;
           const fillColor = excelCellFillColor(cell);
-          const contentStatus = classifyUnitImageFill(fillColor);
+          const fontColor = excelCellFontColor(cell);
+          const contentStatus = classifyUnitImageFill(fillColor, fontColor);
           if (!contentStatus) continue;
           const parsedCode = parseUnitImageInput(inputValue);
           if (!parsedCode.subject || !parsedCode.lessonCode) {
@@ -835,6 +836,7 @@ async function parseUnitImageWorkbook(buffer) {
               row: rowNumber,
               column: columnNumber,
               day: DAYS[dayOffset],
+              fontColor,
             },
           });
         }
@@ -863,14 +865,26 @@ function excelCellFillColor(cell) {
   return String(color.argb || color.rgb || '').toUpperCase();
 }
 
-function classifyUnitImageFill(argb) {
+function excelCellFontColor(cell) {
+  const color = cell.font?.color || {};
+  const rgb = String(color.argb || color.rgb || '').toUpperCase();
+  if (rgb) return rgb;
+  if (Number(color.theme) === 0) return 'FFFFFF';
+  if (Number(color.theme) === 1) return '000000';
+  return '';
+}
+
+function classifyUnitImageFill(argb, fontArgb = '') {
   const hex = String(argb || '').replace(/^#/, '').slice(-6);
   if (!/^[0-9A-F]{6}$/.test(hex)) return '';
   const red = parseInt(hex.slice(0, 2), 16);
   const green = parseInt(hex.slice(2, 4), 16);
   const blue = parseInt(hex.slice(4, 6), 16);
   if (hex === 'FF0000' || (red >= 200 && green <= 80 && blue <= 80)) return UNIT_IMAGE_RED;
-  if (hex === 'E2A7FF' || (red >= 100 && blue >= 100 && red - green >= 35 && blue - green >= 35)) return UNIT_IMAGE_PURPLE;
+  const fontHex = String(fontArgb || '').replace(/^#/, '').slice(-6);
+  const isWhiteFont = fontHex === 'FFFFFF';
+  const isPurpleFill = red >= 100 && blue >= 100 && red - green >= 35 && blue - green >= 35;
+  if (isPurpleFill && isWhiteFont) return UNIT_IMAGE_PURPLE;
   return '';
 }
 
