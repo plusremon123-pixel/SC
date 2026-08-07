@@ -924,6 +924,59 @@ body.unit-image-only {
   line-height: 1.55;
 }
 
+.unit-image-copy-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.unit-image-copy-line + .unit-image-copy-line {
+  margin-top: 0.28rem;
+}
+
+.unit-image-file-cell .unit-image-copy-line {
+  justify-content: center;
+}
+
+.unit-image-copy-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.unit-image-copy-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.22rem;
+}
+
+.unit-image-inline-copy {
+  flex: 0 0 auto;
+  min-width: 31px;
+  padding: 0.12rem 0.3rem;
+  border: 1px solid #b8c8d8;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #3f5f7c;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.unit-image-inline-copy:hover {
+  border-color: #168aad;
+  background: #e6f6fa;
+  color: #075985;
+}
+
+.unit-image-inline-copy.copied {
+  border-color: #38a169;
+  background: #f0fff4;
+  color: #276749;
+}
+
 .unit-image-week-divider th,
 .unit-image-date-divider th {
   text-align: left;

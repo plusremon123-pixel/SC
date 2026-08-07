@@ -532,6 +532,21 @@ function initUnitImageFeature() {
       renderUnitImageTable();
     });
   });
+  unitImageTableBody?.addEventListener('click', event => {
+    const button = event.target.closest?.('[data-unit-image-copy]');
+    if (!button || !unitImageTableBody.contains(button)) return;
+    const value = button.dataset.copyValue || '';
+    if (!value) return;
+    const defaultText = button.dataset.copyLabel || button.textContent || '복사';
+    clipboardWrite(value);
+    button.textContent = '완료';
+    button.classList.add('copied');
+    clearTimeout(button._copyResetTimer);
+    button._copyResetTimer = setTimeout(() => {
+      button.textContent = defaultText;
+      button.classList.remove('copied');
+    }, 1200);
+  });
   unitImageFileInput?.addEventListener('change', async event => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -1293,9 +1308,9 @@ function renderUnitImageDataTable() {
       <td>${escapeHtml(row.unit_number || '')}</td>
       <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
-      <td>${escapeHtml(row.image_file_names || '')}</td>
+      <td class="unit-image-file-cell">${renderUnitImageFileName(row.image_file_names)}</td>
       <td>${escapeHtml(row.publisher || '')}</td>
-      <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
+      <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
     </tr>`).join('');
   requestFrameResize();
 }
@@ -1545,6 +1560,40 @@ function renderUnitImageLessonNumbers(value) {
     const escaped = escapeHtml(item);
     return item.includes('(재사용)') ? `<span class="unit-image-reuse">${escaped}</span>` : escaped;
   }).join(', ');
+}
+
+function renderUnitImageLessonNumbersWithCopy(value) {
+  return String(value || '').split(',').map(item => item.trim()).filter(Boolean).map(item => {
+    const lessonId = item.replace(/\(재사용\)$/u, '').trim();
+    const textClass = item.includes('(재사용)') ? 'unit-image-copy-text unit-image-reuse' : 'unit-image-copy-text';
+    return renderUnitImageCopyLine(item, lessonId, '차시고유번호', textClass);
+  }).join('');
+}
+
+function renderUnitImageFileName(value) {
+  const source = String(value || '').trim();
+  if (!source) return '';
+  const baseName = source.replace(/\.(?:webp|json)$/i, '');
+  const webpFileName = `${baseName}.webp`;
+  const lottieFileName = `${baseName}.json`;
+  return `<div class="unit-image-copy-line">
+    <span class="unit-image-copy-text">${escapeHtml(baseName)}</span>
+    <span class="unit-image-copy-actions">
+      ${renderUnitImageCopyButton(lottieFileName, '로띠', '로띠 이미지 파일명')}
+      ${renderUnitImageCopyButton(webpFileName, '웹피', '웹피 이미지 파일명')}
+    </span>
+  </div>`;
+}
+
+function renderUnitImageCopyLine(displayValue, copyValue, label, textClass = 'unit-image-copy-text') {
+  return `<div class="unit-image-copy-line">
+    <span class="${textClass}">${escapeHtml(displayValue)}</span>
+    ${renderUnitImageCopyButton(copyValue, '복사', label)}
+  </div>`;
+}
+
+function renderUnitImageCopyButton(copyValue, buttonLabel, ariaLabel) {
+  return `<button type="button" class="unit-image-inline-copy" data-unit-image-copy data-copy-label="${escapeHtml(buttonLabel)}" data-copy-value="${escapeHtml(copyValue)}" title="${escapeHtml(ariaLabel)} 복사" aria-label="${escapeHtml(ariaLabel)} ${escapeHtml(copyValue)} 복사">${escapeHtml(buttonLabel)}</button>`;
 }
 
 function naturalCompare(left, right) {
