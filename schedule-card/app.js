@@ -1456,7 +1456,7 @@ function renderUnitImageDateTable() {
             <td>${escapeHtml(row.unit_name || '')}</td>
             <td>${escapeHtml(row.image_file_names || '')}</td>
             <td>${escapeHtml(row.publisher || '')}</td>
-            <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
+            <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
           </tr>`);
       });
     });
