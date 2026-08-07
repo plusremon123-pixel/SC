@@ -94,12 +94,16 @@ const unitImageFileInput = document.getElementById('unit-image-file-input');
 const unitImageSourceSummary = document.getElementById('unit-image-source-summary');
 const unitImageStatus = document.getElementById('unit-image-status');
 const unitImageMonthTabs = document.getElementById('unit-image-month-tabs');
+const unitImageGradeTabs = document.getElementById('unit-image-grade-tabs');
+const unitImageSubjectTabs = document.getElementById('unit-image-subject-tabs');
 const unitImageTableBody = document.getElementById('unit-image-table-body');
 const unitImageEmpty = document.getElementById('unit-image-empty');
 
 let unitImageMode = false;
 let unitImageMonthlyRows = [];
 let selectedUnitImageMonth = '';
+let selectedUnitImageGrade = 'all';
+let selectedUnitImageSubject = 'all';
 
 // ─── 데이터 파일 섹션 토글 ───────────────────────────────
 (function initFileToggle() {
@@ -572,6 +576,7 @@ async function loadUnitImageScheduleFromSupabase() {
     const activeVersion = Array.isArray(versions) ? versions[0] : null;
     renderUnitImageVersion(activeVersion);
     renderUnitImageMonthTabs();
+    renderUnitImageSubfilters();
     renderUnitImageTable();
     if (!activeVersion) {
       setUnitImageStatus('아직 저장된 일정이 없습니다. 엑셀을 업로드해 주세요.');
@@ -967,6 +972,64 @@ function renderUnitImageMonthTabs() {
     button.addEventListener('click', () => {
       selectedUnitImageMonth = button.dataset.month;
       renderUnitImageMonthTabs();
+      renderUnitImageSubfilters();
+      renderUnitImageTable();
+    });
+  });
+}
+
+const UNIT_IMAGE_SUBJECT_ORDER = ['국어', '수학', '과학', '사회', '영어', '바슬즐'];
+
+function getSelectedUnitImageMonthRows() {
+  return unitImageMonthlyRows.filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth);
+}
+
+function renderUnitImageSubfilters() {
+  if (!unitImageGradeTabs || !unitImageSubjectTabs) return;
+  const monthRows = getSelectedUnitImageMonthRows();
+  const grades = [...new Set(monthRows.map(row => String(row.grade || '').trim()).filter(Boolean))]
+    .sort(naturalCompare);
+  if (selectedUnitImageGrade !== 'all' && !grades.includes(selectedUnitImageGrade)) {
+    selectedUnitImageGrade = 'all';
+  }
+
+  const gradeRows = selectedUnitImageGrade === 'all'
+    ? monthRows
+    : monthRows.filter(row => String(row.grade || '').trim() === selectedUnitImageGrade);
+  const subjects = [...new Set(gradeRows.map(row => String(row.subject || '').trim()).filter(Boolean))]
+    .sort((a, b) => {
+      const aIndex = UNIT_IMAGE_SUBJECT_ORDER.indexOf(a);
+      const bIndex = UNIT_IMAGE_SUBJECT_ORDER.indexOf(b);
+      return (aIndex < 0 ? UNIT_IMAGE_SUBJECT_ORDER.length : aIndex)
+        - (bIndex < 0 ? UNIT_IMAGE_SUBJECT_ORDER.length : bIndex)
+        || naturalCompare(a, b);
+    });
+  if (selectedUnitImageSubject !== 'all' && !subjects.includes(selectedUnitImageSubject)) {
+    selectedUnitImageSubject = 'all';
+  }
+
+  unitImageGradeTabs.innerHTML = ['all', ...grades].map(grade => {
+    const active = grade === selectedUnitImageGrade;
+    const label = grade === 'all' ? '전체' : `${grade}학년`;
+    return `<button type="button" class="unit-image-filter-tab${active ? ' active' : ''}" data-grade="${escapeHtml(grade)}">${escapeHtml(label)}</button>`;
+  }).join('');
+  unitImageSubjectTabs.innerHTML = ['all', ...subjects].map(subject => {
+    const active = subject === selectedUnitImageSubject;
+    const label = subject === 'all' ? '전체' : subject;
+    return `<button type="button" class="unit-image-filter-tab${active ? ' active' : ''}" data-subject="${escapeHtml(subject)}">${escapeHtml(label)}</button>`;
+  }).join('');
+
+  unitImageGradeTabs.querySelectorAll('[data-grade]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedUnitImageGrade = button.dataset.grade;
+      renderUnitImageSubfilters();
+      renderUnitImageTable();
+    });
+  });
+  unitImageSubjectTabs.querySelectorAll('[data-subject]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedUnitImageSubject = button.dataset.subject;
+      renderUnitImageSubfilters();
       renderUnitImageTable();
     });
   });
@@ -975,7 +1038,9 @@ function renderUnitImageMonthTabs() {
 function renderUnitImageTable() {
   if (!unitImageTableBody || !unitImageEmpty) return;
   const filtered = mergeUnitImageDisplayRows(unitImageMonthlyRows
-    .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth))
+    .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
+      && (selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
+      && (selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)))
     .sort((a, b) => Number(a.grade) - Number(b.grade)
       || naturalCompare(a.term_type, b.term_type)
       || Number(a.semester || 0) - Number(b.semester || 0)

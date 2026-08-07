@@ -674,6 +674,58 @@ body {
   color: #fff;
 }
 
+.unit-image-subfilters {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.unit-image-filter-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.unit-image-filter-label {
+  color: #4a5568;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.unit-image-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.unit-image-filter-tab {
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.unit-image-filter-tab:hover {
+  border-color: #63b3ed;
+  color: #1a5f7a;
+}
+
+.unit-image-filter-tab.active {
+  border-color: #168aad;
+  background: #e6f6fa;
+  color: #075985;
+  font-weight: 700;
+}
+
 .unit-image-table-card {
   padding: 0;
   overflow: hidden;

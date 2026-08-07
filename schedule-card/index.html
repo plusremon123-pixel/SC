@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>스케쥴 카드</title>
-  <link rel="stylesheet" href="style.css?v=20260807-2" />
+  <link rel="stylesheet" href="style.css?v=20260807-3" />
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
@@ -207,6 +207,16 @@
       <section class="card unit-image-status-card">
         <div id="unit-image-status" class="unit-image-status">데이터를 확인하고 있습니다.</div>
         <div id="unit-image-month-tabs" class="unit-image-month-tabs" aria-label="월 선택"></div>
+        <div class="unit-image-subfilters">
+          <div class="unit-image-filter-row">
+            <span class="unit-image-filter-label">학년</span>
+            <div id="unit-image-grade-tabs" class="unit-image-filter-tabs" aria-label="학년 선택"></div>
+          </div>
+          <div class="unit-image-filter-row">
+            <span class="unit-image-filter-label">과목</span>
+            <div id="unit-image-subject-tabs" class="unit-image-filter-tabs" aria-label="과목 선택"></div>
+          </div>
+        </div>
       </section>
 
       <section class="card unit-image-table-card">
@@ -238,6 +248,6 @@
   <script src="config.js?v=20260703-3"></script>
   <script src="data.js?v=20260703-3"></script>
   <script src="../vendor/exceljs.min.js?v=20260703-39"></script>
-  <script src="app.js?v=20260807-2"></script>
+  <script src="app.js?v=20260807-3"></script>
 </body>
 </html>
