@@ -1039,7 +1039,8 @@ function buildUnitImageContentVariantResolver(rows, existingRows = []) {
     const unresolved = [...nameInfo.keys()].filter(name => findKnownUnitImageVariant(rules, name) == null);
     if (!unresolved.length || !['수학', '과학'].includes(subject)) return;
 
-    const usedVariants = new Set((rules || []).map((_, index) => index));
+    const usesOneBasedVariants = Boolean(rules?.length > 1);
+    const usedVariants = new Set((rules || []).map((_, index) => usesOneBasedVariants ? index + 1 : index));
     unresolved.forEach(name => {
       const existing = existingVariants.get(`${baseKey}|${name}`);
       if (existing != null) usedVariants.add(existing);
@@ -1051,11 +1052,8 @@ function buildUnitImageContentVariantResolver(rows, existingRows = []) {
     sortedNames.forEach((name, index) => {
       let variant = existingVariants.get(`${baseKey}|${name}`);
       if (variant == null) {
-        if (!rules && index === 0 && !usedVariants.has(0)) variant = 0;
-        else {
-          variant = 1;
-          while (usedVariants.has(variant)) variant += 1;
-        }
+        variant = 1;
+        while (usedVariants.has(variant)) variant += 1;
       }
       usedVariants.add(variant);
       dynamicVariants.set(`${baseKey}|${name}`, variant);
@@ -1071,7 +1069,11 @@ function buildUnitImageContentVariantResolver(rows, existingRows = []) {
     resolve(row) {
       const baseKey = unitImageContentBaseKey(row);
       const normalizedName = normalizeUnitImageContentName(row.unit_name);
-      const knownVariant = findKnownUnitImageVariant(UNIT_IMAGE_CONTENT_VARIANT_RULES[baseKey], normalizedName);
+      const rules = UNIT_IMAGE_CONTENT_VARIANT_RULES[baseKey];
+      const knownVariantIndex = findKnownUnitImageVariant(rules, normalizedName);
+      const knownVariant = knownVariantIndex == null
+        ? null
+        : (rules?.length > 1 ? knownVariantIndex + 1 : knownVariantIndex);
       const variant = knownVariant ?? dynamicVariants.get(`${baseKey}|${normalizedName}`) ?? 0;
       return { variant, groupKey: `${baseKey}|${variant}` };
     },
