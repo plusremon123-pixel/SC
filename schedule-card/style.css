@@ -633,6 +633,24 @@ body {
   display: none;
 }
 
+.unit-image-only-title {
+  display: none;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+}
+
+.unit-image-only .unit-image-only-title {
+  display: block;
+}
+
+.unit-image-only-title h1 {
+  color: #102a43;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
 .unit-image-only .container {
   width: 100%;
   max-width: 1480px;
