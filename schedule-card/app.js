@@ -929,25 +929,29 @@ function assignUnitImageNumbers(matches) {
   const sourceGroups = new Map();
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
-    const groupKey = [match.grade, match.term_type, match.semester || '', match.unit_number || '', match.unit_name || '', match.publisher || '공통'].join('|');
+    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.unit_name || ''].join('|');
     if (!sourceGroups.has(groupKey)) sourceGroups.set(groupKey, []);
     const sourceList = sourceGroups.get(groupKey);
     if (!sourceList.includes(sourceKey)) sourceList.push(sourceKey);
   });
 
   const numberMap = new Map();
-  sourceGroups.forEach(sourceKeys => {
-    sourceKeys.forEach((sourceKey, index) => numberMap.set(sourceKey, (index % 2) + 1));
+  sourceGroups.forEach((sourceKeys, groupKey) => {
+    sourceKeys.forEach((sourceKey, index) => numberMap.set(`${groupKey}|${sourceKey}`, (index % 2) + 1));
   });
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
-    const number = numberMap.get(sourceKey) || 1;
+    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.unit_name || ''].join('|');
+    const number = numberMap.get(`${groupKey}|${sourceKey}`) || 1;
     match.image_number = number;
-    const publisher = match.publisher || '공통';
-    const semesterName = match.semester ? `${match.semester}학기` : match.term_type;
-    const unitNumber = match.unit_number ? `${match.unit_number}단원` : '단원확인';
-    match.image_name = `${match.grade}학년_${semesterName}_${unitNumber}_단원이미지${number}_${publisher}`;
+    match.image_name = createUnitImageFileName(match.grade, match.subject, match.unit_number, number);
   });
+}
+
+function createUnitImageFileName(grade, subject, unitNumber, imageNumber) {
+  return [grade || '학년확인', subject || '과목확인', unitNumber || '단원확인', imageNumber || 1]
+    .map(value => String(value).trim().replace(/\s+/g, ''))
+    .join('_');
 }
 
 function renderUnitImageMonthTabs() {
@@ -989,7 +993,7 @@ function renderUnitImageTable() {
       <td>${escapeHtml(row.unit_number || '')}</td>
       <td>${escapeHtml(row.lesson_orders ? `${row.lesson_orders}차시` : '')}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
-      <td>${escapeHtml(row.image_numbers || row.image_number || '')}</td>
+      <td>${escapeHtml(row.image_file_names || '')}</td>
       <td>${escapeHtml(row.publisher || '')}</td>
       <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
     </tr>`).join('');
@@ -1012,32 +1016,39 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       row.subject || '',
       row.unit_number || '',
       row.unit_name || '',
-      row.publisher || '',
     ].join('|');
     if (!grouped.has(key)) {
       grouped.set(key, {
         ...row,
         _imageNumbers: new Set(),
+        _publishers: new Set(),
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
       });
     }
     const item = grouped.get(key);
     if (row.image_number != null && row.image_number !== '') item._imageNumbers.add(String(row.image_number));
+    if (row.publisher) item._publishers.add(String(row.publisher));
     String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonNumbers.add(value));
     String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonOrders.add(value));
   });
-  return [...grouped.values()].map(item => ({
-    ...item,
-    image_numbers: [...item._imageNumbers].sort(naturalCompare).join(', '),
-    lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
-    lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-    _imageNumbers: undefined,
-    _lessonNumbers: undefined,
-    _lessonOrders: undefined,
-  }));
+  return [...grouped.values()].map(item => {
+    const imageNumbers = [...item._imageNumbers].sort(naturalCompare);
+    return {
+      ...item,
+      image_numbers: imageNumbers.join(', '),
+      image_file_names: imageNumbers.map(number => createUnitImageFileName(item.grade, item.subject, item.unit_number, number)).join(', '),
+      publisher: [...item._publishers].sort(naturalCompare).join(', '),
+      lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
+      lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
+      _imageNumbers: undefined,
+      _publishers: undefined,
+      _lessonNumbers: undefined,
+      _lessonOrders: undefined,
+    };
+  });
 }
 
 function renderUnitImageLessonNumbers(value) {
