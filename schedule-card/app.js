@@ -612,7 +612,7 @@ async function loadUnitImageScheduleFromSupabase() {
   try {
     const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse,content_status&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
     unitImageActiveDetails = Array.isArray(details) ? details : [];
     const contentResolution = applyUnitImageContentVariants(unitImageActiveDetails, unitImageActiveDetails);
@@ -1357,7 +1357,7 @@ function renderUnitImageDateTable() {
       // 신규(빨간색) 일정이 없는 학년도 검수 대상에서 빠지지 않도록 표시합니다.
       expectedGrades.forEach(grade => {
         const hasNewGradeRows = dateRows.some(row => String(row.grade || '').trim() === grade
-          && (row.is_reuse === false || String(row.content_status || '').trim() === UNIT_IMAGE_RED));
+          && row.is_reuse === false);
         if (hasNewGradeRows) return;
         const subjectLabel = selectedUnitImageSubject === 'all' ? '' : selectedUnitImageSubject;
         html.push(`
