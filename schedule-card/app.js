@@ -1209,7 +1209,7 @@ function renderUnitImageTable() {
       <td>${escapeHtml(`${row.grade}학년`)}</td>
       <td>${escapeHtml(row.subject || '')}</td>
       <td>${escapeHtml(row.unit_number || '')}</td>
-      <td>${escapeHtml(row.lesson_orders ? `${row.lesson_orders}차시` : '')}</td>
+      <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
       <td>${escapeHtml(row.image_file_names || '')}</td>
       <td>${escapeHtml(row.publisher || '')}</td>
@@ -1238,6 +1238,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
         _publishers: new Set(),
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
+        _lessonOrderDates: new Map(),
       });
     }
     const item = grouped.get(key);
@@ -1247,6 +1248,12 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       .forEach(value => item._lessonNumbers.add(value));
     String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonOrders.add(value));
+    String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
+      .forEach(value => {
+        if (!item._lessonOrderDates.has(value) && row.schedule_month) {
+          item._lessonOrderDates.set(value, row.schedule_month);
+        }
+      });
   });
   return [...grouped.values()].map(item => {
     return {
@@ -1255,12 +1262,27 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
+      lesson_order_display: [...item._lessonOrders].sort(naturalCompare)
+        .map(order => {
+          const formattedDate = formatUnitImageShortDate(item._lessonOrderDates.get(order));
+          return formattedDate ? `${order}(${formattedDate})` : order;
+        })
+        .join('\n'),
       _unitNames: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
       _lessonOrders: undefined,
+      _lessonOrderDates: undefined,
     };
   });
+}
+
+function formatUnitImageShortDate(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return '';
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(date.getTime())) return '';
+  return `${match[2]}.${match[3]}(${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]})`;
 }
 
 function renderUnitImageLessonNumbers(value) {

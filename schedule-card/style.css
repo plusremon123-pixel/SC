@@ -819,6 +819,11 @@ body {
   line-height: 1.55;
 }
 
+.unit-image-table td.unit-image-lesson-orders {
+  white-space: pre-line;
+  line-height: 1.55;
+}
+
 .unit-image-reuse {
   color: #6b46c1;
   font-weight: 700;
