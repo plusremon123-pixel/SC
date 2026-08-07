@@ -1331,11 +1331,43 @@ function renderUnitImageDateTable() {
       html.push(`<tr class="unit-image-date-divider"><th colspan="9">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
       const dateRows = weekDates.get(date);
       const merged = mergeUnitImageDisplayRows(dateRows);
-      merged.sort((a, b) => Number(a.grade) - Number(b.grade)
+      const displayRows = [...merged];
+
+      // 신규(빨간색) 일정이 없는 학년도 검수 대상에서 빠지지 않도록 표시합니다.
+      expectedGrades.forEach(grade => {
+        const hasNewGradeRows = dateRows.some(row => String(row.grade || '').trim() === grade
+          && row.is_reuse === false);
+        if (hasNewGradeRows) return;
+        displayRows.push({
+          grade,
+          subject: selectedUnitImageSubject === 'all' ? '' : selectedUnitImageSubject,
+          _missing: true,
+        });
+      });
+
+      displayRows.sort((a, b) => Number(a.grade) - Number(b.grade)
+        || Number(Boolean(a._missing)) - Number(Boolean(b._missing))
         || naturalCompare(a.subject, b.subject)
         || naturalCompare(a.lesson_orders, b.lesson_orders)
         || naturalCompare(a.image_file_names, b.image_file_names));
-      merged.forEach(row => {
+
+      displayRows.forEach(row => {
+        if (row._missing) {
+          html.push(`
+            <tr class="unit-image-missing-row">
+              <td>${escapeHtml(`${row.grade}학년`)}</td>
+              <td>${escapeHtml(row.subject || '')}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td class="unit-image-validation">없음</td>
+            </tr>`);
+          issueCount += 1;
+          return;
+        }
         const key = unitImageValidationKey(row, date);
         const issue = validation.get(key);
         if (issue) issueCount += 1;
@@ -1352,27 +1384,6 @@ function renderUnitImageDateTable() {
             <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
             <td class="unit-image-validation">${issue ? escapeHtml(issue) : '정상'}</td>
           </tr>`);
-      });
-
-      // 신규(빨간색) 일정이 없는 학년도 검수 대상에서 빠지지 않도록 표시합니다.
-      expectedGrades.forEach(grade => {
-        const hasNewGradeRows = dateRows.some(row => String(row.grade || '').trim() === grade
-          && row.is_reuse === false);
-        if (hasNewGradeRows) return;
-        const subjectLabel = selectedUnitImageSubject === 'all' ? '' : selectedUnitImageSubject;
-        html.push(`
-          <tr class="unit-image-missing-row">
-            <td>${escapeHtml(`${grade}학년`)}</td>
-            <td>${escapeHtml(subjectLabel)}</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td class="unit-image-validation">없음</td>
-          </tr>`);
-        issueCount += 1;
       });
     });
   });
