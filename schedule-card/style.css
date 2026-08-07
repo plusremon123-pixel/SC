@@ -13,6 +13,12 @@ body {
   overflow: hidden;
 }
 
+body.unit-image-only {
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 .container {
   width: 100%;
   max-width: none;
