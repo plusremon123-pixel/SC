@@ -619,6 +619,10 @@ body {
   gap: 1rem;
 }
 
+.unit-image-header[hidden] {
+  display: none !important;
+}
+
 .unit-image-header h2 {
   margin-bottom: 0.35rem;
   color: #44337a;
