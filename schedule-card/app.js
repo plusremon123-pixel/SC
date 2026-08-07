@@ -550,14 +550,25 @@ async function supabaseRest(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+async function loadAllSupabaseRows(path, pageSize = 1000) {
+  const allRows = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const separator = path.includes('?') ? '&' : '?';
+    const page = await supabaseRest(`${path}${separator}limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) return allRows;
+    allRows.push(...page);
+    if (page.length < pageSize) return allRows;
+  }
+}
+
 async function loadUnitImageScheduleFromSupabase() {
   setUnitImageStatus('저장된 단원 이미지 일정을 불러오고 있습니다.');
   try {
-    const [versions, monthly] = await Promise.all([
+    const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      supabaseRest('v_unit_image_schedule_monthly?select=*&order=schedule_month.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_month,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_month.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
-    unitImageMonthlyRows = Array.isArray(monthly) ? monthly : [];
+    unitImageMonthlyRows = aggregateUnitImageDetailRows(details);
     const activeVersion = Array.isArray(versions) ? versions[0] : null;
     renderUnitImageVersion(activeVersion);
     renderUnitImageMonthTabs();
@@ -575,6 +586,41 @@ async function loadUnitImageScheduleFromSupabase() {
     setUnitImageStatus(`Supabase 데이터 조회 실패: ${error.message}`, true);
     renderUnitImageVersion(null);
   }
+}
+
+function aggregateUnitImageDetailRows(details) {
+  const grouped = new Map();
+  (details || []).forEach(row => {
+    const key = [
+      String(row.schedule_month || '').slice(0, 10),
+      row.grade,
+      row.term_type || '',
+      row.semester || '',
+      row.subject || '',
+      row.unit_number || '',
+      row.unit_name || '',
+      row.image_number || '',
+      row.publisher || '',
+      row.image_name || '',
+    ].join('|');
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        ...row,
+        _lessonNumbers: new Set(),
+        _lessonOrders: new Set(),
+      });
+    }
+    const item = grouped.get(key);
+    if (row.lesson_id) item._lessonNumbers.add(`${row.lesson_id}${row.is_reuse ? '(재사용)' : ''}`);
+    if (row.lesson_order != null && row.lesson_order !== '') item._lessonOrders.add(String(row.lesson_order));
+  });
+  return [...grouped.values()].map(item => ({
+    ...item,
+    lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
+    lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
+    _lessonNumbers: undefined,
+    _lessonOrders: undefined,
+  }));
 }
 
 function renderUnitImageVersion(version) {
@@ -906,7 +952,7 @@ function assignUnitImageNumbers(matches) {
 
 function renderUnitImageMonthTabs() {
   if (!unitImageMonthTabs) return;
-  const months = [...new Set(unitImageMonthlyRows.map(row => String(row.schedule_month || '').slice(0, 7)).filter(Boolean))];
+  const months = [...new Set(unitImageMonthlyRows.map(row => unitImageDisplayMonth(row.schedule_month)).filter(Boolean))];
   if (!months.includes(selectedUnitImageMonth)) selectedUnitImageMonth = months[0] || '';
   unitImageMonthTabs.innerHTML = months.map(month => {
     const [year, monthNumber] = month.split('-').map(Number);
@@ -924,8 +970,8 @@ function renderUnitImageMonthTabs() {
 
 function renderUnitImageTable() {
   if (!unitImageTableBody || !unitImageEmpty) return;
-  const filtered = unitImageMonthlyRows
-    .filter(row => String(row.schedule_month || '').startsWith(selectedUnitImageMonth))
+  const filtered = mergeUnitImageDisplayRows(unitImageMonthlyRows
+    .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth))
     .sort((a, b) => Number(a.grade) - Number(b.grade)
       || naturalCompare(a.term_type, b.term_type)
       || Number(a.semester || 0) - Number(b.semester || 0)
@@ -939,13 +985,59 @@ function renderUnitImageTable() {
       <td>${escapeHtml(`${row.grade}학년`)}</td>
       <td>${escapeHtml(row.term_type || '')}</td>
       <td>${escapeHtml(row.semester ? `${row.semester}학기` : '')}</td>
+      <td>${escapeHtml(row.subject || '')}</td>
       <td>${escapeHtml(row.unit_number || '')}</td>
+      <td>${escapeHtml(row.lesson_orders ? `${row.lesson_orders}차시` : '')}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
-      <td>${escapeHtml(row.image_number || '')}</td>
+      <td>${escapeHtml(row.image_numbers || row.image_number || '')}</td>
       <td>${escapeHtml(row.publisher || '')}</td>
       <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
     </tr>`).join('');
   requestFrameResize();
+}
+
+function unitImageDisplayMonth(value) {
+  const month = String(value || '').slice(0, 7);
+  // 원본 엑셀에서 8월 31일은 '9월 1주' 일정으로 관리합니다.
+  return month === '2026-08' ? '2026-09' : month;
+}
+
+function mergeUnitImageDisplayRows(rowsToMerge) {
+  const grouped = new Map();
+  rowsToMerge.forEach(row => {
+    const key = [
+      row.grade,
+      row.term_type || '',
+      row.semester || '',
+      row.subject || '',
+      row.unit_number || '',
+      row.unit_name || '',
+      row.publisher || '',
+    ].join('|');
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        ...row,
+        _imageNumbers: new Set(),
+        _lessonNumbers: new Set(),
+        _lessonOrders: new Set(),
+      });
+    }
+    const item = grouped.get(key);
+    if (row.image_number != null && row.image_number !== '') item._imageNumbers.add(String(row.image_number));
+    String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
+      .forEach(value => item._lessonNumbers.add(value));
+    String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
+      .forEach(value => item._lessonOrders.add(value));
+  });
+  return [...grouped.values()].map(item => ({
+    ...item,
+    image_numbers: [...item._imageNumbers].sort(naturalCompare).join(', '),
+    lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
+    lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
+    _imageNumbers: undefined,
+    _lessonNumbers: undefined,
+    _lessonOrders: undefined,
+  }));
 }
 
 function renderUnitImageLessonNumbers(value) {
