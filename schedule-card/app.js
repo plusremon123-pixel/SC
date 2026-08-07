@@ -1641,9 +1641,9 @@ function renderUnitImagePublishersForLessons(fallbackValue, lessonNumbers) {
 function renderUnitImageFileName(value) {
   const source = String(value || '').trim();
   if (!source) return '';
-  const baseName = source.replace(/\.(?:webp|json)$/i, '');
+  const baseName = source.replace(/\.(?:webp|json|lottie)$/i, '');
   const webpFileName = `${baseName}.webp`;
-  const lottieFileName = `${baseName}.json`;
+  const lottieFileName = `${baseName}.LOTTIE`;
   return `<div class="unit-image-copy-line">
     <span class="unit-image-copy-text">${escapeHtml(baseName)}</span>
     <span class="unit-image-copy-actions">
