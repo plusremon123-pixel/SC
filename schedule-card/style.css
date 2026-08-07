@@ -780,6 +780,11 @@ body {
   word-break: break-word;
 }
 
+.unit-image-table td:nth-child(5) {
+  white-space: pre-line;
+  line-height: 1.55;
+}
+
 .unit-image-reuse {
   color: #6b46c1;
   font-weight: 700;

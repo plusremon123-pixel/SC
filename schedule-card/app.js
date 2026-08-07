@@ -1238,7 +1238,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
   return [...grouped.values()].map(item => {
     return {
       ...item,
-      unit_name: [...item._unitNames].sort(naturalCompare).join(' / '),
+      unit_name: [...item._unitNames].sort(naturalCompare).join('\n'),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
