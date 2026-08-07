@@ -1345,7 +1345,7 @@ function renderUnitImageDateTable() {
             <td>${escapeHtml(`${row.grade}학년`)}</td>
             <td>${escapeHtml(row.subject || '')}</td>
             <td>${escapeHtml(row.unit_number || '')}</td>
-            <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
+            <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_orders || '')}</td>
             <td>${escapeHtml(row.unit_name || '')}</td>
             <td>${escapeHtml(row.image_file_names || '')}</td>
             <td>${escapeHtml(row.publisher || '')}</td>
@@ -1472,7 +1472,12 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-      lesson_order_display: [...item._lessonOrders].sort(naturalCompare).join('\n'),
+      lesson_order_display: [...item._lessonOrders].sort(naturalCompare)
+        .map(order => {
+          const formattedDate = formatUnitImageShortDate(item._lessonOrderDates.get(order));
+          return formattedDate ? `${order}(${formattedDate})` : order;
+        })
+        .join('\n'),
       _unitNames: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
