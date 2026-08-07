@@ -712,6 +712,63 @@ body {
   color: #fff;
 }
 
+.unit-image-view-tabs {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.45rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  background: #edf2f7;
+}
+
+.unit-image-view-tab {
+  flex: 1;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #4a5568;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unit-image-view-tab.active {
+  border-color: #168aad;
+  background: #fff;
+  color: #075985;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.unit-image-week-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.unit-image-week-tab {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #4a5568;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unit-image-week-tab.active {
+  border-color: #6b46c1;
+  background: #f3e8ff;
+  color: #553c9a;
+}
+
+.unit-image-date-summary {
+  color: #4a5568;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .unit-image-subfilters {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -808,6 +865,17 @@ body {
 .unit-image-table th:nth-child(7) { width: 180px; }
 .unit-image-table th:nth-child(8) { width: auto; }
 
+.unit-image-table.date-mode th:nth-child(1) { width: 112px; }
+.unit-image-table.date-mode th:nth-child(2) { width: 70px; }
+.unit-image-table.date-mode th:nth-child(3) { width: 75px; }
+.unit-image-table.date-mode th:nth-child(4) { width: 75px; }
+.unit-image-table.date-mode th:nth-child(5) { width: 120px; }
+.unit-image-table.date-mode th:nth-child(6) { width: 220px; }
+.unit-image-table.date-mode th:nth-child(7) { width: 205px; }
+.unit-image-table.date-mode th:nth-child(8) { width: 170px; }
+.unit-image-table.date-mode th:nth-child(9) { width: 220px; }
+.unit-image-table.date-mode th:nth-child(10) { width: 130px; }
+
 .unit-image-table td:nth-child(5),
 .unit-image-table td:nth-child(8) {
   text-align: left;
@@ -822,6 +890,39 @@ body {
 .unit-image-table td.unit-image-lesson-orders {
   white-space: pre-line;
   line-height: 1.55;
+}
+
+.unit-image-week-divider th,
+.unit-image-date-divider th {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.unit-image-week-divider th {
+  padding: 0.7rem 0.8rem;
+  background: #e9d8fd;
+  color: #553c9a;
+  font-size: 0.9rem;
+}
+
+.unit-image-date-divider th {
+  padding: 0.5rem 0.8rem;
+  background: #f7fafc;
+  color: #2d3748;
+  font-size: 0.82rem;
+}
+
+.unit-image-review-row td {
+  background: #fff5f5;
+}
+
+.unit-image-validation {
+  color: #2f855a;
+  font-weight: 700;
+}
+
+.unit-image-review-row .unit-image-validation {
+  color: #c53030;
 }
 
 .unit-image-reuse {

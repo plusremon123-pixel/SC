@@ -110,6 +110,10 @@ const unitImageFileInput = document.getElementById('unit-image-file-input');
 const unitImageSourceSummary = document.getElementById('unit-image-source-summary');
 const unitImageStatus = document.getElementById('unit-image-status');
 const unitImageMonthTabs = document.getElementById('unit-image-month-tabs');
+const unitImageViewTabs = document.getElementById('unit-image-view-tabs');
+const unitImageWeekTabs = document.getElementById('unit-image-week-tabs');
+const unitImageDateSummary = document.getElementById('unit-image-date-summary');
+const unitImageTableHead = document.getElementById('unit-image-table-head');
 const unitImageGradeTabs = document.getElementById('unit-image-grade-tabs');
 const unitImageSubjectTabs = document.getElementById('unit-image-subject-tabs');
 const unitImageTableBody = document.getElementById('unit-image-table-body');
@@ -122,6 +126,8 @@ let unitImageContentWarnings = [];
 let selectedUnitImageMonth = '';
 let selectedUnitImageGrade = 'all';
 let selectedUnitImageSubject = 'all';
+let selectedUnitImageView = 'data';
+let selectedUnitImageWeek = 'all';
 
 // ─── 데이터 파일 섹션 토글 ───────────────────────────────
 (function initFileToggle() {
@@ -518,6 +524,14 @@ function initUnitImageFeature() {
   });
 
   unitImageBackBtn?.addEventListener('click', () => setUnitImageMode(false));
+  unitImageViewTabs?.querySelectorAll('[data-unit-image-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedUnitImageView = button.dataset.unitImageView === 'date' ? 'date' : 'data';
+      renderUnitImageViewTabs();
+      renderUnitImageWeekTabs();
+      renderUnitImageTable();
+    });
+  });
   unitImageFileInput?.addEventListener('change', async event => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -607,7 +621,9 @@ async function loadUnitImageScheduleFromSupabase() {
     const activeVersion = Array.isArray(versions) ? versions[0] : null;
     renderUnitImageVersion(activeVersion);
     renderUnitImageMonthTabs();
+    renderUnitImageViewTabs();
     renderUnitImageSubfilters();
+    renderUnitImageWeekTabs();
     renderUnitImageTable();
     if (!activeVersion) {
       setUnitImageStatus('아직 저장된 일정이 없습니다. 엑셀을 업로드해 주세요.');
@@ -1124,11 +1140,67 @@ function renderUnitImageMonthTabs() {
   unitImageMonthTabs.querySelectorAll('[data-month]').forEach(button => {
     button.addEventListener('click', () => {
       selectedUnitImageMonth = button.dataset.month;
+      selectedUnitImageWeek = 'all';
       renderUnitImageMonthTabs();
       renderUnitImageSubfilters();
+      renderUnitImageWeekTabs();
       renderUnitImageTable();
     });
   });
+}
+
+function renderUnitImageViewTabs() {
+  unitImageViewTabs?.querySelectorAll('[data-unit-image-view]').forEach(button => {
+    button.classList.toggle('active', button.dataset.unitImageView === selectedUnitImageView);
+  });
+  if (unitImageWeekTabs) unitImageWeekTabs.hidden = selectedUnitImageView !== 'date';
+  if (unitImageDateSummary) unitImageDateSummary.hidden = selectedUnitImageView !== 'date';
+}
+
+function renderUnitImageWeekTabs() {
+  if (!unitImageWeekTabs) return;
+  if (selectedUnitImageView !== 'date') {
+    unitImageWeekTabs.hidden = true;
+    unitImageWeekTabs.innerHTML = '';
+    return;
+  }
+  const weeks = [...new Set(getSelectedUnitImageMonthRows()
+    .map(row => unitImageWeekKey(row.schedule_date || row.lesson_date))
+    .filter(Boolean))].sort(naturalCompare);
+  if (selectedUnitImageWeek !== 'all' && !weeks.includes(selectedUnitImageWeek)) selectedUnitImageWeek = 'all';
+  unitImageWeekTabs.hidden = false;
+  unitImageWeekTabs.innerHTML = ['all', ...weeks].map((week, index) => {
+    const active = week === selectedUnitImageWeek;
+    const label = week === 'all' ? '전체 주차' : `${index}주 ${formatUnitImageWeekRange(week)}`;
+    return `<button type="button" class="unit-image-week-tab${active ? ' active' : ''}" data-week="${escapeHtml(week)}">${escapeHtml(label)}</button>`;
+  }).join('');
+  unitImageWeekTabs.querySelectorAll('[data-week]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedUnitImageWeek = button.dataset.week;
+      renderUnitImageWeekTabs();
+      renderUnitImageTable();
+    });
+  });
+}
+
+function unitImageWeekKey(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return '';
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(date.getTime())) return '';
+  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatUnitImageWeekRange(weekKey) {
+  const start = new Date(`${weekKey}T00:00:00`);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return `${formatUnitImageShortDate(formatUnitImageIsoDate(start))}~${formatUnitImageShortDate(formatUnitImageIsoDate(end))}`;
+}
+
+function formatUnitImageIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 const UNIT_IMAGE_SUBJECT_ORDER = ['국어', '수학', '과학', '사회', '영어', '바슬즐'];
@@ -1196,6 +1268,15 @@ function renderUnitImageSubfilters() {
 
 function renderUnitImageTable() {
   if (!unitImageTableBody || !unitImageEmpty) return;
+  if (selectedUnitImageView === 'date') {
+    renderUnitImageDateTable();
+    return;
+  }
+  renderUnitImageDataTable();
+}
+
+function renderUnitImageDataTable() {
+  renderUnitImageTableHead('data');
   const filtered = mergeUnitImageDisplayRows(getUnitImageTermRows()
     .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
       && (selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
@@ -1217,6 +1298,110 @@ function renderUnitImageTable() {
       <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
     </tr>`).join('');
   requestFrameResize();
+}
+
+function renderUnitImageDateTable() {
+  renderUnitImageTableHead('date');
+  const allRows = getSelectedUnitImageMonthRows()
+    .filter(row => selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
+    .filter(row => selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)
+    .filter(row => selectedUnitImageWeek === 'all' || unitImageWeekKey(row.schedule_date || row.lesson_date) === selectedUnitImageWeek);
+  const validation = buildUnitImageValidationIssues(getSelectedUnitImageMonthRows());
+  const groups = new Map();
+  allRows.forEach(row => {
+    const date = String(row.schedule_date || row.lesson_date || '').slice(0, 10);
+    if (!date) return;
+    const week = unitImageWeekKey(date);
+    if (!groups.has(week)) groups.set(week, new Map());
+    const weekGroup = groups.get(week);
+    if (!weekGroup.has(date)) weekGroup.set(date, []);
+    weekGroup.get(date).push(row);
+  });
+  const weekKeys = [...groups.keys()].sort(naturalCompare);
+  const html = [];
+  let normalCount = 0;
+  let issueCount = 0;
+  weekKeys.forEach(week => {
+    const weekDates = groups.get(week);
+    const weekRows = [...weekDates.values()].flat();
+    html.push(`<tr class="unit-image-week-divider"><th colspan="10">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
+    [...weekDates.keys()].sort(naturalCompare).forEach(date => {
+      html.push(`<tr class="unit-image-date-divider"><th colspan="10">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
+      const merged = mergeUnitImageDisplayRows(weekDates.get(date));
+      merged.sort((a, b) => Number(a.grade) - Number(b.grade)
+        || naturalCompare(a.subject, b.subject)
+        || naturalCompare(a.lesson_orders, b.lesson_orders)
+        || naturalCompare(a.image_file_names, b.image_file_names));
+      merged.forEach(row => {
+        const key = unitImageValidationKey(row, date);
+        const issue = validation.get(key);
+        if (issue) issueCount += 1;
+        else normalCount += 1;
+        html.push(`
+          <tr class="${issue ? 'unit-image-review-row' : ''}">
+            <td>${escapeHtml(formatUnitImageShortDate(date))}</td>
+            <td>${escapeHtml(`${row.grade}학년`)}</td>
+            <td>${escapeHtml(row.subject || '')}</td>
+            <td>${escapeHtml(row.unit_number || '')}</td>
+            <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
+            <td>${escapeHtml(row.unit_name || '')}</td>
+            <td>${escapeHtml(row.image_file_names || '')}</td>
+            <td>${escapeHtml(row.publisher || '')}</td>
+            <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
+            <td class="unit-image-validation">${issue ? escapeHtml(issue) : '정상'}</td>
+          </tr>`);
+      });
+    });
+  });
+  unitImageTableBody.innerHTML = html.join('');
+  unitImageEmpty.hidden = html.length > 0;
+  if (unitImageDateSummary) {
+    unitImageDateSummary.textContent = `검수 결과 · 정상 ${normalCount}건 · 확인 필요 ${issueCount}건`;
+  }
+  requestFrameResize();
+}
+
+function renderUnitImageTableHead(mode) {
+  if (!unitImageTableHead) return;
+  unitImageTableHead.closest('table')?.classList.toggle('date-mode', mode === 'date');
+  const labels = mode === 'date'
+    ? ['노출일', '학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호', '검수 상태']
+    : ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호'];
+  unitImageTableHead.innerHTML = `<tr>${labels.map(label => `<th>${label}</th>`).join('')}</tr>`;
+}
+
+function formatUnitImageFullDate(value) {
+  const short = formatUnitImageShortDate(value);
+  return short ? `${value.slice(0, 4)}.${value.slice(5, 7)}.${value.slice(8, 10)}(${short.slice(-2, -1)})` : value;
+}
+
+function unitImageValidationKey(row, date) {
+  return [date, row.grade, row.subject, row.image_file_names].join('|');
+}
+
+function buildUnitImageValidationIssues(rows) {
+  const issues = new Map();
+  const lessonImages = new Map();
+  (rows || []).forEach(row => {
+    const date = String(row.schedule_date || row.lesson_date || '').slice(0, 10);
+    const key = [date, row.grade, row.subject, row.image_name].join('|');
+    if (!date) issues.set(key, '일정일 없음');
+    else if (!row.image_name) issues.set(key, '이미지 파일명 없음');
+    if (!row.lesson_id) issues.set(key, '차시고유번호 없음');
+    const lessonId = String(row.lesson_id || '').trim();
+    if (lessonId) {
+      if (!lessonImages.has(lessonId)) lessonImages.set(lessonId, new Set());
+      lessonImages.get(lessonId).add(String(row.image_name || ''));
+    }
+  });
+  lessonImages.forEach((images, lessonId) => {
+    if (images.size <= 1) return;
+    (rows || []).filter(row => String(row.lesson_id || '').trim() === lessonId).forEach(row => {
+      const date = String(row.schedule_date || row.lesson_date || '').slice(0, 10);
+      issues.set([date, row.grade, row.subject, row.image_name].join('|'), '차시고유번호 이미지 중복');
+    });
+  });
+  return issues;
 }
 
 function unitImageDisplayMonth(value) {
@@ -1559,7 +1744,9 @@ function switchTerm(term, isInitial = false) {
     selectedUnitImageGrade = 'all';
     selectedUnitImageSubject = 'all';
     renderUnitImageMonthTabs();
+    renderUnitImageViewTabs();
     renderUnitImageSubfilters();
+    renderUnitImageWeekTabs();
     renderUnitImageTable();
   }
 }
