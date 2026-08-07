@@ -1437,7 +1437,7 @@ function renderUnitImageDateTable() {
           html.push(`
             <tr class="unit-image-missing-row">
               <td>${escapeHtml(`${row.grade}학년`)}</td>
-              <td colspan="7" class="unit-image-missing-summary">없음</td>
+              <td colspan="7" class="unit-image-missing-summary"></td>
             </tr>`);
           issueCount += 1;
           return;
