@@ -65,6 +65,14 @@ const SUBJECT_MAP = {
   '수학': '수학', '국어': '국어', '바슬즐': '바슬즐',
   '영어': '영어', '과학': '과학', '사회': '사회'
 };
+const UNIT_IMAGE_SUBJECT_CODE_MAP = {
+  '국어': 'KORN',
+  '수학': 'MATH',
+  '바슬즐': 'INGT',
+  '사회': 'SOSI',
+  '과학': 'SCNE',
+  '영어': 'ENSH',
+};
 const DAYS = ['월', '화', '수', '목', '금'];
 
 // ─── DOM 참조 (단일 검색) ────────────────────────────────
@@ -1310,7 +1318,7 @@ function renderUnitImageDataTable() {
   unitImageTableBody.innerHTML = filtered.map(row => `
     <tr>
       <td>${escapeHtml(`${row.grade}학년`)}</td>
-      <td>${escapeHtml(row.subject || '')}</td>
+      <td class="unit-image-subject-cell">${renderUnitImageSubjectCode(row.subject)}</td>
       <td>${escapeHtml(row.unit_number || '')}</td>
       <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
@@ -1588,6 +1596,17 @@ function renderUnitImageFileName(value) {
       ${renderUnitImageCopyButton(lottieFileName, '로띠', '로띠 이미지 파일명')}
       ${renderUnitImageCopyButton(webpFileName, '웹피', '웹피 이미지 파일명')}
     </span>
+  </div>`;
+}
+
+function renderUnitImageSubjectCode(subject) {
+  const label = String(subject || '').trim();
+  if (!label) return '';
+  const code = UNIT_IMAGE_SUBJECT_CODE_MAP[label];
+  if (!code) return escapeHtml(label);
+  return `<div class="unit-image-copy-line unit-image-subject-copy-line">
+    <span class="unit-image-copy-text">${escapeHtml(label)}</span>
+    ${renderUnitImageCopyButton(code, '복사', `${label} 과목 코드`)}
   </div>`;
 }
 
