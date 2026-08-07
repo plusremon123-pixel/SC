@@ -1368,7 +1368,7 @@ function renderUnitImageDataTable() {
       <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_order_display || '')}</td>
       <td>${escapeHtml(row.unit_name || '')}</td>
       <td class="unit-image-file-cell">${renderUnitImageFileName(row.image_file_names)}</td>
-      <td>${escapeHtml(row.publisher || '')}</td>
+      <td class="unit-image-publisher-cell">${renderUnitImagePublishersForLessons(row.publisher, row.lesson_numbers)}</td>
       <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
     </tr>`).join('');
   requestFrameResize();
@@ -1619,6 +1619,16 @@ function renderUnitImageLessonNumbersWithCopy(value) {
     const lessonId = item.replace(/\(재사용\)$/u, '').trim();
     const textClass = item.includes('(재사용)') ? 'unit-image-copy-text unit-image-reuse' : 'unit-image-copy-text';
     return renderUnitImageCopyLine(lessonId, lessonId, '차시고유번호', textClass);
+  }).join('');
+}
+
+function renderUnitImagePublishersForLessons(fallbackValue, lessonNumbers) {
+  const lessonItems = String(lessonNumbers || '').split(',').map(item => item.trim()).filter(Boolean);
+  if (!lessonItems.length) return escapeHtml(fallbackValue || '');
+  return lessonItems.map(item => {
+    const lessonId = item.replace(/\(재사용\)$/u, '').trim();
+    const publisher = unitImageLessonSortInfo.get(lessonId)?.publisher || fallbackValue || '';
+    return `<div class="unit-image-publisher-line">${escapeHtml(publisher)}</div>`;
   }).join('');
 }
 

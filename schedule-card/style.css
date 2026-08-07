@@ -934,6 +934,21 @@ body.unit-image-only {
   margin-top: 0.28rem;
 }
 
+.unit-image-id-cell .unit-image-copy-line,
+.unit-image-publisher-line {
+  min-height: 1.45rem;
+}
+
+.unit-image-publisher-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unit-image-publisher-line + .unit-image-publisher-line {
+  margin-top: 0.28rem;
+}
+
 .unit-image-file-cell .unit-image-copy-line {
   justify-content: center;
 }
