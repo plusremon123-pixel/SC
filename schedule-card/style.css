@@ -633,6 +633,12 @@ body {
   display: none;
 }
 
+.unit-image-only .container {
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
 .unit-image-header h2 {
   margin-bottom: 0.35rem;
   color: #44337a;
