@@ -12,6 +12,21 @@ const UNIT_IMAGE_SCHEDULE_SHEET_PREFIX = '2026 스케줄';
 const UNIT_IMAGE_RED = '신규';
 const UNIT_IMAGE_PURPLE = '재사용';
 const UNIT_IMAGE_GRADE_START_COLUMNS = [2, 10, 18, 26, 34, 42];
+const UNIT_IMAGE_CONTENT_VARIANT_RULES = {
+  '3|수학|2': [['나눗셈'], ['원']],
+  '3|수학|4': [['분수'], ['들이와 무게', '무게와 들이']],
+  '3|수학|5': [['들이와 무게', '무게와 들이']],
+  '3|수학|6': [['그림그래프', '자료와 그림그래프']],
+  '4|수학|2': [['삼각형'], ['사각형']],
+  '4|수학|3': [['소수의 덧셈과 뺄셈'], ['사각형']],
+  '4|수학|5': [['꺾은선그래프', '자료와 꺾은선그래프'], ['다각형']],
+  '4|수학|6': [['다각형'], ['꺾은선그래프'], ['평면도형의 이동']],
+  '5|수학|5': [['직육면체', '직육면체와 정육면체']],
+  '6|수학|2': [['공간과 입체'], ['소수의 나눗셈']],
+  '6|수학|4': [['비례식과 비례배분'], ['원의 둘레와 넓이']],
+  '6|수학|5': [['원의 넓이', '원의 둘레와 넓이', '원주율과 원의 넓이']],
+  '5|과학|2': [['날씨와 우리 생활'], ['열과 우리 생활']],
+};
 
 const TERM_CONFIG = {
   regular: {
@@ -101,6 +116,8 @@ const unitImageEmpty = document.getElementById('unit-image-empty');
 
 let unitImageMode = false;
 let unitImageMonthlyRows = [];
+let unitImageActiveDetails = [];
+let unitImageContentWarnings = [];
 let selectedUnitImageMonth = '';
 let selectedUnitImageGrade = 'all';
 let selectedUnitImageSubject = 'all';
@@ -572,7 +589,10 @@ async function loadUnitImageScheduleFromSupabase() {
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
       loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_month,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_month.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
-    unitImageMonthlyRows = aggregateUnitImageDetailRows(details);
+    unitImageActiveDetails = Array.isArray(details) ? details : [];
+    const contentResolution = applyUnitImageContentVariants(unitImageActiveDetails, unitImageActiveDetails);
+    unitImageContentWarnings = contentResolution.warnings;
+    unitImageMonthlyRows = aggregateUnitImageDetailRows(contentResolution.rows);
     const activeVersion = Array.isArray(versions) ? versions[0] : null;
     renderUnitImageVersion(activeVersion);
     renderUnitImageMonthTabs();
@@ -582,9 +602,13 @@ async function loadUnitImageScheduleFromSupabase() {
       setUnitImageStatus('아직 저장된 일정이 없습니다. 엑셀을 업로드해 주세요.');
     } else {
       const unmatched = Number(activeVersion.unmatched_count || 0);
-      setUnitImageStatus(unmatched
-        ? `저장 완료 · 매칭 확인 필요 ${unmatched}건`
-        : '저장된 일정과 차시번호 매칭이 모두 완료되었습니다.', unmatched > 0);
+      const reviewCount = unitImageContentWarnings.length;
+      const notices = [];
+      if (unmatched) notices.push(`매칭 확인 필요 ${unmatched}건`);
+      if (reviewCount) notices.push(`콘텐츠 묶음 확인 필요 ${reviewCount}건`);
+      setUnitImageStatus(notices.length
+        ? `저장 완료 · ${notices.join(' · ')}`
+        : '저장된 일정과 차시번호 매칭이 모두 완료되었습니다.', notices.length > 0);
     }
   } catch (error) {
     console.error(error);
@@ -661,7 +685,7 @@ async function uploadUnitImageSchedule(file) {
 
     setUnitImageStatus(`일정 ${parsed.sources.length.toLocaleString('ko-KR')}건을 차시 데이터와 연결하고 있습니다.`);
     const matches = buildUnitImageMatches(parsed.sources);
-    assignUnitImageNumbers(matches);
+    const contentAssignment = assignUnitImageNumbers(matches, unitImageActiveDetails);
     const unmatchedSourceCount = new Set(matches
       .filter(item => item.match_status !== 'matched')
       .map(item => `${item.source_sheet}|${item.source_cell}`)).size;
@@ -682,12 +706,14 @@ async function uploadUnitImageSchedule(file) {
           purpleCount: parsed.purpleCount,
           ignoredMarkedCellCount: parsed.ignoredMarkedCellCount,
           unmatchedSourceCount,
+          contentVariantReviewCount: contentAssignment.warnings.length,
+          contentVariantReviews: contentAssignment.warnings,
           parsedAt: new Date().toISOString(),
         },
       }),
     });
     await loadUnitImageScheduleFromSupabase();
-    alert(`저장 완료\n신규 ${parsed.redCount}건 · 재사용 ${parsed.purpleCount}건\n매칭 확인 필요 ${unmatchedSourceCount}건${parsed.ignoredMarkedCellCount ? `\n일정 형식이 아닌 색상 셀 제외 ${parsed.ignoredMarkedCellCount}건` : ''}`);
+    alert(`저장 완료\n신규 ${parsed.redCount}건 · 재사용 ${parsed.purpleCount}건\n매칭 확인 필요 ${unmatchedSourceCount}건${contentAssignment.warnings.length ? `\n콘텐츠 묶음 확인 필요 ${contentAssignment.warnings.length}건` : ''}${parsed.ignoredMarkedCellCount ? `\n일정 형식이 아닌 색상 셀 제외 ${parsed.ignoredMarkedCellCount}건` : ''}`);
   } catch (error) {
     console.error(error);
     setUnitImageStatus(`저장 실패: ${error.message}`, true);
@@ -930,11 +956,16 @@ function isoDateFromDigits(value) {
   return digits.length === 8 ? `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}` : null;
 }
 
-function assignUnitImageNumbers(matches) {
+function assignUnitImageNumbers(matches, existingRows = []) {
+  const contentResolution = applyUnitImageContentVariants(matches, existingRows);
+  contentResolution.rows.forEach((resolved, index) => {
+    matches[index].content_variant = resolved.content_variant;
+    matches[index].content_group_key = resolved.content_group_key;
+  });
   const sourceGroups = new Map();
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
-    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.unit_name || ''].join('|');
+    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.content_variant || 0].join('|');
     if (!sourceGroups.has(groupKey)) sourceGroups.set(groupKey, []);
     const sourceList = sourceGroups.get(groupKey);
     if (!sourceList.includes(sourceKey)) sourceList.push(sourceKey);
@@ -946,17 +977,125 @@ function assignUnitImageNumbers(matches) {
   });
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
-    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.unit_name || ''].join('|');
+    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.content_variant || 0].join('|');
     const number = numberMap.get(`${groupKey}|${sourceKey}`) || 1;
     match.image_number = number;
-    match.image_name = createUnitImageFileName(match.grade, match.subject, match.unit_number, number);
+    match.image_name = createUnitImageFileName(match.grade, match.subject, match.unit_number, number, match.content_variant);
   });
+  return { warnings: contentResolution.warnings };
 }
 
-function createUnitImageFileName(grade, subject, unitNumber, imageNumber) {
-  return [grade || '학년확인', subject || '과목확인', unitNumber || '단원확인', imageNumber || 1]
+function createUnitImageFileName(grade, subject, unitNumber, imageNumber, contentVariant = 0) {
+  const parts = [grade || '학년확인', subject || '과목확인', unitNumber || '단원확인', imageNumber || 1]
     .map(value => String(value).trim().replace(/\s+/g, ''))
-    .join('_');
+  if (Number(contentVariant) > 0) parts.push(String(contentVariant));
+  return parts.join('_');
+}
+
+function applyUnitImageContentVariants(rows, existingRows = []) {
+  const resolver = buildUnitImageContentVariantResolver(rows, existingRows);
+  return {
+    rows: (rows || []).map(row => {
+      const resolved = resolver.resolve(row);
+      return {
+        ...row,
+        content_variant: resolved.variant,
+        content_group_key: resolved.groupKey,
+        image_name: row.image_number == null || row.image_number === ''
+          ? row.image_name
+          : createUnitImageFileName(row.grade, row.subject, row.unit_number, row.image_number, resolved.variant),
+      };
+    }),
+    warnings: resolver.warnings,
+  };
+}
+
+function buildUnitImageContentVariantResolver(rows, existingRows = []) {
+  const namesByBase = new Map();
+  (rows || []).forEach(row => {
+    const baseKey = unitImageContentBaseKey(row);
+    const normalizedName = normalizeUnitImageContentName(row.unit_name);
+    if (!normalizedName) return;
+    if (!namesByBase.has(baseKey)) namesByBase.set(baseKey, new Map());
+    const nameInfo = namesByBase.get(baseKey);
+    if (!nameInfo.has(normalizedName)) nameInfo.set(normalizedName, { label: row.unit_name, publishers: new Set() });
+    if (row.publisher) nameInfo.get(normalizedName).publishers.add(String(row.publisher));
+  });
+
+  const existingVariants = new Map();
+  (existingRows || []).forEach(row => {
+    const variant = extractUnitImageContentVariant(row.image_name);
+    if (variant == null) return;
+    const normalizedName = normalizeUnitImageContentName(row.unit_name);
+    if (normalizedName) existingVariants.set(`${unitImageContentBaseKey(row)}|${normalizedName}`, variant);
+  });
+
+  const dynamicVariants = new Map();
+  const warnings = [];
+  namesByBase.forEach((nameInfo, baseKey) => {
+    const rules = UNIT_IMAGE_CONTENT_VARIANT_RULES[baseKey];
+    const subject = baseKey.split('|')[1];
+    if (!rules && nameInfo.size <= 1) return;
+    const unresolved = [...nameInfo.keys()].filter(name => findKnownUnitImageVariant(rules, name) == null);
+    if (!unresolved.length || !['수학', '과학'].includes(subject)) return;
+
+    const usedVariants = new Set((rules || []).map((_, index) => index));
+    unresolved.forEach(name => {
+      const existing = existingVariants.get(`${baseKey}|${name}`);
+      if (existing != null) usedVariants.add(existing);
+    });
+    const sortedNames = unresolved.sort((a, b) => {
+      const publisherDifference = nameInfo.get(b).publishers.size - nameInfo.get(a).publishers.size;
+      return publisherDifference || naturalCompare(a, b);
+    });
+    sortedNames.forEach((name, index) => {
+      let variant = existingVariants.get(`${baseKey}|${name}`);
+      if (variant == null) {
+        if (!rules && index === 0 && !usedVariants.has(0)) variant = 0;
+        else {
+          variant = 1;
+          while (usedVariants.has(variant)) variant += 1;
+        }
+      }
+      usedVariants.add(variant);
+      dynamicVariants.set(`${baseKey}|${name}`, variant);
+    });
+    warnings.push({
+      key: baseKey,
+      names: unresolved.map(name => nameInfo.get(name).label),
+    });
+  });
+
+  return {
+    warnings,
+    resolve(row) {
+      const baseKey = unitImageContentBaseKey(row);
+      const normalizedName = normalizeUnitImageContentName(row.unit_name);
+      const knownVariant = findKnownUnitImageVariant(UNIT_IMAGE_CONTENT_VARIANT_RULES[baseKey], normalizedName);
+      const variant = knownVariant ?? dynamicVariants.get(`${baseKey}|${normalizedName}`) ?? 0;
+      return { variant, groupKey: `${baseKey}|${variant}` };
+    },
+  };
+}
+
+function unitImageContentBaseKey(row) {
+  return [row.grade || '', row.subject || '', row.unit_number || ''].join('|');
+}
+
+function normalizeUnitImageContentName(value) {
+  return String(value || '').normalize('NFKC').toLowerCase().replace(/[\s·.,()\[\]{}'"-]/g, '');
+}
+
+function findKnownUnitImageVariant(rules, normalizedName) {
+  if (!rules || !normalizedName) return null;
+  const index = rules.findIndex(aliases => aliases.some(alias => normalizeUnitImageContentName(alias) === normalizedName));
+  return index >= 0 ? index : null;
+}
+
+function extractUnitImageContentVariant(imageName) {
+  const parts = String(imageName || '').split('_');
+  if (parts.length < 5 || !/^\d+$/.test(parts[parts.length - 1])) return null;
+  return Number(parts[parts.length - 1]);
 }
 
 function renderUnitImageMonthTabs() {
@@ -1076,14 +1215,18 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       grouped.set(key, {
         ...row,
         image_file_names: imageFileName,
-        _unitNames: new Set(),
+        _unitPublishers: new Map(),
         _publishers: new Set(),
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
       });
     }
     const item = grouped.get(key);
-    if (row.unit_name) item._unitNames.add(String(row.unit_name));
+    if (row.unit_name) {
+      const unitName = String(row.unit_name);
+      if (!item._unitPublishers.has(unitName)) item._unitPublishers.set(unitName, new Set());
+      if (row.publisher) item._unitPublishers.get(unitName).add(String(row.publisher));
+    }
     if (row.publisher) item._publishers.add(String(row.publisher));
     String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonNumbers.add(value));
@@ -1093,11 +1236,14 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
   return [...grouped.values()].map(item => {
     return {
       ...item,
-      unit_name: [...item._unitNames].sort(naturalCompare).join(' / '),
+      unit_name: [...item._unitPublishers.entries()]
+        .sort(([left], [right]) => naturalCompare(left, right))
+        .map(([name, publishers]) => `${name}${publishers.size ? ` (${[...publishers].sort(naturalCompare).join(', ')})` : ''}`)
+        .join(' / '),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-      _unitNames: undefined,
+      _unitPublishers: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
       _lessonOrders: undefined,
