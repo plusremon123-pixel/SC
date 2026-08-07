@@ -1100,7 +1100,7 @@ function extractUnitImageContentVariant(imageName) {
 
 function renderUnitImageMonthTabs() {
   if (!unitImageMonthTabs) return;
-  const months = [...new Set(unitImageMonthlyRows.map(row => unitImageDisplayMonth(row.schedule_month)).filter(Boolean))];
+  const months = [...new Set(getUnitImageTermRows().map(row => unitImageDisplayMonth(row.schedule_month)).filter(Boolean))];
   if (!months.includes(selectedUnitImageMonth)) selectedUnitImageMonth = months[0] || '';
   unitImageMonthTabs.innerHTML = months.map(month => {
     const [year, monthNumber] = month.split('-').map(Number);
@@ -1120,7 +1120,13 @@ function renderUnitImageMonthTabs() {
 const UNIT_IMAGE_SUBJECT_ORDER = ['국어', '수학', '과학', '사회', '영어', '바슬즐'];
 
 function getSelectedUnitImageMonthRows() {
-  return unitImageMonthlyRows.filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth);
+  return getUnitImageTermRows().filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth);
+}
+
+function getUnitImageTermRows() {
+  return unitImageMonthlyRows.filter(row => activeTerm === 'vacation'
+    ? String(row.term_type || '').trim() === '방학'
+    : String(row.term_type || '').trim() !== '방학');
 }
 
 function renderUnitImageSubfilters() {
@@ -1176,7 +1182,7 @@ function renderUnitImageSubfilters() {
 
 function renderUnitImageTable() {
   if (!unitImageTableBody || !unitImageEmpty) return;
-  const filtered = mergeUnitImageDisplayRows(unitImageMonthlyRows
+  const filtered = mergeUnitImageDisplayRows(getUnitImageTermRows()
     .filter(row => unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
       && (selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
       && (selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)))
@@ -1511,6 +1517,14 @@ function switchTerm(term, isInitial = false) {
   updateTermSwitchUI();
   rows = termRows[activeTerm] || [];
   refreshDataControls(isInitial && activeTerm === 'regular');
+  if (unitImageMode) {
+    selectedUnitImageMonth = '';
+    selectedUnitImageGrade = 'all';
+    selectedUnitImageSubject = 'all';
+    renderUnitImageMonthTabs();
+    renderUnitImageSubfilters();
+    renderUnitImageTable();
+  }
 }
 
 function updateTermSwitchUI() {
