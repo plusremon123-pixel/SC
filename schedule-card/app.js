@@ -1302,19 +1302,26 @@ function renderUnitImageDataTable() {
 
 function renderUnitImageDateTable() {
   renderUnitImageTableHead('date');
-  const allRows = getSelectedUnitImageMonthRows()
-    .filter(row => selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
-    .filter(row => selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject)
+  const monthRows = getSelectedUnitImageMonthRows()
     .filter(row => selectedUnitImageWeek === 'all' || unitImageWeekKey(row.schedule_date || row.lesson_date) === selectedUnitImageWeek);
+  const allRows = monthRows
+    .filter(row => selectedUnitImageGrade === 'all' || String(row.grade || '').trim() === selectedUnitImageGrade)
+    .filter(row => selectedUnitImageSubject === 'all' || String(row.subject || '').trim() === selectedUnitImageSubject);
   const validation = buildUnitImageValidationIssues(getSelectedUnitImageMonthRows());
   const groups = new Map();
-  allRows.forEach(row => {
+  monthRows.forEach(row => {
     const date = String(row.schedule_date || row.lesson_date || '').slice(0, 10);
     if (!date) return;
     const week = unitImageWeekKey(date);
     if (!groups.has(week)) groups.set(week, new Map());
     const weekGroup = groups.get(week);
     if (!weekGroup.has(date)) weekGroup.set(date, []);
+  });
+  allRows.forEach(row => {
+    const date = String(row.schedule_date || row.lesson_date || '').slice(0, 10);
+    if (!date) return;
+    const week = unitImageWeekKey(date);
+    const weekGroup = groups.get(week);
     weekGroup.get(date).push(row);
   });
   const weekKeys = [...groups.keys()].sort(naturalCompare);
