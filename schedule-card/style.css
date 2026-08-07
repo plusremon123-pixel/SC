@@ -623,6 +623,16 @@ body {
   display: none !important;
 }
 
+.unit-image-only .unit-image-entry-btn,
+.unit-image-only .term-switch-label,
+.unit-image-only .term-switch-note {
+  display: none;
+}
+
+.unit-image-only .term-switch-card {
+  justify-content: flex-start;
+}
+
 .unit-image-header h2 {
   margin-bottom: 0.35rem;
   color: #44337a;

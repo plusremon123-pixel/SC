@@ -8,6 +8,7 @@ const SUPABASE_URL = 'https://vmebzlinboxmgcrrorwv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR';
 const SUPABASE_BUCKET = 'schedule-data';
 const SUPABASE_SCHEDULE_CARD_PATH = 'schedule-card-data.json';
+const IS_UNIT_IMAGE_ONLY = new URLSearchParams(window.location.search).get('view') === 'unit-image-only';
 const UNIT_IMAGE_SCHEDULE_SHEET_PREFIX = '2026 스케줄';
 const UNIT_IMAGE_RED = '신규';
 const UNIT_IMAGE_PURPLE = '재사용';
@@ -149,6 +150,11 @@ const termFiles = { regular: [], vacation: [] };
   updateTermSwitchUI();
   switchTerm(activeTerm, true);
   initUnitImageFeature();
+  if (IS_UNIT_IMAGE_ONLY) {
+    document.body.classList.add('unit-image-only');
+    setUnitImageMode(true);
+    await loadUnitImageScheduleFromSupabase();
+  }
 })().catch(error => {
   console.error(error);
   loadDataJs();
@@ -156,6 +162,11 @@ const termFiles = { regular: [], vacation: [] };
   updateTermSwitchUI();
   switchTerm(activeTerm, true);
   initUnitImageFeature();
+  if (IS_UNIT_IMAGE_ONLY) {
+    document.body.classList.add('unit-image-only');
+    setUnitImageMode(true);
+    loadUnitImageScheduleFromSupabase();
+  }
 });
 
 termButtons.forEach(btn => {
