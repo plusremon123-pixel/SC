@@ -1466,6 +1466,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
         _lessonOrderDates: new Map(),
+        _orderlessDateLabels: new Map(),
       });
     }
     const item = grouped.get(key);
@@ -1473,36 +1474,62 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
     if (row.publisher) item._publishers.add(String(row.publisher));
     String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonNumbers.add(value));
-    String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
-      .forEach(value => item._lessonOrders.add(value));
-    String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean)
-      .forEach(value => {
-        const displayDate = row.schedule_date || row.lesson_date;
-        if (!item._lessonOrderDates.has(value) && displayDate) {
-          item._lessonOrderDates.set(value, displayDate);
-        }
-      });
+    const lessonOrders = String(row.lesson_orders || '').split(',').map(value => value.trim()).filter(Boolean);
+    const displayDate = row.schedule_date || row.lesson_date;
+    lessonOrders.forEach(value => item._lessonOrders.add(value));
+    lessonOrders.forEach(value => {
+      if (!item._lessonOrderDates.has(value) && displayDate) {
+        item._lessonOrderDates.set(value, displayDate);
+      }
+    });
+    if (!lessonOrders.length && displayDate) {
+      if (!item._orderlessDateLabels.has(displayDate)) item._orderlessDateLabels.set(displayDate, new Set());
+      getUnitImageSpecialLessonLabels(row.lesson_numbers)
+        .forEach(label => item._orderlessDateLabels.get(displayDate).add(label));
+    }
   });
   return [...grouped.values()].map(item => {
+    const lessonOrderDisplay = [...item._lessonOrders].sort(naturalCompare)
+      .map(order => {
+        const formattedDate = formatUnitImageShortDate(item._lessonOrderDates.get(order));
+        return formattedDate ? `${order}(${formattedDate})` : order;
+      });
+    [...item._orderlessDateLabels.entries()].sort(([left], [right]) => naturalCompare(left, right))
+      .forEach(([value, labels]) => {
+        const formattedDate = formatUnitImageShortDate(value);
+        if (!formattedDate) return;
+        const label = [...labels].sort(naturalCompare).join(', ');
+        lessonOrderDisplay.push(label ? `${label}(${formattedDate})` : formattedDate);
+      });
     return {
       ...item,
       unit_name: [...item._unitNames].sort(naturalCompare).join('\n'),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-      lesson_order_display: [...item._lessonOrders].sort(naturalCompare)
-        .map(order => {
-          const formattedDate = formatUnitImageShortDate(item._lessonOrderDates.get(order));
-          return formattedDate ? `${order}(${formattedDate})` : order;
-        })
-        .join('\n'),
+      lesson_order_display: lessonOrderDisplay.join('\n'),
       _unitNames: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
       _lessonOrders: undefined,
       _lessonOrderDates: undefined,
+      _orderlessDateLabels: undefined,
     };
   });
+}
+
+function getUnitImageSpecialLessonLabels(lessonNumbers) {
+  const curriculumRows = [...termRows.regular, ...termRows.vacation];
+  const labels = new Set();
+  String(lessonNumbers || '').split(',').map(value => value.trim()).filter(Boolean).forEach(value => {
+    const lessonId = value.replace(/\(재사용\)$/u, '').trim();
+    const sourceRow = curriculumRows.find(row => String(row.차시고유번호 || '').trim() === lessonId);
+    const lessonCode = String(sourceRow?.과목차시_clean || '').trim();
+    const separatorIndex = lessonCode.indexOf('-');
+    const lessonLabel = separatorIndex >= 0 ? lessonCode.slice(separatorIndex + 1).trim() : '';
+    if (lessonLabel && !/^\d+(?:\.\d+)?$/.test(lessonLabel)) labels.add(lessonLabel);
+  });
+  return labels;
 }
 
 function formatUnitImageShortDate(value) {
