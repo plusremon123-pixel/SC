@@ -1362,9 +1362,9 @@ function renderUnitImageDateTable() {
   let issueCount = 0;
   weekKeys.forEach(week => {
     const weekDates = groups.get(week);
-    html.push(`<tr class="unit-image-week-divider"><th colspan="9">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
+    html.push(`<tr class="unit-image-week-divider"><th colspan="8">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
     [...weekDates.keys()].sort(naturalCompare).forEach(date => {
-      html.push(`<tr class="unit-image-date-divider"><th colspan="9">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
+      html.push(`<tr class="unit-image-date-divider"><th colspan="8">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
       const dateRows = weekDates.get(date);
       const merged = mergeUnitImageDisplayRows(dateRows);
       const displayRows = [...merged];
@@ -1392,14 +1392,7 @@ function renderUnitImageDateTable() {
           html.push(`
             <tr class="unit-image-missing-row">
               <td>${escapeHtml(`${row.grade}학년`)}</td>
-              <td>${escapeHtml(row.subject || '')}</td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td class="unit-image-validation">없음</td>
+              <td colspan="7" class="unit-image-missing-summary">없음</td>
             </tr>`);
           issueCount += 1;
           return;
@@ -1418,7 +1411,6 @@ function renderUnitImageDateTable() {
             <td>${escapeHtml(row.image_file_names || '')}</td>
             <td>${escapeHtml(row.publisher || '')}</td>
             <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
-            <td class="unit-image-validation">${issue ? escapeHtml(issue) : '정상'}</td>
           </tr>`);
       });
     });
@@ -1435,7 +1427,7 @@ function renderUnitImageTableHead(mode) {
   if (!unitImageTableHead) return;
   unitImageTableHead.closest('table')?.classList.toggle('date-mode', mode === 'date');
   const labels = mode === 'date'
-    ? ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호', '검수 상태']
+    ? ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호']
     : ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호'];
   unitImageTableHead.innerHTML = `<tr>${labels.map(label => `<th>${label}</th>`).join('')}</tr>`;
 }
