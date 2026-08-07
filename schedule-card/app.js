@@ -612,7 +612,7 @@ async function loadUnitImageScheduleFromSupabase() {
   try {
     const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse,content_status&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
     unitImageActiveDetails = Array.isArray(details) ? details : [];
     const contentResolution = applyUnitImageContentVariants(unitImageActiveDetails, unitImageActiveDetails);
@@ -1319,15 +1319,18 @@ function renderUnitImageDateTable() {
   });
   const weekKeys = [...groups.keys()].sort(naturalCompare);
   const html = [];
+  const expectedGrades = selectedUnitImageGrade === 'all'
+    ? ['1', '2', '3', '4', '5', '6']
+    : [selectedUnitImageGrade];
   let normalCount = 0;
   let issueCount = 0;
   weekKeys.forEach(week => {
     const weekDates = groups.get(week);
-    const weekRows = [...weekDates.values()].flat();
-    html.push(`<tr class="unit-image-week-divider"><th colspan="10">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
+    html.push(`<tr class="unit-image-week-divider"><th colspan="9">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
     [...weekDates.keys()].sort(naturalCompare).forEach(date => {
-      html.push(`<tr class="unit-image-date-divider"><th colspan="10">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
-      const merged = mergeUnitImageDisplayRows(weekDates.get(date));
+      html.push(`<tr class="unit-image-date-divider"><th colspan="9">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
+      const dateRows = weekDates.get(date);
+      const merged = mergeUnitImageDisplayRows(dateRows);
       merged.sort((a, b) => Number(a.grade) - Number(b.grade)
         || naturalCompare(a.subject, b.subject)
         || naturalCompare(a.lesson_orders, b.lesson_orders)
@@ -1339,7 +1342,6 @@ function renderUnitImageDateTable() {
         else normalCount += 1;
         html.push(`
           <tr class="${issue ? 'unit-image-review-row' : ''}">
-            <td>${escapeHtml(formatUnitImageShortDate(date))}</td>
             <td>${escapeHtml(`${row.grade}학년`)}</td>
             <td>${escapeHtml(row.subject || '')}</td>
             <td>${escapeHtml(row.unit_number || '')}</td>
@@ -1350,6 +1352,27 @@ function renderUnitImageDateTable() {
             <td>${renderUnitImageLessonNumbers(row.lesson_numbers)}</td>
             <td class="unit-image-validation">${issue ? escapeHtml(issue) : '정상'}</td>
           </tr>`);
+      });
+
+      // 신규(빨간색) 일정이 없는 학년도 검수 대상에서 빠지지 않도록 표시합니다.
+      expectedGrades.forEach(grade => {
+        const hasNewGradeRows = dateRows.some(row => String(row.grade || '').trim() === grade
+          && (row.is_reuse === false || String(row.content_status || '').trim() === UNIT_IMAGE_RED));
+        if (hasNewGradeRows) return;
+        const subjectLabel = selectedUnitImageSubject === 'all' ? '' : selectedUnitImageSubject;
+        html.push(`
+          <tr class="unit-image-missing-row">
+            <td>${escapeHtml(`${grade}학년`)}</td>
+            <td>${escapeHtml(subjectLabel)}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="unit-image-validation">없음</td>
+          </tr>`);
+        issueCount += 1;
       });
     });
   });
@@ -1365,7 +1388,7 @@ function renderUnitImageTableHead(mode) {
   if (!unitImageTableHead) return;
   unitImageTableHead.closest('table')?.classList.toggle('date-mode', mode === 'date');
   const labels = mode === 'date'
-    ? ['노출일', '학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호', '검수 상태']
+    ? ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호', '검수 상태']
     : ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호'];
   unitImageTableHead.innerHTML = `<tr>${labels.map(label => `<th>${label}</th>`).join('')}</tr>`;
 }
@@ -1376,7 +1399,7 @@ function formatUnitImageFullDate(value) {
 }
 
 function unitImageValidationKey(row, date) {
-  return [date, row.grade, row.subject, row.image_file_names].join('|');
+  return [date, row.grade, row.subject, row.image_name].join('|');
 }
 
 function buildUnitImageValidationIssues(rows) {
@@ -1449,12 +1472,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: [...item._lessonNumbers].sort(naturalCompare).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
-      lesson_order_display: [...item._lessonOrders].sort(naturalCompare)
-        .map(order => {
-          const formattedDate = formatUnitImageShortDate(item._lessonOrderDates.get(order));
-          return formattedDate ? `${order}(${formattedDate})` : order;
-        })
-        .join('\n'),
+      lesson_order_display: [...item._lessonOrders].sort(naturalCompare).join('\n'),
       _unitNames: undefined,
       _publishers: undefined,
       _lessonNumbers: undefined,
