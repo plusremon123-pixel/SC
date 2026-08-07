@@ -1453,7 +1453,7 @@ function renderUnitImageDateTable() {
             <td>${escapeHtml(row.subject || '')}</td>
             <td>${escapeHtml(row.unit_number || '')}</td>
             <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_orders || '')}</td>
-            <td>${escapeHtml(row.unit_name || '')}</td>
+            <td>${renderUnitImageValueWithCopy(row.unit_name, '단원명')}</td>
             <td>${escapeHtml(row.image_file_names || '')}</td>
             <td>${escapeHtml(row.publisher || '')}</td>
             <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
@@ -1661,6 +1661,15 @@ function renderUnitImageSubjectCode(subject) {
   return `<div class="unit-image-copy-line unit-image-subject-copy-line">
     <span class="unit-image-copy-text">${escapeHtml(label)}</span>
     ${renderUnitImageCopyButton(code, '복사', `${label} 과목 코드`)}
+  </div>`;
+}
+
+function renderUnitImageValueWithCopy(value, label) {
+  const source = String(value || '').trim();
+  if (!source) return '';
+  return `<div class="unit-image-copy-line">
+    <span class="unit-image-copy-text">${escapeHtml(source)}</span>
+    ${renderUnitImageCopyButton(source, '복사', label)}
   </div>`;
 }
 
