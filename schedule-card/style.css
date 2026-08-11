@@ -1056,6 +1056,13 @@ body.unit-image-only {
   color: #276749;
 }
 
+.unit-image-inline-copy:disabled {
+  border-color: #d7e0e8;
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: default;
+}
+
 .unit-image-copy-status {
   flex: 0 0 auto;
   color: #2f855a;
@@ -1082,6 +1089,24 @@ body.unit-image-only {
   background: #f7fafc;
   color: #2d3748;
   font-size: 0.82rem;
+}
+
+.unit-image-date-divider-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.unit-image-date-copy-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.unit-image-date-copy-actions .unit-image-inline-copy {
+  min-width: auto;
+  padding-inline: 0.42rem;
 }
 
 .unit-image-review-row td {

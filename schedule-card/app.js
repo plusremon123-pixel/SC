@@ -1424,8 +1424,21 @@ function renderUnitImageDateTable() {
     const weekDates = groups.get(week);
     html.push(`<tr class="unit-image-week-divider"><th colspan="8">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
     [...weekDates.keys()].sort(naturalCompare).forEach(date => {
-      html.push(`<tr class="unit-image-date-divider"><th colspan="8">${escapeHtml(formatUnitImageFullDate(date))}</th></tr>`);
       const dateRows = weekDates.get(date);
+      const formattedDate = formatUnitImageFullDate(date);
+      const lessonCopyValue = buildUnitImageDateLessonCopyValue(dateRows);
+      html.push(`
+        <tr class="unit-image-date-divider">
+          <th colspan="8">
+            <div class="unit-image-date-divider-content">
+              <span>${escapeHtml(formattedDate)}</span>
+              <span class="unit-image-date-copy-actions">
+                ${renderUnitImageCopyButton(formattedDate, '날짜 복사', '날짜')}
+                ${renderUnitImageCopyButton(lessonCopyValue, '차시 복사', '차시')}
+              </span>
+            </div>
+          </th>
+        </tr>`);
       const merged = mergeUnitImageDisplayRows(dateRows);
       const displayRows = [...merged];
 
@@ -1496,6 +1509,18 @@ function renderUnitImageTableHead(mode) {
 function formatUnitImageFullDate(value) {
   const short = formatUnitImageShortDate(value);
   return short ? `${value.slice(0, 4)}.${value.slice(5, 7)}.${value.slice(8, 10)}(${short.slice(-2, -1)})` : value;
+}
+
+function buildUnitImageDateLessonCopyValue(rows) {
+  const values = new Set();
+  (rows || []).forEach(row => {
+    const subject = String(row.subject || '').trim();
+    const unitNumber = String(row.unit_number || '').trim();
+    const lessonOrder = String(row.lesson_order || '').trim();
+    if (!subject || !unitNumber || !lessonOrder) return;
+    values.add(`${subject} ${unitNumber}-${lessonOrder}`);
+  });
+  return [...values].sort(naturalCompare).join('\n');
 }
 
 function unitImageValidationKey(row, date) {
@@ -1722,7 +1747,8 @@ function renderUnitImageCopyLine(displayValue, copyValue, label, textClass = 'un
 
 function renderUnitImageCopyButton(copyValue, buttonLabel, ariaLabel, trackLessonId = false) {
   const trackAttribute = trackLessonId ? ' data-copy-track="lesson-id"' : '';
-  return `<button type="button" class="unit-image-inline-copy" data-unit-image-copy${trackAttribute} data-copy-label="${escapeHtml(buttonLabel)}" data-copy-value="${escapeHtml(copyValue)}" title="${escapeHtml(ariaLabel)} 복사" aria-label="${escapeHtml(ariaLabel)} ${escapeHtml(copyValue)} 복사">${escapeHtml(buttonLabel)}</button>`;
+  const disabledAttribute = String(copyValue || '').trim() ? '' : ' disabled';
+  return `<button type="button" class="unit-image-inline-copy" data-unit-image-copy${trackAttribute} data-copy-label="${escapeHtml(buttonLabel)}" data-copy-value="${escapeHtml(copyValue)}" title="${escapeHtml(ariaLabel)} 복사" aria-label="${escapeHtml(ariaLabel)} ${escapeHtml(copyValue)} 복사"${disabledAttribute}>${escapeHtml(buttonLabel)}</button>`;
 }
 
 function getUnitImageCopiedLessonIds() {
