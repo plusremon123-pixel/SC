@@ -654,7 +654,7 @@ async function loadUnitImageScheduleFromSupabase() {
   try {
     const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,lesson_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
     unitImageActiveDetails = Array.isArray(details) ? details : [];
     unitImageLessonSortInfo = buildUnitImageLessonSortInfo(unitImageActiveDetails);
@@ -709,18 +709,22 @@ function aggregateUnitImageDetailRows(details) {
         ...row,
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
+        _lessonNames: new Set(),
       });
     }
     const item = grouped.get(key);
     if (row.lesson_id) item._lessonNumbers.add(`${row.lesson_id}${row.is_reuse ? '(재사용)' : ''}`);
     if (row.lesson_order != null && row.lesson_order !== '') item._lessonOrders.add(String(row.lesson_order));
+    if (row.lesson_name) item._lessonNames.add(String(row.lesson_name));
   });
   return [...grouped.values()].map(item => ({
     ...item,
     lesson_numbers: sortUnitImageLessonNumbers([...item._lessonNumbers]).join(', '),
     lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
+    lesson_names: [...item._lessonNames].sort(naturalCompare).join('\n'),
     _lessonNumbers: undefined,
     _lessonOrders: undefined,
+    _lessonNames: undefined,
   }));
 }
 
@@ -1422,14 +1426,14 @@ function renderUnitImageDateTable() {
   let issueCount = 0;
   weekKeys.forEach(week => {
     const weekDates = groups.get(week);
-    html.push(`<tr class="unit-image-week-divider"><th colspan="8">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
+    html.push(`<tr class="unit-image-week-divider"><th colspan="9">${escapeHtml(formatUnitImageWeekRange(week))}</th></tr>`);
     [...weekDates.keys()].sort(naturalCompare).forEach(date => {
       const dateRows = weekDates.get(date);
       const formattedDate = formatUnitImageFullDate(date);
       const lessonCopyValue = buildUnitImageDateLessonCopyValue(dateRows);
       html.push(`
         <tr class="unit-image-date-divider">
-          <th colspan="8">
+          <th colspan="9">
             <div class="unit-image-date-divider-content">
               <span>${escapeHtml(formattedDate)}</span>
               <span class="unit-image-date-copy-actions">
@@ -1465,7 +1469,7 @@ function renderUnitImageDateTable() {
           html.push(`
             <tr class="unit-image-missing-row">
               <td>${escapeHtml(`${row.grade}학년`)}</td>
-              <td colspan="7" class="unit-image-missing-summary"></td>
+              <td colspan="8" class="unit-image-missing-summary"></td>
             </tr>`);
           issueCount += 1;
           return;
@@ -1482,6 +1486,7 @@ function renderUnitImageDateTable() {
             <td>${escapeHtml(row.unit_number || '')}</td>
             <td class="unit-image-lesson-orders">${escapeHtml(row.lesson_orders || '')}</td>
             <td>${renderUnitImageValueWithCopy(row.unit_name, '단원명')}</td>
+            <td class="unit-image-lesson-name-cell">${escapeHtml(row.lesson_names || row.lesson_name || '')}</td>
             <td>${escapeHtml(row.image_file_names || '')}</td>
             <td>${escapeHtml(row.publisher || '')}</td>
             <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
@@ -1501,7 +1506,7 @@ function renderUnitImageTableHead(mode) {
   if (!unitImageTableHead) return;
   unitImageTableHead.closest('table')?.classList.toggle('date-mode', mode === 'date');
   const labels = mode === 'date'
-    ? ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호']
+    ? ['학년', '과목', '단원번호', '차시번호', '단원명', '차시명', '이미지 파일명', '출판사', '차시고유번호']
     : ['학년', '과목', '단원번호', '차시번호', '단원명', '이미지 파일명', '출판사', '차시고유번호'];
   unitImageTableHead.innerHTML = `<tr>${labels.map(label => `<th>${label}</th>`).join('')}</tr>`;
 }
@@ -1572,12 +1577,15 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
         _publishers: new Set(),
         _lessonNumbers: new Set(),
         _lessonOrders: new Set(),
+        _lessonNames: new Set(),
         _lessonOrderDates: new Map(),
         _orderlessDateLabels: new Map(),
       });
     }
     const item = grouped.get(key);
     if (row.unit_name) item._unitNames.add(String(row.unit_name));
+    String(row.lesson_names || row.lesson_name || '').split('\n').map(value => value.trim()).filter(Boolean)
+      .forEach(value => item._lessonNames.add(value));
     if (row.publisher) item._publishers.add(String(row.publisher));
     String(row.lesson_numbers || '').split(',').map(value => value.trim()).filter(Boolean)
       .forEach(value => item._lessonNumbers.add(value));
@@ -1618,6 +1626,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
     return {
       ...item,
       unit_name: [...item._unitNames].sort(naturalCompare).join('\n'),
+      lesson_names: [...item._lessonNames].sort(naturalCompare).join('\n'),
       publisher: [...item._publishers].sort(naturalCompare).join(', '),
       lesson_numbers: sortUnitImageLessonNumbers([...item._lessonNumbers]).join(', '),
       lesson_orders: [...item._lessonOrders].sort(naturalCompare).join(', '),
@@ -1626,6 +1635,7 @@ function mergeUnitImageDisplayRows(rowsToMerge) {
       _publishers: undefined,
       _lessonNumbers: undefined,
       _lessonOrders: undefined,
+      _lessonNames: undefined,
       _lessonOrderDates: undefined,
       _orderlessDateLabels: undefined,
     };

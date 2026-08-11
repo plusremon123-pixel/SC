@@ -931,10 +931,11 @@ body.unit-image-only {
 .unit-image-table.date-mode th:nth-child(2) { width: 6%; }
 .unit-image-table.date-mode th:nth-child(3) { width: 6%; }
 .unit-image-table.date-mode th:nth-child(4) { width: 7%; }
-.unit-image-table.date-mode th:nth-child(5) { width: 28%; }
-.unit-image-table.date-mode th:nth-child(6) { width: 13%; }
-.unit-image-table.date-mode th:nth-child(7) { width: 15%; }
-.unit-image-table.date-mode th:nth-child(8) { width: 20%; }
+.unit-image-table.date-mode th:nth-child(5) { width: 15%; }
+.unit-image-table.date-mode th:nth-child(6) { width: 28%; }
+.unit-image-table.date-mode th:nth-child(7) { width: 12%; }
+.unit-image-table.date-mode th:nth-child(8) { width: 9%; }
+.unit-image-table.date-mode th:nth-child(9) { width: 12%; }
 
 .unit-image-table.date-mode {
   width: 100%;
@@ -967,11 +968,24 @@ body.unit-image-only {
   line-height: 1.45;
 }
 
+.unit-image-table.date-mode td:nth-child(6),
+.unit-image-table.date-mode td:nth-child(9) {
+  text-align: left;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
 .unit-image-table.date-mode td:nth-child(7),
 .unit-image-table.date-mode td:nth-child(8) {
   white-space: pre-line;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.unit-image-table.date-mode td:nth-child(8) {
+  text-align: center;
 }
 
 .unit-image-table td.unit-image-lesson-orders {
