@@ -1105,9 +1105,10 @@ function assignUnitImageNumbers(matches, existingRows = []) {
 }
 
 function createUnitImageFileName(grade, subject, unitNumber, imageNumber, contentVariant = 0) {
-  const parts = [grade || '학년확인', subject || '과목확인', unitNumber || '단원확인', imageNumber || 1]
-    .map(value => String(value).trim().replace(/\s+/g, ''))
+  const parts = [grade || '학년확인', subject || '과목확인', unitNumber || '단원확인']
+    .map(value => String(value).trim().replace(/\s+/g, ''));
   if (Number(contentVariant) > 0) parts.push(String(contentVariant));
+  parts.push(String(imageNumber || 1));
   return parts.join('_');
 }
 
@@ -1143,7 +1144,7 @@ function buildUnitImageContentVariantResolver(rows, existingRows = []) {
 
   const existingVariants = new Map();
   (existingRows || []).forEach(row => {
-    const variant = extractUnitImageContentVariant(row.image_name);
+    const variant = extractUnitImageContentVariant(row);
     if (variant == null) return;
     const normalizedName = normalizeUnitImageContentName(row.unit_name);
     if (normalizedName) existingVariants.set(`${unitImageContentBaseKey(row)}|${normalizedName}`, variant);
@@ -1213,10 +1214,19 @@ function findKnownUnitImageVariant(rules, normalizedName) {
   return index >= 0 ? index : null;
 }
 
-function extractUnitImageContentVariant(imageName) {
-  const parts = String(imageName || '').split('_');
-  if (parts.length < 5 || !/^\d+$/.test(parts[parts.length - 1])) return null;
-  return Number(parts[parts.length - 1]);
+function extractUnitImageContentVariant(row) {
+  const parts = String(row?.image_name || '').split('_');
+  if (parts.length < 5) return null;
+  const fourth = Number(parts[parts.length - 2]);
+  const fifth = Number(parts[parts.length - 1]);
+  const imageNumber = Number(row?.image_number);
+  if (![fourth, fifth, imageNumber].every(Number.isFinite)) return null;
+
+  // New names are ..._<content variant>_<ping-pong number>. Older saved rows
+  // used the reverse order, so compare against image_number for compatibility.
+  if (fifth === imageNumber) return fourth;
+  if (fourth === imageNumber) return fifth;
+  return fourth;
 }
 
 function renderUnitImageMonthTabs() {
