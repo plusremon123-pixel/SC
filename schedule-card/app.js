@@ -1738,6 +1738,7 @@ function renderUnitImageFileName(value) {
   return `<div class="unit-image-copy-line">
     <span class="unit-image-copy-text">${escapeHtml(baseName)}</span>
     <span class="unit-image-copy-actions">
+      ${renderUnitImageCopyButton(baseName, '기본', '기본 이미지 파일명')}
       ${renderUnitImageCopyButton(lottieFileName, '로띠', '로띠 이미지 파일명')}
       ${renderUnitImageCopyButton(webpFileName, '웹피', '웹피 이미지 파일명')}
     </span>
