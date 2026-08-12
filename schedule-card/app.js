@@ -654,13 +654,13 @@ async function loadUnitImageScheduleFromSupabase() {
   try {
     const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,lesson_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=source_sheet,source_cell,schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,lesson_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
     unitImageActiveDetails = Array.isArray(details) ? details : [];
     unitImageLessonSortInfo = buildUnitImageLessonSortInfo(unitImageActiveDetails);
-    const contentResolution = applyUnitImageContentVariants(unitImageActiveDetails, unitImageActiveDetails);
-    unitImageContentWarnings = contentResolution.warnings;
-    unitImageMonthlyRows = aggregateUnitImageDetailRows(contentResolution.rows);
+    const contentAssignment = assignUnitImageNumbers(unitImageActiveDetails, unitImageActiveDetails);
+    unitImageContentWarnings = contentAssignment.warnings;
+    unitImageMonthlyRows = aggregateUnitImageDetailRows(unitImageActiveDetails);
     const activeVersion = Array.isArray(versions) ? versions[0] : null;
     renderUnitImageVersion(activeVersion);
     renderUnitImageMonthTabs();
@@ -1085,14 +1085,22 @@ function assignUnitImageNumbers(matches, existingRows = []) {
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
     const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.content_variant || 0].join('|');
-    if (!sourceGroups.has(groupKey)) sourceGroups.set(groupKey, []);
-    const sourceList = sourceGroups.get(groupKey);
-    if (!sourceList.includes(sourceKey)) sourceList.push(sourceKey);
+    if (!sourceGroups.has(groupKey)) sourceGroups.set(groupKey, new Map());
+    const sourceMap = sourceGroups.get(groupKey);
+    if (!sourceMap.has(sourceKey)) {
+      sourceMap.set(sourceKey, {
+        sourceKey,
+        scheduleDate: match.schedule_date || match.lesson_date || '',
+        sourceCell: match.source_cell || '',
+      });
+    }
   });
 
   const numberMap = new Map();
-  sourceGroups.forEach((sourceKeys, groupKey) => {
-    sourceKeys.forEach((sourceKey, index) => numberMap.set(`${groupKey}|${sourceKey}`, (index % 2) + 1));
+  sourceGroups.forEach((sourceMap, groupKey) => {
+    [...sourceMap.values()]
+      .sort((a, b) => naturalCompare(a.scheduleDate, b.scheduleDate) || naturalCompare(a.sourceCell, b.sourceCell))
+      .forEach((source, index) => numberMap.set(`${groupKey}|${source.sourceKey}`, (index % 2) + 1));
   });
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
