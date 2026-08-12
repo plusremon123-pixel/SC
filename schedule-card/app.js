@@ -20,7 +20,7 @@ const UNIT_IMAGE_CONTENT_VARIANT_RULES = {
   '3|수학|4': [['분수'], ['들이와 무게', '무게와 들이']],
   '3|수학|5': [['들이와 무게', '무게와 들이']],
   '3|수학|6': [['그림그래프', '자료와 그림그래프']],
-  '4|수학|2': [['삼각형'], ['사각형']],
+  '4|수학|2': [['삼각형'], ['사각형'], ['분수의 덧셈과 뺄셈']],
   '4|수학|3': [['소수의 덧셈과 뺄셈'], ['사각형']],
   '4|수학|5': [['꺾은선그래프', '자료와 꺾은선그래프'], ['다각형']],
   '4|수학|6': [['다각형'], ['꺾은선그래프'], ['평면도형의 이동']],
@@ -992,14 +992,27 @@ function buildUnitImageMatches(sources) {
   const result = [];
   sources.forEach(source => {
     const term = source.term_type === '방학' ? 'vacation' : 'regular';
-    const candidates = (termRows[term] || []).filter(row =>
+    const baseCandidates = (termRows[term] || []).filter(row =>
       normalizeGrade(row.학년) === String(source.grade)
       && (!source.semester || Number(normalizeGrade(row.학기)) === Number(source.semester))
       && row.과목 === source.subject
-      && normalizeUnitImageLessonCode(row.과목차시_clean) === source.unit_lesson_code
+    );
+    const candidates = baseCandidates.filter(row =>
+      normalizeUnitImageLessonCode(row.과목차시_clean) === source.unit_lesson_code
     );
     const sourceDate = source.schedule_date.replace(/-/g, '');
-    const exact = candidates.filter(row => normalizeScheduleDate(row.노출일) === sourceDate);
+    let exact = candidates.filter(row => normalizeScheduleDate(row.노출일) === sourceDate);
+
+    // 수학은 출판사별 차시 진도가 달라도 같은 날짜에 같은 단원을 오픈할 수 있다.
+    // 이 경우 일정 셀의 차시 번호보다 실제 단원 번호를 우선해 모든 출판사를 연결한다.
+    if (source.subject === '수학') {
+      const sourceUnitNumber = String(source.unit_lesson_code || '').match(/^(\d+)/)?.[1] || '';
+      const sameDateAndUnit = baseCandidates.filter(row => {
+        if (normalizeScheduleDate(row.노출일) !== sourceDate) return false;
+        return parseUnitInformation(row.단원명, row.과목차시_clean).number === sourceUnitNumber;
+      });
+      if (sameDateAndUnit.length) exact = sameDateAndUnit;
+    }
     let selected = exact;
     let matchStatus = 'matched';
     let matchMessage = '';
