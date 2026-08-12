@@ -176,6 +176,12 @@ const termFiles = { regular: [], vacation: [] };
     setUnitImageMode(true);
     await loadUnitImageScheduleFromSupabase();
   }
+  if (IS_UNIT_IMAGE_ADMIN) {
+    window.__unitImageDebug = {
+      match: source => buildUnitImageMatches([source]),
+      regularRows: () => termRows.regular,
+    };
+  }
 })().catch(error => {
   console.error(error);
   loadDataJs();
