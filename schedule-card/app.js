@@ -176,12 +176,6 @@ const termFiles = { regular: [], vacation: [] };
     setUnitImageMode(true);
     await loadUnitImageScheduleFromSupabase();
   }
-  if (IS_UNIT_IMAGE_ADMIN) {
-    window.__unitImageDebug = {
-      match: source => buildUnitImageMatches([source]),
-      regularRows: () => termRows.regular,
-    };
-  }
 })().catch(error => {
   console.error(error);
   loadDataJs();
@@ -1001,9 +995,19 @@ function normalizeUnitImageLessonCode(value) {
 
 function buildUnitImageMatches(sources) {
   const result = [];
+  const candidateRowsByTerm = {};
+  ['regular', 'vacation'].forEach(term => {
+    const bundledRows = processRows(window.CURRICULUM_DATA_BY_TERM?.[term] || []);
+    const uniqueRows = new Map();
+    [...bundledRows, ...(termRows[term] || [])].forEach(row => {
+      const key = [row.차시고유번호, row.교과서, row.노출일, row.과목차시_clean].join('|');
+      uniqueRows.set(key, row);
+    });
+    candidateRowsByTerm[term] = [...uniqueRows.values()];
+  });
   sources.forEach(source => {
     const term = source.term_type === '방학' ? 'vacation' : 'regular';
-    const baseCandidates = (termRows[term] || []).filter(row =>
+    const baseCandidates = candidateRowsByTerm[term].filter(row =>
       normalizeGrade(row.학년) === String(source.grade)
       && (!source.semester || Number(normalizeGrade(row.학기)) === Number(source.semester))
       && row.과목 === source.subject
