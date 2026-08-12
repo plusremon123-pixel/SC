@@ -795,6 +795,15 @@ async function uploadUnitImageSchedule(file) {
     setUnitImageStatus(`일정 ${parsed.sources.length.toLocaleString('ko-KR')}건을 최신 차시 데이터와 연결하고 있습니다.`);
     await loadSharedScheduleCardData();
     const matches = buildUnitImageMatches(parsed.sources);
+    if (IS_UNIT_IMAGE_ADMIN && unitImageStatus) {
+      const debugIds = new Set(['5830739', '5830741', '5830743']);
+      unitImageStatus.dataset.matchDebug = JSON.stringify({
+        regularCount: termRows.regular.length,
+        bundledCount: window.CURRICULUM_DATA_BY_TERM?.regular?.length || 0,
+        candidateRows: termRows.regular.filter(row => debugIds.has(String(row.차시고유번호))),
+        matchedRows: matches.filter(row => debugIds.has(String(row.lesson_id))),
+      });
+    }
     const contentAssignment = assignUnitImageNumbers(matches, unitImageActiveDetails);
     const unmatchedSourceCount = new Set(matches
       .filter(item => item.match_status !== 'matched')
