@@ -1109,10 +1109,11 @@ function assignUnitImageNumbers(matches, existingRows = []) {
     matches[index].content_variant = resolved.content_variant;
     matches[index].content_group_key = resolved.content_group_key;
   });
+  applyUnitImageAssetReuse(matches);
   const sourceGroups = new Map();
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
-    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.content_variant || 0].join('|');
+    const groupKey = match.asset_group_key || unitImageAssetGroupKey(match);
     if (!sourceGroups.has(groupKey)) sourceGroups.set(groupKey, new Map());
     const sourceMap = sourceGroups.get(groupKey);
     if (!sourceMap.has(sourceKey)) {
@@ -1132,12 +1133,73 @@ function assignUnitImageNumbers(matches, existingRows = []) {
   });
   matches.forEach(match => {
     const sourceKey = `${match.source_sheet}|${match.source_cell}`;
-    const groupKey = [match.grade, match.term_type, match.semester || '', match.subject || '', match.unit_number || '', match.content_variant || 0].join('|');
+    const groupKey = match.asset_group_key || unitImageAssetGroupKey(match);
     const number = numberMap.get(`${groupKey}|${sourceKey}`) || 1;
     match.image_number = number;
-    match.image_name = createUnitImageFileName(match.grade, match.subject, match.unit_number, number, match.content_variant);
+    match.image_name = createUnitImageFileName(
+      match.grade,
+      match.subject,
+      match.asset_unit_number || match.unit_number,
+      number,
+      match.asset_content_variant ?? match.content_variant,
+    );
   });
   return { warnings: contentResolution.warnings };
+}
+
+function applyUnitImageAssetReuse(matches) {
+  const contentGroups = new Map();
+  (matches || []).forEach(match => {
+    match.asset_unit_number = match.unit_number || '';
+    match.asset_content_variant = Number(match.content_variant || 0);
+    match.asset_group_key = unitImageAssetGroupKey(match);
+    if (match.subject !== '수학') return;
+
+    const contentName = normalizeUnitImageContentName(match.unit_name);
+    if (!contentName) return;
+    const contentKey = [
+      match.grade || '',
+      match.term_type || '',
+      match.semester || '',
+      match.subject || '',
+      contentName,
+    ].join('|');
+    if (!contentGroups.has(contentKey)) contentGroups.set(contentKey, []);
+    contentGroups.get(contentKey).push(match);
+  });
+
+  contentGroups.forEach(rows => {
+    const unitNumbers = [...new Set(rows.map(row => String(row.unit_number || '')))];
+    if (unitNumbers.length < 2) return;
+    const canonical = [...rows].sort((left, right) => {
+      const unitDifference = naturalCompare(String(left.unit_number || ''), String(right.unit_number || ''));
+      const dateDifference = naturalCompare(
+        left.schedule_date || left.lesson_date || '',
+        right.schedule_date || right.lesson_date || '',
+      );
+      return unitDifference
+        || dateDifference
+        || naturalCompare(String(left.source_cell || ''), String(right.source_cell || ''));
+    })[0];
+    const assetUnitNumber = canonical.unit_number || '';
+    const assetContentVariant = Number(canonical.content_variant || 0);
+    rows.forEach(row => {
+      row.asset_unit_number = assetUnitNumber;
+      row.asset_content_variant = assetContentVariant;
+      row.asset_group_key = unitImageAssetGroupKey(row, assetUnitNumber, assetContentVariant);
+    });
+  });
+}
+
+function unitImageAssetGroupKey(row, unitNumber = row.asset_unit_number || row.unit_number, contentVariant = row.asset_content_variant ?? row.content_variant) {
+  return [
+    row.grade || '',
+    row.term_type || '',
+    row.semester || '',
+    row.subject || '',
+    unitNumber || '',
+    Number(contentVariant || 0),
+  ].join('|');
 }
 
 function createUnitImageFileName(grade, subject, unitNumber, imageNumber, contentVariant = 0) {
