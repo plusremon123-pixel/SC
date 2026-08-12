@@ -792,7 +792,8 @@ async function uploadUnitImageSchedule(file) {
     const parsed = await parseUnitImageWorkbook(bytes);
     if (!parsed.sources.length) throw new Error('빨강 또는 보라색으로 표시된 일정이 없습니다.');
 
-    setUnitImageStatus(`일정 ${parsed.sources.length.toLocaleString('ko-KR')}건을 차시 데이터와 연결하고 있습니다.`);
+    setUnitImageStatus(`일정 ${parsed.sources.length.toLocaleString('ko-KR')}건을 최신 차시 데이터와 연결하고 있습니다.`);
+    await loadSharedScheduleCardData();
     const matches = buildUnitImageMatches(parsed.sources);
     const contentAssignment = assignUnitImageNumbers(matches, unitImageActiveDetails);
     const unmatchedSourceCount = new Set(matches
