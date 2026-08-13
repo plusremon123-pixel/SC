@@ -278,40 +278,19 @@ function bandMetrics(bandIndex) {
 }
 
 function renderNameText({ id, x, y, lines }) {
-  const lineCount = lines.length;
-  const fontSize = lineCount === 1 ? 68 : lineCount === 2 ? 42 : lineCount === 3 ? 32 : 25;
-  const lineHeight = lineCount === 1 ? 0 : lineCount === 2 ? 52 : lineCount === 3 ? 39 : 30;
-  const blockHeight = lineCount === 1 ? fontSize : fontSize + (lineCount - 1) * lineHeight;
-  const startY = y + (176 - blockHeight) / 2 + fontSize * 0.78;
-  const tspans = lines.map((line, index) => (
-    `<tspan id="${id}-line-${index + 1}" x="${x}" dy="${index === 0 ? 0 : lineHeight}">${esc(line)}</tspan>`
-  )).join('');
-  return `<text id="${id}" x="${x}" y="${startY}" text-anchor="middle" style="font-size:${fontSize}px;font-weight:700">${tspans}</text>`;
+  const text = lines.join(' ');
+  const widthUnits = [...text].reduce((sum, character) => {
+    if (/\s/u.test(character)) return sum + 0.32;
+    if (/[\u3131-\uD79D]/u.test(character)) return sum + 0.96;
+    return sum + 0.58;
+  }, 0);
+  const fontSize = Math.max(24, Math.min(68, Math.floor(820 / Math.max(widthUnits, 1))));
+  const baselineY = y + 88 + fontSize * 0.35;
+  return `<text id="${id}" x="${x}" y="${baselineY}" text-anchor="middle" style="font-size:${fontSize}px;font-weight:700">${esc(text)}</text>`;
 }
 
 function wrapDisplayName(value) {
-  const text = String(value || '').trim();
-  const limit = /[A-Za-z]/.test(text) ? 22 : 12;
-  if (text.length <= limit) return [text];
-
-  const words = text.split(/\s+/u);
-  if (words.length === 1) {
-    const splitAt = Math.ceil(text.length / 2);
-    return [text.slice(0, splitAt), text.slice(splitAt)];
-  }
-
-  const target = text.length / 2;
-  let bestIndex = 1;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (let index = 1; index < words.length; index += 1) {
-    const firstLine = words.slice(0, index).join(' ');
-    const distance = Math.abs(firstLine.length - target);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestIndex = index;
-    }
-  }
-  return [words.slice(0, bestIndex).join(' '), words.slice(bestIndex).join(' ')];
+  return [String(value || '').trim()];
 }
 
 function renderSlot({ unitId, itemIndex, slotIndex, columnIndex, y, filename, reuse }) {
