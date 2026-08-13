@@ -1157,7 +1157,7 @@ function applyUnitImageAssetReuse(matches) {
     match.asset_group_key = unitImageAssetGroupKey(match);
     if (match.subject !== '수학') return;
 
-    const contentName = normalizeUnitImageContentName(match.unit_name);
+    const contentName = normalizeUnitImageReuseContentName(match.unit_name);
     if (!contentName) return;
     const contentKey = [
       match.grade || '',
@@ -1306,6 +1306,15 @@ function unitImageContentBaseKey(row) {
 
 function normalizeUnitImageContentName(value) {
   return String(value || '').normalize('NFKC').toLowerCase().replace(/[\s·.,()\[\]{}'"-]/g, '');
+}
+
+function normalizeUnitImageReuseContentName(value) {
+  const normalized = normalizeUnitImageContentName(value);
+  const aliases = {
+    무게와들이: '들이와무게',
+    자료와꺾은선그래프: '꺾은선그래프',
+  };
+  return aliases[normalized] || normalized;
 }
 
 function findKnownUnitImageVariant(rules, normalizedName) {
@@ -1542,6 +1551,8 @@ async function copySelectedUnitImageSvg() {
     window.__lastUnitImageSvgMarkup = svg;
     unitImageSvgCopyBtn.dataset.svgLength = String(svg.length);
     unitImageSvgCopyBtn.dataset.svgGroupCount = String((svg.match(/<g\b/gu) || []).length);
+    unitImageSvgCopyBtn.dataset.svgReuseUnitCount = String((svg.match(/<text\b[^>]*>\[앞단원 재사용\]/gu) || []).length);
+    unitImageSvgCopyBtn.dataset.svgPartialReuseUnitCount = String((svg.match(/<text\b[^>]*>\[앞단원 일부 재사용\]/gu) || []).length);
     unitImageSvgCopyBtn.textContent = '복사 완료';
     unitImageSvgCopyBtn.classList.add('copied');
     clearTimeout(unitImageSvgCopyBtn._copyResetTimer);
@@ -1662,15 +1673,17 @@ function buildUnitImageSvgSample(rowsForSelection) {
         })
         .sort((left, right) => naturalCompare(left.files[0], right.files[0])
           || naturalCompare(left.names[0], right.names[0]));
-      const allReuse = items.length > 0 && items.every(item => item.reuse);
+      const reuseItemCount = items.filter(item => item.reuse).length;
+      const allReuse = items.length > 0 && reuseItemCount === items.length;
+      const partialReuse = reuseItemCount > 0 && !allReuse;
       const worksInSelectedMonth = unitData.rows.some(row => (
         unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
       ));
-      const tone = allReuse ? 'reuse' : (worksInSelectedMonth ? 'active' : 'default');
+      const tone = (allReuse || partialReuse) ? 'reuse' : (worksInSelectedMonth ? 'active' : 'default');
       const label = tone === 'reuse'
-        ? `[앞단원 재사용] ${unitData.number}단원`
+        ? `[앞단원 ${partialReuse ? '일부 ' : ''}재사용] ${unitData.number}단원`
         : (tone === 'active' ? `[${monthNumber}월 작업] ${unitData.number}단원` : `${unitData.number}단원`);
-      return { number: unitData.number, label, tone, items };
+      return { number: unitData.number, label, tone, items, reuseItemCount };
     })
     .filter(unitData => unitData.items.length > 0);
 
