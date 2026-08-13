@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="6387" height="6817" viewBox="0 0 6387 6817" role="img" aria-labelledby="svg-title svg-desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="7447" height="6817" viewBox="0 0 7447 6817" role="img" aria-labelledby="svg-title svg-desc">
   <title id="svg-title">6학년 수학 단원별 이미지 최종 샘플</title>
   <desc id="svg-desc">확정 배치와 파일명 규칙을 적용한 Figma 편집용 SVG 샘플</desc>
   <style>
@@ -11,7 +11,7 @@
     .row-label { font-size: 52px; font-weight: 700; }
   </style>
   <g id="board" data-name="작업표 배경">
-    <rect id="board-background" x="0.5" y="0.5" width="6386" height="6816" rx="29.5" fill="#ffffff" stroke="#111111"/>
+    <rect id="board-background" x="0.5" y="0.5" width="7446" height="6816" rx="29.5" fill="#ffffff" stroke="#111111"/>
   </g>
   <g id="labels" data-name="행 라벨">
     
@@ -26,7 +26,7 @@
       <text id="band-2-thumbnail-2-label" x="165" y="5562" class="row-label">섬네일2</text>
     </g>
   </g>
-  <line id="band-1-major-divider" x1="191" y1="3254.5" x2="6060" y2="3254.5" stroke="#b7b7b7" stroke-width="4"/>
+  <line id="band-1-major-divider" x1="191" y1="3254.5" x2="7120" y2="3254.5" stroke="#b7b7b7" stroke-width="4"/>
   
   <g id="band-1-unit-2" data-name="[9월 작업] 2단원">
     <g id="band-1-unit-2-title" data-name="[9월 작업] 2단원 타이틀">
@@ -77,8 +77,8 @@
   </g>
   <g id="band-1-unit-3" data-name="[앞단원 재사용] 3단원">
     <g id="band-1-unit-3-title" data-name="[앞단원 재사용] 3단원 타이틀">
-      <rect id="band-1-unit-3-title-background" x="2664" y="119" width="936" height="176" rx="20" fill="#8f3fab"/>
-      <text id="band-1-unit-3-title-text" x="3132" y="232" text-anchor="middle" class="unit-title">[앞단원 재사용] 3단원</text>
+      <rect id="band-1-unit-3-title-background" x="2664" y="119" width="1996" height="176" rx="20" fill="#8f3fab"/>
+      <text id="band-1-unit-3-title-text" x="3662" y="232" text-anchor="middle" class="unit-title">[앞단원 재사용] 3단원</text>
     </g>
     
     <g id="band-1-unit-3-item-1" data-name="공간과 입체">
@@ -101,58 +101,78 @@
         <text id="band-1-unit-3-item-1-thumbnail-2-request" x="2672" y="2777" class="request-label">요청내용</text>
       </g>
     </g>
+    <g id="band-1-unit-3-item-2" data-name="소수의 나눗셈">
+      <desc>출판사별 단원명: 소수의 나눗셈</desc>
+      <g id="band-1-unit-3-item-2-name-title" data-name="소수의 나눗셈 타이틀">
+        <rect id="band-1-unit-3-item-2-name-background" x="3732" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-1-unit-3-item-2-name" x="4192" y="460.8" text-anchor="middle" style="font-size:68px;font-weight:700">소수의 나눗셈</text>
+      </g>
+      
+      <g id="band-1-unit-3-item-2-thumbnail-1" data-name="6_수학_2_2_1">
+        <rect id="band-1-unit-3-item-2-thumbnail-1-placeholder" x="3732" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-3-item-2-thumbnail-1-filename" x="3732" y="1325" class="filename reuse-filename">6_수학_2_2_1</text>
+        <text id="band-1-unit-3-item-2-thumbnail-1-request" x="3732" y="1445" class="request-label">요청내용</text>
+      </g>
+      <line id="band-1-unit-3-item-2-divider" x1="3709" y1="1833.5" x2="4699" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
+      
+      <g id="band-1-unit-3-item-2-thumbnail-2" data-name="6_수학_2_2_2">
+        <rect id="band-1-unit-3-item-2-thumbnail-2-placeholder" x="3732" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-3-item-2-thumbnail-2-filename" x="3732" y="2657" class="filename reuse-filename">6_수학_2_2_2</text>
+        <text id="band-1-unit-3-item-2-thumbnail-2-request" x="3732" y="2777" class="request-label">요청내용</text>
+      </g>
+    </g>
   </g>
   <g id="band-1-unit-4" data-name="4단원">
     <g id="band-1-unit-4-title" data-name="4단원 타이틀">
-      <rect id="band-1-unit-4-title-background" x="3724" y="119" width="1996" height="176" rx="20" fill="#666666"/>
-      <text id="band-1-unit-4-title-text" x="4722" y="232" text-anchor="middle" class="unit-title">4단원</text>
+      <rect id="band-1-unit-4-title-background" x="4784" y="119" width="1996" height="176" rx="20" fill="#666666"/>
+      <text id="band-1-unit-4-title-text" x="5782" y="232" text-anchor="middle" class="unit-title">4단원</text>
     </g>
     
     <g id="band-1-unit-4-item-1" data-name="비례식과 비례배분">
       <desc>출판사별 단원명: 비례식과 비례배분</desc>
       <g id="band-1-unit-4-item-1-name-title" data-name="비례식과 비례배분 타이틀">
-        <rect id="band-1-unit-4-item-1-name-background" x="3732" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
-        <text id="band-1-unit-4-item-1-name" x="4192" y="460.8" text-anchor="middle" style="font-size:68px;font-weight:700">비례식과 비례배분</text>
+        <rect id="band-1-unit-4-item-1-name-background" x="4792" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-1-unit-4-item-1-name" x="5252" y="460.8" text-anchor="middle" style="font-size:68px;font-weight:700">비례식과 비례배분</text>
       </g>
       
       <g id="band-1-unit-4-item-1-thumbnail-1" data-name="6_수학_4_1_1">
-        <rect id="band-1-unit-4-item-1-thumbnail-1-placeholder" x="3732" y="590" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-1-unit-4-item-1-thumbnail-1-filename" x="3732" y="1325" class="filename">6_수학_4_1_1</text>
-        <text id="band-1-unit-4-item-1-thumbnail-1-request" x="3732" y="1445" class="request-label">요청내용</text>
+        <rect id="band-1-unit-4-item-1-thumbnail-1-placeholder" x="4792" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-4-item-1-thumbnail-1-filename" x="4792" y="1325" class="filename">6_수학_4_1_1</text>
+        <text id="band-1-unit-4-item-1-thumbnail-1-request" x="4792" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="band-1-unit-4-item-1-divider" x1="3709" y1="1833.5" x2="4699" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
+      <line id="band-1-unit-4-item-1-divider" x1="4769" y1="1833.5" x2="5759" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
       <g id="band-1-unit-4-item-1-thumbnail-2" data-name="6_수학_4_1_2">
-        <rect id="band-1-unit-4-item-1-thumbnail-2-placeholder" x="3732" y="1922" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-1-unit-4-item-1-thumbnail-2-filename" x="3732" y="2657" class="filename">6_수학_4_1_2</text>
-        <text id="band-1-unit-4-item-1-thumbnail-2-request" x="3732" y="2777" class="request-label">요청내용</text>
+        <rect id="band-1-unit-4-item-1-thumbnail-2-placeholder" x="4792" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-4-item-1-thumbnail-2-filename" x="4792" y="2657" class="filename">6_수학_4_1_2</text>
+        <text id="band-1-unit-4-item-1-thumbnail-2-request" x="4792" y="2777" class="request-label">요청내용</text>
       </g>
     </g>
     <g id="band-1-unit-4-item-2" data-name="원의 둘레와 넓이">
       <desc>출판사별 단원명: 원의 둘레와 넓이</desc>
       <g id="band-1-unit-4-item-2-name-title" data-name="원의 둘레와 넓이 타이틀">
-        <rect id="band-1-unit-4-item-2-name-background" x="4792" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
-        <text id="band-1-unit-4-item-2-name" x="5252" y="460.8" text-anchor="middle" style="font-size:68px;font-weight:700">원의 둘레와 넓이</text>
+        <rect id="band-1-unit-4-item-2-name-background" x="5852" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-1-unit-4-item-2-name" x="6312" y="460.8" text-anchor="middle" style="font-size:68px;font-weight:700">원의 둘레와 넓이</text>
       </g>
       
       <g id="band-1-unit-4-item-2-thumbnail-1" data-name="6_수학_4_2_1">
-        <rect id="band-1-unit-4-item-2-thumbnail-1-placeholder" x="4792" y="590" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-1-unit-4-item-2-thumbnail-1-filename" x="4792" y="1325" class="filename">6_수학_4_2_1</text>
-        <text id="band-1-unit-4-item-2-thumbnail-1-request" x="4792" y="1445" class="request-label">요청내용</text>
+        <rect id="band-1-unit-4-item-2-thumbnail-1-placeholder" x="5852" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-4-item-2-thumbnail-1-filename" x="5852" y="1325" class="filename">6_수학_4_2_1</text>
+        <text id="band-1-unit-4-item-2-thumbnail-1-request" x="5852" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="band-1-unit-4-item-2-divider" x1="4769" y1="1833.5" x2="5759" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
+      <line id="band-1-unit-4-item-2-divider" x1="5829" y1="1833.5" x2="6819" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
       <g id="band-1-unit-4-item-2-thumbnail-2" data-name="6_수학_4_2_2">
-        <rect id="band-1-unit-4-item-2-thumbnail-2-placeholder" x="4792" y="1922" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-1-unit-4-item-2-thumbnail-2-filename" x="4792" y="2657" class="filename">6_수학_4_2_2</text>
-        <text id="band-1-unit-4-item-2-thumbnail-2-request" x="4792" y="2777" class="request-label">요청내용</text>
+        <rect id="band-1-unit-4-item-2-thumbnail-2-placeholder" x="5852" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-4-item-2-thumbnail-2-filename" x="5852" y="2657" class="filename">6_수학_4_2_2</text>
+        <text id="band-1-unit-4-item-2-thumbnail-2-request" x="5852" y="2777" class="request-label">요청내용</text>
       </g>
     </g>
   </g>
   <g id="band-2-unit-5" data-name="5단원">
     <g id="band-2-unit-5-title" data-name="5단원 타이틀">
-      <rect id="band-2-unit-5-title-background" x="544" y="3409" width="1996" height="176" rx="20" fill="#666666"/>
-      <text id="band-2-unit-5-title-text" x="1542" y="3522" text-anchor="middle" class="unit-title">5단원</text>
+      <rect id="band-2-unit-5-title-background" x="544" y="3409" width="3056" height="176" rx="20" fill="#666666"/>
+      <text id="band-2-unit-5-title-text" x="2072" y="3522" text-anchor="middle" class="unit-title">5단원</text>
     </g>
     
     <g id="band-2-unit-5-item-1" data-name="원의 넓이 / 원주율과 원의 넓이">
@@ -195,31 +215,51 @@
         <text id="band-2-unit-5-item-2-thumbnail-2-request" x="1612" y="6067" class="request-label">요청내용</text>
       </g>
     </g>
+    <g id="band-2-unit-5-item-3" data-name="비례식과 비례배분">
+      <desc>출판사별 단원명: 비례식과 비례배분</desc>
+      <g id="band-2-unit-5-item-3-name-title" data-name="비례식과 비례배분 타이틀">
+        <rect id="band-2-unit-5-item-3-name-background" x="2672" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-2-unit-5-item-3-name" x="3132" y="3750.8" text-anchor="middle" style="font-size:68px;font-weight:700">비례식과 비례배분</text>
+      </g>
+      
+      <g id="band-2-unit-5-item-3-thumbnail-1" data-name="6_수학_4_1_1">
+        <rect id="band-2-unit-5-item-3-thumbnail-1-placeholder" x="2672" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-2-unit-5-item-3-thumbnail-1-filename" x="2672" y="4615" class="filename reuse-filename">6_수학_4_1_1</text>
+        <text id="band-2-unit-5-item-3-thumbnail-1-request" x="2672" y="4735" class="request-label">요청내용</text>
+      </g>
+      <line id="band-2-unit-5-item-3-divider" x1="2649" y1="5123.5" x2="3639" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
+      
+      <g id="band-2-unit-5-item-3-thumbnail-2" data-name="6_수학_4_1_2">
+        <rect id="band-2-unit-5-item-3-thumbnail-2-placeholder" x="2672" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-2-unit-5-item-3-thumbnail-2-filename" x="2672" y="5947" class="filename reuse-filename">6_수학_4_1_2</text>
+        <text id="band-2-unit-5-item-3-thumbnail-2-request" x="2672" y="6067" class="request-label">요청내용</text>
+      </g>
+    </g>
   </g>
   <g id="band-2-unit-6" data-name="6단원">
     <g id="band-2-unit-6-title" data-name="6단원 타이틀">
-      <rect id="band-2-unit-6-title-background" x="2664" y="3409" width="936" height="176" rx="20" fill="#666666"/>
-      <text id="band-2-unit-6-title-text" x="3132" y="3522" text-anchor="middle" class="unit-title">6단원</text>
+      <rect id="band-2-unit-6-title-background" x="3724" y="3409" width="936" height="176" rx="20" fill="#666666"/>
+      <text id="band-2-unit-6-title-text" x="4192" y="3522" text-anchor="middle" class="unit-title">6단원</text>
     </g>
     
     <g id="band-2-unit-6-item-1" data-name="원기둥, 원뿔, 구">
       <desc>출판사별 단원명: 원기둥, 원뿔, 구</desc>
       <g id="band-2-unit-6-item-1-name-title" data-name="원기둥, 원뿔, 구 타이틀">
-        <rect id="band-2-unit-6-item-1-name-background" x="2672" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
-        <text id="band-2-unit-6-item-1-name" x="3132" y="3750.8" text-anchor="middle" style="font-size:68px;font-weight:700">원기둥, 원뿔, 구</text>
+        <rect id="band-2-unit-6-item-1-name-background" x="3732" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-2-unit-6-item-1-name" x="4192" y="3750.8" text-anchor="middle" style="font-size:68px;font-weight:700">원기둥, 원뿔, 구</text>
       </g>
       
       <g id="band-2-unit-6-item-1-thumbnail-1" data-name="6_수학_6_1">
-        <rect id="band-2-unit-6-item-1-thumbnail-1-placeholder" x="2672" y="3880" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-6-item-1-thumbnail-1-filename" x="2672" y="4615" class="filename">6_수학_6_1</text>
-        <text id="band-2-unit-6-item-1-thumbnail-1-request" x="2672" y="4735" class="request-label">요청내용</text>
+        <rect id="band-2-unit-6-item-1-thumbnail-1-placeholder" x="3732" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-2-unit-6-item-1-thumbnail-1-filename" x="3732" y="4615" class="filename">6_수학_6_1</text>
+        <text id="band-2-unit-6-item-1-thumbnail-1-request" x="3732" y="4735" class="request-label">요청내용</text>
       </g>
-      <line id="band-2-unit-6-item-1-divider" x1="2649" y1="5123.5" x2="3639" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
+      <line id="band-2-unit-6-item-1-divider" x1="3709" y1="5123.5" x2="4699" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
       
       <g id="band-2-unit-6-item-1-thumbnail-2" data-name="6_수학_6_2">
-        <rect id="band-2-unit-6-item-1-thumbnail-2-placeholder" x="2672" y="5212" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-6-item-1-thumbnail-2-filename" x="2672" y="5947" class="filename">6_수학_6_2</text>
-        <text id="band-2-unit-6-item-1-thumbnail-2-request" x="2672" y="6067" class="request-label">요청내용</text>
+        <rect id="band-2-unit-6-item-1-thumbnail-2-placeholder" x="3732" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-2-unit-6-item-1-thumbnail-2-filename" x="3732" y="5947" class="filename">6_수학_6_2</text>
+        <text id="band-2-unit-6-item-1-thumbnail-2-request" x="3732" y="6067" class="request-label">요청내용</text>
       </g>
     </g>
   </g>
