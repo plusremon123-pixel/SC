@@ -202,7 +202,7 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
   <title id="svg-title">3학년 수학 단원별 이미지 작업표</title>
   <desc id="svg-desc">Figma에서 개별 편집할 수 있도록 모든 단원, 콘텐츠, 이미지 자리, 파일명을 독립된 그룹과 객체로 구성한 SVG 샘플</desc>
   <style>
-    text { font-family: Arial, 'Malgun Gothic', sans-serif; fill: #172033; }
+    text { font-family: 'NanumGothic', sans-serif; fill: #172033; }
     .page-title { font-size: 28px; font-weight: 700; }
     .page-subtitle { font-size: 16px; font-weight: 600; fill: #5b6472; }
     .unit-header { font-size: 17px; font-weight: 700; }
