@@ -1493,7 +1493,7 @@ function renderUnitImageDataTable() {
       <td class="unit-image-subject-cell">${renderUnitImageSubjectCode(row.subject)}</td>
       <td>${escapeHtml(row.unit_number || '')}</td>
       <td class="unit-image-lesson-orders">${renderUnitImageLessonOrders(row.lesson_order_display)}</td>
-      <td>${escapeHtml(row.unit_name || '')}</td>
+      <td>${renderUnitImageValueWithCopy(row.unit_name, '단원명')}</td>
       <td class="unit-image-file-cell">${renderUnitImageFileName(row.image_file_names)}</td>
       <td class="unit-image-publisher-cell">${renderUnitImagePublishersForLessons(row.publisher, row.lesson_numbers)}</td>
       <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
