@@ -1,261 +1,235 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1480" viewBox="0 0 1600 1480" role="img" aria-labelledby="svg-title svg-desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="6387" height="6817" viewBox="0 0 6387 6817" role="img" aria-labelledby="svg-title svg-desc">
   <title id="svg-title">3학년 수학 단원별 이미지 작업표</title>
-  <desc id="svg-desc">Figma에서 개별 편집할 수 있도록 모든 단원, 콘텐츠, 이미지 자리, 파일명을 독립된 그룹과 객체로 구성한 SVG 샘플</desc>
+  <desc id="svg-desc">11.svg 배치를 기준으로 만든 Figma 편집용 SVG. 단원 타이틀, 단원명, 섬네일 자리, 파일명이 개별 그룹으로 구성되어 있습니다.</desc>
   <style>
-    text { font-family: 'NanumGothic', sans-serif; fill: #172033; }
-    .page-title { font-size: 28px; font-weight: 700; }
-    .page-subtitle { font-size: 16px; font-weight: 600; fill: #5b6472; }
-    .unit-header { font-size: 17px; font-weight: 700; }
-    .unit-name { font-size: 16px; font-weight: 700; }
-    .image-placeholder { fill: #d9d9dc; stroke: #c6c9ce; stroke-width: 1; }
-    .placeholder-label { font-size: 16px; font-weight: 700; fill: #9a9da4; letter-spacing: 1px; }
-    .name-bar { fill: #ececef; }
-    .caption-label { font-size: 12px; fill: #717783; }
-    .filename { font-size: 15px; font-weight: 700; fill: #252b36; }
-    .reuse-text { fill: #7e22ce; }
-    .reuse-caption { font-size: 12px; font-weight: 700; fill: #7e22ce; }
-    .publishers { font-size: 12px; fill: #5f6672; }
-    .divider { stroke: #d1d5db; stroke-width: 1; }
-    .rail-grade { font-size: 30px; font-weight: 700; }
-    .rail-subject { font-size: 20px; font-weight: 700; fill: #4b5563; }
-    .legend { font-size: 13px; font-weight: 700; fill: #5f6672; }
+    text { font-family: 'NanumGothic', sans-serif; letter-spacing: 0; }
+    .unit-title { fill: #ffffff; font-size: 72px; font-weight: 700; }
+    .content-name { fill: #111111; font-size: 68px; font-weight: 700; }
+    .filename { font-size: 52px; font-weight: 700; }
+    .request-label { fill: #111111; font-size: 46px; font-weight: 400; }
+    .row-label { fill: #111111; font-size: 52px; font-weight: 700; }
   </style>
 
-  <g id="background" data-name="배경">
-    <rect id="canvas-background" x="0" y="0" width="1600" height="1480" fill="#f4f5f7"/>
-    <rect id="grade-rail-background" x="30" y="30" width="220" height="1400" rx="4" fill="#dedfe2"/>
-    <rect id="content-board-background" x="270" y="30" width="1300" height="1400" rx="8" fill="#ffffff" stroke="#c9cdd3" stroke-width="1"/>
+  <g id="board" data-name="작업표 배경">
+    <rect id="board-background" x="0.5" y="0.5" width="6386" height="6816" rx="29.5" fill="#ffffff" stroke="#111111"/>
   </g>
 
-  <g id="grade-rail" data-name="학년 과목">
-    <text id="grade-label" x="140" y="105" text-anchor="middle" class="rail-grade">3학년</text>
-    <text id="subject-label" x="140" y="145" text-anchor="middle" class="rail-subject">수학 · 2학기</text>
-    <line id="grade-rail-divider" x1="70" y1="175" x2="210" y2="175" class="divider"/>
-    <text id="legend-title" x="70" y="215" class="page-subtitle">표시 기준</text>
-    <rect id="legend-new-color" x="70" y="238" width="18" height="18" rx="3" fill="#f97316"/>
-    <text id="legend-new-label" x="98" y="252" class="legend">신규 작업 단원</text>
-    <rect id="legend-reuse-color" x="70" y="270" width="18" height="18" rx="3" fill="#7e22ce"/>
-    <text id="legend-reuse-label" x="98" y="284" class="legend">앞 단원 재사용</text>
-    <rect id="legend-default-color" x="70" y="302" width="18" height="18" rx="3" fill="#60646b"/>
-    <text id="legend-default-label" x="98" y="316" class="legend">일반 단원</text>
+  <g id="labels" data-name="행 라벨">
+    <text id="unit-label-top" x="230" y="235" class="row-label">단원</text>
+    <text id="thumbnail-1-label-top" x="165" y="940" class="row-label">섬네일1</text>
+    <text id="thumbnail-2-label-top" x="165" y="2272" class="row-label">섬네일2</text>
+    <text id="unit-label-bottom" x="230" y="3525" class="row-label">단원</text>
+    <text id="thumbnail-1-label-bottom" x="165" y="4230" class="row-label">섬네일1</text>
+    <text id="thumbnail-2-label-bottom" x="165" y="5562" class="row-label">섬네일2</text>
   </g>
 
-  <g id="page-heading" data-name="제목">
-    <text id="page-title" x="300" y="62" class="page-title">3학년 수학 단원별 이미지 작업표</text>
-    <text id="page-subtitle" x="930" y="60" class="page-subtitle">파일명 규칙: 학년_과목_단원_내용구분_핑퐁번호</text>
-  </g>
-
-  <line id="row-divider" x1="300" y1="720" x2="1530" y2="720" class="divider"/>
+  <line id="major-divider" x1="191" y1="3254.5" x2="6060" y2="3254.5" stroke="#b7b7b7" stroke-width="4"/>
   
-  <g id="unit-2" data-name="2단원">
+  <g id="unit-2" data-name="[9월 작업] 2단원">
     <g id="unit-2-title" data-name="[9월 작업] 2단원 타이틀">
-      <rect id="unit-2-header" x="300" y="80" width="530" height="42" rx="4" fill="#f97316"/>
-      <text id="unit-2-header-label" x="565" y="107" text-anchor="middle" class="unit-header" fill="#ffffff">[9월 작업] 2단원</text>
+      <rect id="unit-2-title-background" x="544" y="119" width="1996" height="176" rx="20" fill="#ff6b00"/>
+      <text id="unit-2-title-text" x="1542" y="232" text-anchor="middle" class="unit-title">[9월 작업] 2단원</text>
     </g>
     
-    <g id="unit-2-division" data-name="2단원 나눗셈">
-      <rect id="unit-2-division-panel" x="292" y="126" width="266" height="600" rx="5" fill="#ffffff" stroke="#d5d9df" stroke-width="1"/>
-      <g id="unit-2-division-name-title" data-name="나눗셈 타이틀">
-        <rect id="unit-2-division-name-bg" x="300" y="134" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-2-division-name" x="425" y="161" text-anchor="middle" class="unit-name">나눗셈</text>
+    <g id="unit-2-item-1" data-name="[9월 작업] 2단원 나눗셈">
+      <g id="unit-2-item-1-name-title" data-name="나눗셈 타이틀">
+        <rect id="unit-2-item-1-name-background" x="552" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-2-item-1-name" x="1012" y="462" text-anchor="middle" class="content-name">나눗셈</text>
       </g>
       
-      <g id="unit-2-division-image-1" data-name="2단원 나눗셈 이미지 1">
-        <rect id="unit-2-division-image-1-placeholder" x="300" y="188" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-2-division-image-1-placeholder-label" x="425" y="268" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-2-division-image-1-filename-label" x="300" y="363" class="caption-label">파일명</text>
-        <text id="unit-2-division-image-1-filename" x="300" y="384" class="filename">3_수학_2_1_1</text>
-        
+      <g id="unit-2-item-1-thumbnail-1" data-name="3_수학_2_1_1">
+        <rect id="unit-2-item-1-thumbnail-1-placeholder" x="552" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-2-item-1-thumbnail-1-filename" x="552" y="1325" class="filename" fill="#111111">3_수학_2_1_1</text>
+        <text id="unit-2-item-1-thumbnail-1-request" x="552" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="unit-2-division-divider" x1="300" y1="442" x2="550" y2="442" class="divider"/>
+      <line id="unit-2-item-1-divider" x1="529" y1="1833.5" x2="1519" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-2-division-image-2" data-name="2단원 나눗셈 이미지 2">
-        <rect id="unit-2-division-image-2-placeholder" x="300" y="466" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-2-division-image-2-placeholder-label" x="425" y="546" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-2-division-image-2-filename-label" x="300" y="641" class="caption-label">파일명</text>
-        <text id="unit-2-division-image-2-filename" x="300" y="662" class="filename">3_수학_2_1_2</text>
-        
+      <g id="unit-2-item-1-thumbnail-2" data-name="3_수학_2_1_2">
+        <rect id="unit-2-item-1-thumbnail-2-placeholder" x="552" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-2-item-1-thumbnail-2-filename" x="552" y="2657" class="filename" fill="#111111">3_수학_2_1_2</text>
+        <text id="unit-2-item-1-thumbnail-2-request" x="552" y="2777" class="request-label">요청내용</text>
       </g>
-      <text id="unit-2-division-publishers" class="publishers" x="300" y="708" text-anchor="start"><tspan id="unit-2-division-publishers-line-1" x="300" dy="0">동아출판, 비상, 아이스크림, 천재(박)</tspan><tspan id="unit-2-division-publishers-line-2" x="300" dy="18">천재(한)</tspan></text>
     </g>
-    <g id="unit-2-circle" data-name="2단원 원">
-      <rect id="unit-2-circle-panel" x="572" y="126" width="266" height="600" rx="5" fill="#ffffff" stroke="#d5d9df" stroke-width="1"/>
-      <g id="unit-2-circle-name-title" data-name="원 타이틀">
-        <rect id="unit-2-circle-name-bg" x="580" y="134" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-2-circle-name" x="705" y="161" text-anchor="middle" class="unit-name">원</text>
+    <g id="unit-2-item-2" data-name="[9월 작업] 2단원 원">
+      <g id="unit-2-item-2-name-title" data-name="원 타이틀">
+        <rect id="unit-2-item-2-name-background" x="1612" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-2-item-2-name" x="2072" y="462" text-anchor="middle" class="content-name">원</text>
       </g>
       
-      <g id="unit-2-circle-image-1" data-name="2단원 원 이미지 1">
-        <rect id="unit-2-circle-image-1-placeholder" x="580" y="188" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-2-circle-image-1-placeholder-label" x="705" y="268" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-2-circle-image-1-filename-label" x="580" y="363" class="caption-label">파일명</text>
-        <text id="unit-2-circle-image-1-filename" x="580" y="384" class="filename">3_수학_2_2_1</text>
-        
+      <g id="unit-2-item-2-thumbnail-1" data-name="3_수학_2_2_1">
+        <rect id="unit-2-item-2-thumbnail-1-placeholder" x="1612" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-2-item-2-thumbnail-1-filename" x="1612" y="1325" class="filename" fill="#111111">3_수학_2_2_1</text>
+        <text id="unit-2-item-2-thumbnail-1-request" x="1612" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="unit-2-circle-divider" x1="580" y1="442" x2="830" y2="442" class="divider"/>
+      <line id="unit-2-item-2-divider" x1="1589" y1="1833.5" x2="2579" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-2-circle-image-2" data-name="2단원 원 이미지 2">
-        <rect id="unit-2-circle-image-2-placeholder" x="580" y="466" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-2-circle-image-2-placeholder-label" x="705" y="546" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-2-circle-image-2-filename-label" x="580" y="641" class="caption-label">파일명</text>
-        <text id="unit-2-circle-image-2-filename" x="580" y="662" class="filename">3_수학_2_2_2</text>
-        
+      <g id="unit-2-item-2-thumbnail-2" data-name="3_수학_2_2_2">
+        <rect id="unit-2-item-2-thumbnail-2-placeholder" x="1612" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-2-item-2-thumbnail-2-filename" x="1612" y="2657" class="filename" fill="#111111">3_수학_2_2_2</text>
+        <text id="unit-2-item-2-thumbnail-2-request" x="1612" y="2777" class="request-label">요청내용</text>
       </g>
-      <text id="unit-2-circle-publishers" class="publishers" x="580" y="708" text-anchor="start"><tspan id="unit-2-circle-publishers-line-1" x="580" dy="0">디딤돌, 미래엔, 와이비엠, 지학사</tspan></text>
     </g>
   </g>
-  <g id="unit-3" data-name="3단원">
-    <g id="unit-3-title" data-name="3단원 · 2단원 이미지 재사용 타이틀">
-      <rect id="unit-3-header" x="860" y="80" width="250" height="42" rx="4" fill="#7e22ce"/>
-      <text id="unit-3-header-label" x="985" y="107" text-anchor="middle" class="unit-header" fill="#ffffff">3단원 · 2단원 이미지 재사용</text>
+  <g id="unit-3" data-name="[앞단원 재사용] 3단원">
+    <g id="unit-3-title" data-name="[앞단원 재사용] 3단원 타이틀">
+      <rect id="unit-3-title-background" x="2664" y="119" width="1996" height="176" rx="20" fill="#8f3fab"/>
+      <text id="unit-3-title-text" x="3662" y="232" text-anchor="middle" class="unit-title">[앞단원 재사용] 3단원</text>
     </g>
     
-    <g id="unit-3-circle-reuse" data-name="3단원 원">
-      <rect id="unit-3-circle-reuse-panel" x="852" y="126" width="266" height="600" rx="5" fill="#faf5ff" stroke="#c084fc" stroke-width="1"/>
-      <g id="unit-3-circle-reuse-name-title" data-name="원 타이틀">
-        <rect id="unit-3-circle-reuse-name-bg" x="860" y="134" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-3-circle-reuse-name" x="985" y="161" text-anchor="middle" class="unit-name">원</text>
+    <g id="unit-3-item-1" data-name="[앞단원 재사용] 3단원 원">
+      <g id="unit-3-item-1-name-title" data-name="원 타이틀">
+        <rect id="unit-3-item-1-name-background" x="2672" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-3-item-1-name" x="3132" y="462" text-anchor="middle" class="content-name">원</text>
       </g>
       
-      <g id="unit-3-circle-reuse-image-1" data-name="3단원 원 이미지 1">
-        <rect id="unit-3-circle-reuse-image-1-placeholder" x="860" y="188" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-3-circle-reuse-image-1-placeholder-label" x="985" y="268" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-3-circle-reuse-image-1-filename-label" x="860" y="363" class="caption-label">파일명</text>
-        <text id="unit-3-circle-reuse-image-1-filename" x="860" y="384" class="filename reuse-text">3_수학_2_2_1</text>
-        <text id="unit-3-circle-reuse-image-1-reuse-label" x="860" y="404" class="reuse-caption">앞 단원 이미지 재사용</text>
+      <g id="unit-3-item-1-thumbnail-1" data-name="3_수학_2_2_1">
+        <rect id="unit-3-item-1-thumbnail-1-placeholder" x="2672" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-3-item-1-thumbnail-1-filename" x="2672" y="1325" class="filename" fill="#8f3fab">3_수학_2_2_1</text>
+        <text id="unit-3-item-1-thumbnail-1-request" x="2672" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="unit-3-circle-reuse-divider" x1="860" y1="442" x2="1110" y2="442" class="divider"/>
+      <line id="unit-3-item-1-divider" x1="2649" y1="1833.5" x2="3639" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-3-circle-reuse-image-2" data-name="3단원 원 이미지 2">
-        <rect id="unit-3-circle-reuse-image-2-placeholder" x="860" y="466" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-3-circle-reuse-image-2-placeholder-label" x="985" y="546" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-3-circle-reuse-image-2-filename-label" x="860" y="641" class="caption-label">파일명</text>
-        <text id="unit-3-circle-reuse-image-2-filename" x="860" y="662" class="filename reuse-text">3_수학_2_2_2</text>
-        <text id="unit-3-circle-reuse-image-2-reuse-label" x="860" y="682" class="reuse-caption">앞 단원 이미지 재사용</text>
+      <g id="unit-3-item-1-thumbnail-2" data-name="3_수학_2_2_2">
+        <rect id="unit-3-item-1-thumbnail-2-placeholder" x="2672" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-3-item-1-thumbnail-2-filename" x="2672" y="2657" class="filename" fill="#8f3fab">3_수학_2_2_2</text>
+        <text id="unit-3-item-1-thumbnail-2-request" x="2672" y="2777" class="request-label">요청내용</text>
       </g>
-      <text id="unit-3-circle-reuse-publishers" class="publishers" x="860" y="708" text-anchor="start"><tspan id="unit-3-circle-reuse-publishers-line-1" x="860" dy="0">동아출판, 비상, 아이스크림, 천재(박)</tspan><tspan id="unit-3-circle-reuse-publishers-line-2" x="860" dy="18">천재(한)</tspan></text>
+    </g>
+    <g id="unit-3-item-2" data-name="[앞단원 재사용] 3단원 나눗셈">
+      <g id="unit-3-item-2-name-title" data-name="나눗셈 타이틀">
+        <rect id="unit-3-item-2-name-background" x="3732" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-3-item-2-name" x="4192" y="462" text-anchor="middle" class="content-name">나눗셈</text>
+      </g>
+      
+      <g id="unit-3-item-2-thumbnail-1" data-name="3_수학_2_1_1">
+        <rect id="unit-3-item-2-thumbnail-1-placeholder" x="3732" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-3-item-2-thumbnail-1-filename" x="3732" y="1325" class="filename" fill="#8f3fab">3_수학_2_1_1</text>
+        <text id="unit-3-item-2-thumbnail-1-request" x="3732" y="1445" class="request-label">요청내용</text>
+      </g>
+      <line id="unit-3-item-2-divider" x1="3709" y1="1833.5" x2="4699" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
+      
+      <g id="unit-3-item-2-thumbnail-2" data-name="3_수학_2_1_2">
+        <rect id="unit-3-item-2-thumbnail-2-placeholder" x="3732" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-3-item-2-thumbnail-2-filename" x="3732" y="2657" class="filename" fill="#8f3fab">3_수학_2_1_2</text>
+        <text id="unit-3-item-2-thumbnail-2-request" x="3732" y="2777" class="request-label">요청내용</text>
+      </g>
     </g>
   </g>
   <g id="unit-4" data-name="4단원">
     <g id="unit-4-title" data-name="4단원 타이틀">
-      <rect id="unit-4-header" x="300" y="750" width="530" height="42" rx="4" fill="#60646b"/>
-      <text id="unit-4-header-label" x="565" y="777" text-anchor="middle" class="unit-header" fill="#ffffff">4단원</text>
+      <rect id="unit-4-title-background" x="544" y="3409" width="1996" height="176" rx="20" fill="#666666"/>
+      <text id="unit-4-title-text" x="1542" y="3522" text-anchor="middle" class="unit-title">4단원</text>
     </g>
     
-    <g id="unit-4-fraction" data-name="4단원 분수">
-      <rect id="unit-4-fraction-panel" x="292" y="796" width="266" height="600" rx="5" fill="#ffffff" stroke="#d5d9df" stroke-width="1"/>
-      <g id="unit-4-fraction-name-title" data-name="분수 타이틀">
-        <rect id="unit-4-fraction-name-bg" x="300" y="804" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-4-fraction-name" x="425" y="831" text-anchor="middle" class="unit-name">분수</text>
+    <g id="unit-4-item-1" data-name="4단원 분수">
+      <g id="unit-4-item-1-name-title" data-name="분수 타이틀">
+        <rect id="unit-4-item-1-name-background" x="552" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-4-item-1-name" x="1012" y="3752" text-anchor="middle" class="content-name">분수</text>
       </g>
       
-      <g id="unit-4-fraction-image-1" data-name="4단원 분수 이미지 1">
-        <rect id="unit-4-fraction-image-1-placeholder" x="300" y="858" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-4-fraction-image-1-placeholder-label" x="425" y="938" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-4-fraction-image-1-filename-label" x="300" y="1033" class="caption-label">파일명</text>
-        <text id="unit-4-fraction-image-1-filename" x="300" y="1054" class="filename">3_수학_4_1_1</text>
-        
+      <g id="unit-4-item-1-thumbnail-1" data-name="3_수학_4_1_1">
+        <rect id="unit-4-item-1-thumbnail-1-placeholder" x="552" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-4-item-1-thumbnail-1-filename" x="552" y="4615" class="filename" fill="#111111">3_수학_4_1_1</text>
+        <text id="unit-4-item-1-thumbnail-1-request" x="552" y="4735" class="request-label">요청내용</text>
       </g>
-      <line id="unit-4-fraction-divider" x1="300" y1="1112" x2="550" y2="1112" class="divider"/>
+      <line id="unit-4-item-1-divider" x1="529" y1="5123.5" x2="1519" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-4-fraction-image-2" data-name="4단원 분수 이미지 2">
-        <rect id="unit-4-fraction-image-2-placeholder" x="300" y="1136" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-4-fraction-image-2-placeholder-label" x="425" y="1216" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-4-fraction-image-2-filename-label" x="300" y="1311" class="caption-label">파일명</text>
-        <text id="unit-4-fraction-image-2-filename" x="300" y="1332" class="filename">3_수학_4_1_2</text>
-        
+      <g id="unit-4-item-1-thumbnail-2" data-name="3_수학_4_1_2">
+        <rect id="unit-4-item-1-thumbnail-2-placeholder" x="552" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-4-item-1-thumbnail-2-filename" x="552" y="5947" class="filename" fill="#111111">3_수학_4_1_2</text>
+        <text id="unit-4-item-1-thumbnail-2-request" x="552" y="6067" class="request-label">요청내용</text>
       </g>
-      <text id="unit-4-fraction-publishers" class="publishers" x="300" y="1378" text-anchor="start"><tspan id="unit-4-fraction-publishers-line-1" x="300" dy="0">동아출판, 아이스크림, 와이비엠, 천재(한)</tspan></text>
     </g>
-    <g id="unit-4-capacity-weight" data-name="4단원 들이와 무게">
-      <rect id="unit-4-capacity-weight-panel" x="572" y="796" width="266" height="600" rx="5" fill="#ffffff" stroke="#d5d9df" stroke-width="1"/>
-      <g id="unit-4-capacity-weight-name-title" data-name="들이와 무게 타이틀">
-        <rect id="unit-4-capacity-weight-name-bg" x="580" y="804" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-4-capacity-weight-name" x="705" y="831" text-anchor="middle" class="unit-name">들이와 무게</text>
+    <g id="unit-4-item-2" data-name="4단원 들이와 무게">
+      <g id="unit-4-item-2-name-title" data-name="들이와 무게 타이틀">
+        <rect id="unit-4-item-2-name-background" x="1612" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-4-item-2-name" x="2072" y="3752" text-anchor="middle" class="content-name">들이와 무게</text>
       </g>
       
-      <g id="unit-4-capacity-weight-image-1" data-name="4단원 들이와 무게 이미지 1">
-        <rect id="unit-4-capacity-weight-image-1-placeholder" x="580" y="858" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-4-capacity-weight-image-1-placeholder-label" x="705" y="938" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-4-capacity-weight-image-1-filename-label" x="580" y="1033" class="caption-label">파일명</text>
-        <text id="unit-4-capacity-weight-image-1-filename" x="580" y="1054" class="filename">3_수학_4_2_1</text>
-        
+      <g id="unit-4-item-2-thumbnail-1" data-name="3_수학_4_2_1">
+        <rect id="unit-4-item-2-thumbnail-1-placeholder" x="1612" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-4-item-2-thumbnail-1-filename" x="1612" y="4615" class="filename" fill="#111111">3_수학_4_2_1</text>
+        <text id="unit-4-item-2-thumbnail-1-request" x="1612" y="4735" class="request-label">요청내용</text>
       </g>
-      <line id="unit-4-capacity-weight-divider" x1="580" y1="1112" x2="830" y2="1112" class="divider"/>
+      <line id="unit-4-item-2-divider" x1="1589" y1="5123.5" x2="2579" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-4-capacity-weight-image-2" data-name="4단원 들이와 무게 이미지 2">
-        <rect id="unit-4-capacity-weight-image-2-placeholder" x="580" y="1136" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-4-capacity-weight-image-2-placeholder-label" x="705" y="1216" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-4-capacity-weight-image-2-filename-label" x="580" y="1311" class="caption-label">파일명</text>
-        <text id="unit-4-capacity-weight-image-2-filename" x="580" y="1332" class="filename">3_수학_4_2_2</text>
-        
+      <g id="unit-4-item-2-thumbnail-2" data-name="3_수학_4_2_2">
+        <rect id="unit-4-item-2-thumbnail-2-placeholder" x="1612" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-4-item-2-thumbnail-2-filename" x="1612" y="5947" class="filename" fill="#111111">3_수학_4_2_2</text>
+        <text id="unit-4-item-2-thumbnail-2-request" x="1612" y="6067" class="request-label">요청내용</text>
       </g>
-      <text id="unit-4-capacity-weight-publishers" class="publishers" x="580" y="1378" text-anchor="start"><tspan id="unit-4-capacity-weight-publishers-line-1" x="580" dy="0">디딤돌, 미래엔, 지학사, 천재(박)</tspan></text>
     </g>
   </g>
-  <g id="unit-5" data-name="5단원">
-    <g id="unit-5-title" data-name="5단원 · 4단원 이미지 재사용 타이틀">
-      <rect id="unit-5-header" x="860" y="750" width="250" height="42" rx="4" fill="#7e22ce"/>
-      <text id="unit-5-header-label" x="985" y="777" text-anchor="middle" class="unit-header" fill="#ffffff">5단원 · 4단원 이미지 재사용</text>
+  <g id="unit-5" data-name="[앞단원 재사용] 5단원">
+    <g id="unit-5-title" data-name="[앞단원 재사용] 5단원 타이틀">
+      <rect id="unit-5-title-background" x="2664" y="3409" width="1996" height="176" rx="20" fill="#8f3fab"/>
+      <text id="unit-5-title-text" x="3662" y="3522" text-anchor="middle" class="unit-title">[앞단원 재사용] 5단원</text>
     </g>
     
-    <g id="unit-5-capacity-weight-reuse" data-name="5단원 들이와 무게">
-      <rect id="unit-5-capacity-weight-reuse-panel" x="852" y="796" width="266" height="600" rx="5" fill="#faf5ff" stroke="#c084fc" stroke-width="1"/>
-      <g id="unit-5-capacity-weight-reuse-name-title" data-name="들이와 무게 타이틀">
-        <rect id="unit-5-capacity-weight-reuse-name-bg" x="860" y="804" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-5-capacity-weight-reuse-name" x="985" y="831" text-anchor="middle" class="unit-name">들이와 무게</text>
+    <g id="unit-5-item-1" data-name="[앞단원 재사용] 5단원 분수">
+      <g id="unit-5-item-1-name-title" data-name="분수 타이틀">
+        <rect id="unit-5-item-1-name-background" x="2672" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-5-item-1-name" x="3132" y="3752" text-anchor="middle" class="content-name">분수</text>
       </g>
       
-      <g id="unit-5-capacity-weight-reuse-image-1" data-name="5단원 들이와 무게 이미지 1">
-        <rect id="unit-5-capacity-weight-reuse-image-1-placeholder" x="860" y="858" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-5-capacity-weight-reuse-image-1-placeholder-label" x="985" y="938" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-5-capacity-weight-reuse-image-1-filename-label" x="860" y="1033" class="caption-label">파일명</text>
-        <text id="unit-5-capacity-weight-reuse-image-1-filename" x="860" y="1054" class="filename reuse-text">3_수학_4_2_1</text>
-        <text id="unit-5-capacity-weight-reuse-image-1-reuse-label" x="860" y="1074" class="reuse-caption">앞 단원 이미지 재사용</text>
+      <g id="unit-5-item-1-thumbnail-1" data-name="3_수학_4_1_1">
+        <rect id="unit-5-item-1-thumbnail-1-placeholder" x="2672" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-5-item-1-thumbnail-1-filename" x="2672" y="4615" class="filename" fill="#8f3fab">3_수학_4_1_1</text>
+        <text id="unit-5-item-1-thumbnail-1-request" x="2672" y="4735" class="request-label">요청내용</text>
       </g>
-      <line id="unit-5-capacity-weight-reuse-divider" x1="860" y1="1112" x2="1110" y2="1112" class="divider"/>
+      <line id="unit-5-item-1-divider" x1="2649" y1="5123.5" x2="3639" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-5-capacity-weight-reuse-image-2" data-name="5단원 들이와 무게 이미지 2">
-        <rect id="unit-5-capacity-weight-reuse-image-2-placeholder" x="860" y="1136" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-5-capacity-weight-reuse-image-2-placeholder-label" x="985" y="1216" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-5-capacity-weight-reuse-image-2-filename-label" x="860" y="1311" class="caption-label">파일명</text>
-        <text id="unit-5-capacity-weight-reuse-image-2-filename" x="860" y="1332" class="filename reuse-text">3_수학_4_2_2</text>
-        <text id="unit-5-capacity-weight-reuse-image-2-reuse-label" x="860" y="1352" class="reuse-caption">앞 단원 이미지 재사용</text>
+      <g id="unit-5-item-1-thumbnail-2" data-name="3_수학_4_1_2">
+        <rect id="unit-5-item-1-thumbnail-2-placeholder" x="2672" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-5-item-1-thumbnail-2-filename" x="2672" y="5947" class="filename" fill="#8f3fab">3_수학_4_1_2</text>
+        <text id="unit-5-item-1-thumbnail-2-request" x="2672" y="6067" class="request-label">요청내용</text>
       </g>
-      <text id="unit-5-capacity-weight-reuse-publishers" class="publishers" x="860" y="1378" text-anchor="start"><tspan id="unit-5-capacity-weight-reuse-publishers-line-1" x="860" dy="0">동아출판, 비상, 아이스크림, 와이비엠</tspan><tspan id="unit-5-capacity-weight-reuse-publishers-line-2" x="860" dy="18">천재(한)</tspan></text>
+    </g>
+    <g id="unit-5-item-2" data-name="[앞단원 재사용] 5단원 들이와 무게">
+      <g id="unit-5-item-2-name-title" data-name="들이와 무게 타이틀">
+        <rect id="unit-5-item-2-name-background" x="3732" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-5-item-2-name" x="4192" y="3752" text-anchor="middle" class="content-name">들이와 무게</text>
+      </g>
+      
+      <g id="unit-5-item-2-thumbnail-1" data-name="3_수학_4_2_1">
+        <rect id="unit-5-item-2-thumbnail-1-placeholder" x="3732" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-5-item-2-thumbnail-1-filename" x="3732" y="4615" class="filename" fill="#8f3fab">3_수학_4_2_1</text>
+        <text id="unit-5-item-2-thumbnail-1-request" x="3732" y="4735" class="request-label">요청내용</text>
+      </g>
+      <line id="unit-5-item-2-divider" x1="3709" y1="5123.5" x2="4699" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
+      
+      <g id="unit-5-item-2-thumbnail-2" data-name="3_수학_4_2_2">
+        <rect id="unit-5-item-2-thumbnail-2-placeholder" x="3732" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-5-item-2-thumbnail-2-filename" x="3732" y="5947" class="filename" fill="#8f3fab">3_수학_4_2_2</text>
+        <text id="unit-5-item-2-thumbnail-2-request" x="3732" y="6067" class="request-label">요청내용</text>
+      </g>
     </g>
   </g>
   <g id="unit-6" data-name="6단원">
     <g id="unit-6-title" data-name="6단원 타이틀">
-      <rect id="unit-6-header" x="1140" y="750" width="250" height="42" rx="4" fill="#60646b"/>
-      <text id="unit-6-header-label" x="1265" y="777" text-anchor="middle" class="unit-header" fill="#ffffff">6단원</text>
+      <rect id="unit-6-title-background" x="4784" y="3409" width="936" height="176" rx="20" fill="#666666"/>
+      <text id="unit-6-title-text" x="5252" y="3522" text-anchor="middle" class="unit-title">6단원</text>
     </g>
     
-    <g id="unit-6-picture-graph" data-name="6단원 그림그래프">
-      <rect id="unit-6-picture-graph-panel" x="1132" y="796" width="266" height="600" rx="5" fill="#ffffff" stroke="#d5d9df" stroke-width="1"/>
-      <g id="unit-6-picture-graph-name-title" data-name="그림그래프 타이틀">
-        <rect id="unit-6-picture-graph-name-bg" x="1140" y="804" width="250" height="42" rx="3" class="name-bar"/>
-        <text id="unit-6-picture-graph-name" x="1265" y="831" text-anchor="middle" class="unit-name">그림그래프</text>
+    <g id="unit-6-item-1" data-name="6단원 그림그래프">
+      <g id="unit-6-item-1-name-title" data-name="그림그래프 타이틀">
+        <rect id="unit-6-item-1-name-background" x="4792" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="unit-6-item-1-name" x="5252" y="3752" text-anchor="middle" class="content-name">그림그래프</text>
       </g>
       
-      <g id="unit-6-picture-graph-image-1" data-name="6단원 그림그래프 이미지 1">
-        <rect id="unit-6-picture-graph-image-1-placeholder" x="1140" y="858" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-6-picture-graph-image-1-placeholder-label" x="1265" y="938" text-anchor="middle" class="placeholder-label">IMAGE 1</text>
-        <text id="unit-6-picture-graph-image-1-filename-label" x="1140" y="1033" class="caption-label">파일명</text>
-        <text id="unit-6-picture-graph-image-1-filename" x="1140" y="1054" class="filename">3_수학_6_1_1</text>
-        
+      <g id="unit-6-item-1-thumbnail-1" data-name="3_수학_6_1_1">
+        <rect id="unit-6-item-1-thumbnail-1-placeholder" x="4792" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-6-item-1-thumbnail-1-filename" x="4792" y="4615" class="filename" fill="#111111">3_수학_6_1_1</text>
+        <text id="unit-6-item-1-thumbnail-1-request" x="4792" y="4735" class="request-label">요청내용</text>
       </g>
-      <line id="unit-6-picture-graph-divider" x1="1140" y1="1112" x2="1390" y2="1112" class="divider"/>
+      <line id="unit-6-item-1-divider" x1="4769" y1="5123.5" x2="5759" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="unit-6-picture-graph-image-2" data-name="6단원 그림그래프 이미지 2">
-        <rect id="unit-6-picture-graph-image-2-placeholder" x="1140" y="1136" width="250" height="150" rx="3" class="image-placeholder"/>
-        <text id="unit-6-picture-graph-image-2-placeholder-label" x="1265" y="1216" text-anchor="middle" class="placeholder-label">IMAGE 2</text>
-        <text id="unit-6-picture-graph-image-2-filename-label" x="1140" y="1311" class="caption-label">파일명</text>
-        <text id="unit-6-picture-graph-image-2-filename" x="1140" y="1332" class="filename">3_수학_6_1_2</text>
-        
+      <g id="unit-6-item-1-thumbnail-2" data-name="3_수학_6_1_2">
+        <rect id="unit-6-item-1-thumbnail-2-placeholder" x="4792" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="unit-6-item-1-thumbnail-2-filename" x="4792" y="5947" class="filename" fill="#111111">3_수학_6_1_2</text>
+        <text id="unit-6-item-1-thumbnail-2-request" x="4792" y="6067" class="request-label">요청내용</text>
       </g>
-      <text id="unit-6-picture-graph-publishers" class="publishers" x="1140" y="1378" text-anchor="start"><tspan id="unit-6-picture-graph-publishers-line-1" x="1140" dy="0">동아출판, 디딤돌, 미래엔, 비상</tspan><tspan id="unit-6-picture-graph-publishers-line-2" x="1140" dy="18">아이스크림, 와이비엠, 지학사, 천재(박)</tspan><tspan id="unit-6-picture-graph-publishers-line-3" x="1140" dy="18">천재(한)</tspan></text>
     </g>
   </g>
 </svg>
