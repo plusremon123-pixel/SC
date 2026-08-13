@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1520" viewBox="0 0 1600 1520" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">4학년 수학 단원별 이미지 작업표</title>
+  <desc id="svg-desc">Supabase에 저장된 4학년 수학 단원 데이터를 확정 화면 구성으로 배치한 Figma 편집용 SVG</desc>
+  <style>
+    text { font-family: 'NanumGothic', sans-serif; fill: #111111; }
+    .unit-title { font-size: 14px; font-weight: 700; }
+    .content-title { font-size: 14px; font-weight: 700; }
+    .row-label { font-size: 14px; font-weight: 700; }
+    .grade-label { font-size: 27px; font-weight: 700; }
+    .section-label { font-size: 13px; font-weight: 700; }
+    .meta-label { font-size: 10px; fill: #555555; }
+    .filename { font-size: 11px; font-weight: 700; }
+    .reuse-filename { fill: #8b2ca3; }
+    .request-label { font-size: 10px; fill: #222222; }
+  </style>
+
+  <g id="background" data-name="배경">
+    <rect id="canvas-background" x="0" y="0" width="1600" height="1520" fill="#f4f4f4"/>
+    <rect id="grade-background" x="24" y="34" width="205" height="142" fill="#d9d9d9"/>
+    <rect id="board-background" x="262" y="24" width="1310" height="1470" rx="5" fill="#ffffff" stroke="#bdbdbd" stroke-width="1"/>
+  </g>
+
+  <g id="grade-title" data-name="4학년 타이틀">
+    <text id="grade-title-text" x="126.5" y="113" text-anchor="middle" class="grade-label">4학년</text>
+  </g>
+
+  <g id="layout-labels" data-name="행 구분">
+    <text id="unit-label" x="285" y="74" class="section-label">단원</text>
+    <text id="thumbnail-1-label" x="300" y="222" text-anchor="end" class="row-label">섬네일1</text>
+    <text id="thumbnail-2-label" x="300" y="505" text-anchor="end" class="row-label">섬네일2</text>
+  </g>
+
+  <line id="top-thumbnail-divider" x1="315" y1="450" x2="1515" y2="450" stroke="#c9c9c9" stroke-width="1"/>
+  <line id="section-divider" x1="285" y1="735" x2="1515" y2="735" stroke="#c9c9c9" stroke-width="1"/>
+  <line id="bottom-thumbnail-divider" x1="315" y1="1162" x2="1515" y2="1162" stroke="#c9c9c9" stroke-width="1"/>
+
+
+  <g id="unit-2" data-name="2단원">
+
+    <g id="unit-2-title" data-name="[9월 작업] 2단원 타이틀">
+      <rect id="unit-2-title-background" x="315" y="58" width="590" height="36" rx="4" fill="#ff6b00"/>
+      <text id="unit-2-title-text" x="610" y="81" text-anchor="middle" class="unit-title" fill="#ffffff">[9월 작업] 2단원</text>
+    </g>
+
+      <g id="unit-2-content-1" data-name="2단원 삼각형">
+
+    <g id="unit-2-content-1-title" data-name="삼각형 타이틀">
+      <rect id="unit-2-content-1-title-background" x="315" y="104" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-2-content-1-title-text" x="406.6666666666667" y="126" text-anchor="middle" class="content-title">삼각형</text>
+    </g>
+
+    <g id="unit-2-content-1-slot-1" data-name="삼각형 섬네일1">
+      <rect id="unit-2-content-1-slot-1-image" x="315" y="150" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-2-content-1-slot-1-filename-label" x="315" y="300" class="meta-label">파일명</text>
+      <text id="unit-2-content-1-slot-1-filename" x="315" y="319" class="filename">4_수학_2_1_1</text>
+      <text id="unit-2-content-1-slot-1-request" x="315" y="337" class="request-label">이미지 활용</text>
+    </g>
+
+    <g id="unit-2-content-1-slot-2" data-name="삼각형 섬네일2">
+      <rect id="unit-2-content-1-slot-2-image" x="315" y="434" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-2-content-1-slot-2-filename-label" x="315" y="584" class="meta-label">파일명</text>
+      <text id="unit-2-content-1-slot-2-filename" x="315" y="603" class="filename">4_수학_2_1_2</text>
+      <text id="unit-2-content-1-slot-2-request" x="315" y="621" class="request-label">이미지 활용</text>
+    </g>
+      </g>
+      <g id="unit-2-content-2" data-name="2단원 사각형">
+
+    <g id="unit-2-content-2-title" data-name="사각형 타이틀">
+      <rect id="unit-2-content-2-title-background" x="518.3333333333334" y="104" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-2-content-2-title-text" x="610" y="126" text-anchor="middle" class="content-title">사각형</text>
+    </g>
+
+    <g id="unit-2-content-2-slot-1" data-name="사각형 섬네일1">
+      <rect id="unit-2-content-2-slot-1-image" x="518.3333333333334" y="150" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-2-content-2-slot-1-filename-label" x="518.3333333333334" y="300" class="meta-label">파일명</text>
+      <text id="unit-2-content-2-slot-1-filename" x="518.3333333333334" y="319" class="filename">4_수학_2_2_1</text>
+      <text id="unit-2-content-2-slot-1-request" x="518.3333333333334" y="337" class="request-label">이미지 활용</text>
+    </g>
+
+    <g id="unit-2-content-2-slot-2" data-name="사각형 섬네일2">
+      <rect id="unit-2-content-2-slot-2-image" x="518.3333333333334" y="434" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-2-content-2-slot-2-filename-label" x="518.3333333333334" y="584" class="meta-label">파일명</text>
+      <text id="unit-2-content-2-slot-2-filename" x="518.3333333333334" y="603" class="filename">4_수학_2_2_2</text>
+      <text id="unit-2-content-2-slot-2-request" x="518.3333333333334" y="621" class="request-label">이미지 활용</text>
+    </g>
+      </g>
+      <g id="unit-2-content-3" data-name="2단원 분수의 덧셈과 뺄셈">
+
+    <g id="unit-2-content-3-title" data-name="분수의 덧셈과 뺄셈 타이틀">
+      <rect id="unit-2-content-3-title-background" x="721.6666666666667" y="104" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-2-content-3-title-text" x="813.3333333333334" y="126" text-anchor="middle" class="content-title">분수의 덧셈과 뺄셈</text>
+    </g>
+
+    <g id="unit-2-content-3-slot-1" data-name="분수의 덧셈과 뺄셈 섬네일1">
+      <rect id="unit-2-content-3-slot-1-image" x="721.6666666666667" y="150" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-2-content-3-slot-1-filename-label" x="721.6666666666667" y="300" class="meta-label">파일명</text>
+      <text id="unit-2-content-3-slot-1-filename" x="721.6666666666667" y="319" class="filename">4_수학_2_3_1</text>
+      <text id="unit-2-content-3-slot-1-request" x="721.6666666666667" y="337" class="request-label">이미지 활용</text>
+    </g>
+
+    <g id="unit-2-content-3-slot-2" data-name="분수의 덧셈과 뺄셈 섬네일2">
+      <rect id="unit-2-content-3-slot-2-image" x="721.6666666666667" y="434" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-2-content-3-slot-2-filename-label" x="721.6666666666667" y="584" class="meta-label">파일명</text>
+      <text id="unit-2-content-3-slot-2-filename" x="721.6666666666667" y="603" class="filename">4_수학_2_3_2</text>
+      <text id="unit-2-content-3-slot-2-request" x="721.6666666666667" y="621" class="request-label">이미지 활용</text>
+    </g>
+      </g>
+  </g>
+  <g id="unit-3" data-name="3단원">
+
+    <g id="unit-3-title" data-name="3단원 타이틀">
+      <rect id="unit-3-title-background" x="939" y="58" width="386.6666666666667" height="36" rx="4" fill="#666666"/>
+      <text id="unit-3-title-text" x="1132.3333333333333" y="81" text-anchor="middle" class="unit-title" fill="#ffffff">3단원</text>
+    </g>
+
+      <g id="unit-3-content-1" data-name="3단원 소수의 덧셈과 뺄셈">
+
+    <g id="unit-3-content-1-title" data-name="소수의 덧셈과 뺄셈 타이틀">
+      <rect id="unit-3-content-1-title-background" x="939" y="104" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-3-content-1-title-text" x="1030.6666666666667" y="126" text-anchor="middle" class="content-title">소수의 덧셈과 뺄셈</text>
+    </g>
+
+    <g id="unit-3-content-1-slot-1" data-name="소수의 덧셈과 뺄셈 섬네일1">
+      <rect id="unit-3-content-1-slot-1-image" x="939" y="150" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-3-content-1-slot-1-filename-label" x="939" y="300" class="meta-label">파일명</text>
+      <text id="unit-3-content-1-slot-1-filename" x="939" y="319" class="filename">4_수학_3_1_1</text>
+      <text id="unit-3-content-1-slot-1-request" x="939" y="337" class="request-label">이미지 활용</text>
+    </g>
+
+    <g id="unit-3-content-1-slot-2" data-name="소수의 덧셈과 뺄셈 섬네일2">
+      <rect id="unit-3-content-1-slot-2-image" x="939" y="434" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-3-content-1-slot-2-filename-label" x="939" y="584" class="meta-label">파일명</text>
+      <text id="unit-3-content-1-slot-2-filename" x="939" y="603" class="filename">4_수학_3_1_2</text>
+      <text id="unit-3-content-1-slot-2-request" x="939" y="621" class="request-label">이미지 활용</text>
+    </g>
+      </g>
+      <g id="unit-3-content-2" data-name="3단원 사각형">
+
+    <g id="unit-3-content-2-title" data-name="사각형 타이틀">
+      <rect id="unit-3-content-2-title-background" x="1142.3333333333333" y="104" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-3-content-2-title-text" x="1234" y="126" text-anchor="middle" class="content-title">사각형</text>
+    </g>
+
+    <g id="unit-3-content-2-slot-1" data-name="사각형 섬네일1">
+      <rect id="unit-3-content-2-slot-1-image" x="1142.3333333333333" y="150" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-3-content-2-slot-1-filename-label" x="1142.3333333333333" y="300" class="meta-label">파일명</text>
+
+      <text id="unit-3-content-2-slot-1-request" x="1142.3333333333333" y="337" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-3-content-2-slot-2" data-name="사각형 섬네일2">
+      <rect id="unit-3-content-2-slot-2-image" x="1142.3333333333333" y="434" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-3-content-2-slot-2-filename-label" x="1142.3333333333333" y="584" class="meta-label">파일명</text>
+      <text id="unit-3-content-2-slot-2-filename" x="1142.3333333333333" y="603" class="filename reuse-filename">4_수학_2_2_2</text>
+      <text id="unit-3-content-2-slot-2-request" x="1142.3333333333333" y="621" class="request-label">이미지 활용</text>
+    </g>
+      </g>
+  </g>
+  <g id="unit-4" data-name="4단원">
+
+    <g id="unit-4-title" data-name="[앞단원 재사용] 4단원 타이틀">
+      <rect id="unit-4-title-background" x="315" y="770" width="183.33333333333334" height="36" rx="4" fill="#9145aa"/>
+      <text id="unit-4-title-text" x="406.6666666666667" y="793" text-anchor="middle" class="unit-title" fill="#ffffff">[앞단원 재사용] 4단원</text>
+    </g>
+
+      <g id="unit-4-content-1" data-name="4단원 사각형">
+
+    <g id="unit-4-content-1-title" data-name="사각형 타이틀">
+      <rect id="unit-4-content-1-title-background" x="315" y="816" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-4-content-1-title-text" x="406.6666666666667" y="838" text-anchor="middle" class="content-title">사각형</text>
+    </g>
+
+    <g id="unit-4-content-1-slot-1" data-name="사각형 섬네일1">
+      <rect id="unit-4-content-1-slot-1-image" x="315" y="862" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-4-content-1-slot-1-filename-label" x="315" y="1012" class="meta-label">파일명</text>
+
+      <text id="unit-4-content-1-slot-1-request" x="315" y="1049" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-4-content-1-slot-2" data-name="사각형 섬네일2">
+      <rect id="unit-4-content-1-slot-2-image" x="315" y="1146" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-4-content-1-slot-2-filename-label" x="315" y="1296" class="meta-label">파일명</text>
+
+      <text id="unit-4-content-1-slot-2-request" x="315" y="1333" class="request-label">요청내용</text>
+    </g>
+      </g>
+  </g>
+  <g id="unit-5" data-name="5단원">
+
+    <g id="unit-5-title" data-name="5단원 타이틀">
+      <rect id="unit-5-title-background" x="532.3333333333334" y="770" width="386.6666666666667" height="36" rx="4" fill="#666666"/>
+      <text id="unit-5-title-text" x="725.6666666666667" y="793" text-anchor="middle" class="unit-title" fill="#ffffff">5단원</text>
+    </g>
+
+      <g id="unit-5-content-1" data-name="5단원 꺾은선그래프">
+
+    <g id="unit-5-content-1-title" data-name="꺾은선그래프 타이틀">
+      <rect id="unit-5-content-1-title-background" x="532.3333333333334" y="816" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-5-content-1-title-text" x="624" y="838" text-anchor="middle" class="content-title">꺾은선그래프</text>
+    </g>
+
+    <g id="unit-5-content-1-slot-1" data-name="꺾은선그래프 섬네일1">
+      <rect id="unit-5-content-1-slot-1-image" x="532.3333333333334" y="862" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-5-content-1-slot-1-filename-label" x="532.3333333333334" y="1012" class="meta-label">파일명</text>
+
+      <text id="unit-5-content-1-slot-1-request" x="532.3333333333334" y="1049" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-5-content-1-slot-2" data-name="꺾은선그래프 섬네일2">
+      <rect id="unit-5-content-1-slot-2-image" x="532.3333333333334" y="1146" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-5-content-1-slot-2-filename-label" x="532.3333333333334" y="1296" class="meta-label">파일명</text>
+
+      <text id="unit-5-content-1-slot-2-request" x="532.3333333333334" y="1333" class="request-label">요청내용</text>
+    </g>
+      </g>
+      <g id="unit-5-content-2" data-name="5단원 다각형">
+
+    <g id="unit-5-content-2-title" data-name="다각형 타이틀">
+      <rect id="unit-5-content-2-title-background" x="735.6666666666667" y="816" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-5-content-2-title-text" x="827.3333333333334" y="838" text-anchor="middle" class="content-title">다각형</text>
+    </g>
+
+    <g id="unit-5-content-2-slot-1" data-name="다각형 섬네일1">
+      <rect id="unit-5-content-2-slot-1-image" x="735.6666666666667" y="862" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-5-content-2-slot-1-filename-label" x="735.6666666666667" y="1012" class="meta-label">파일명</text>
+
+      <text id="unit-5-content-2-slot-1-request" x="735.6666666666667" y="1049" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-5-content-2-slot-2" data-name="다각형 섬네일2">
+      <rect id="unit-5-content-2-slot-2-image" x="735.6666666666667" y="1146" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-5-content-2-slot-2-filename-label" x="735.6666666666667" y="1296" class="meta-label">파일명</text>
+
+      <text id="unit-5-content-2-slot-2-request" x="735.6666666666667" y="1333" class="request-label">요청내용</text>
+    </g>
+      </g>
+  </g>
+  <g id="unit-6" data-name="6단원">
+
+    <g id="unit-6-title" data-name="6단원 타이틀">
+      <rect id="unit-6-title-background" x="953" y="770" width="590" height="36" rx="4" fill="#666666"/>
+      <text id="unit-6-title-text" x="1248" y="793" text-anchor="middle" class="unit-title" fill="#ffffff">6단원</text>
+    </g>
+
+      <g id="unit-6-content-1" data-name="6단원 꺾은선그래프">
+
+    <g id="unit-6-content-1-title" data-name="꺾은선그래프 타이틀">
+      <rect id="unit-6-content-1-title-background" x="953" y="816" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-6-content-1-title-text" x="1044.6666666666667" y="838" text-anchor="middle" class="content-title">꺾은선그래프</text>
+    </g>
+
+    <g id="unit-6-content-1-slot-1" data-name="꺾은선그래프 섬네일1">
+      <rect id="unit-6-content-1-slot-1-image" x="953" y="862" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-6-content-1-slot-1-filename-label" x="953" y="1012" class="meta-label">파일명</text>
+
+      <text id="unit-6-content-1-slot-1-request" x="953" y="1049" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-6-content-1-slot-2" data-name="꺾은선그래프 섬네일2">
+      <rect id="unit-6-content-1-slot-2-image" x="953" y="1146" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-6-content-1-slot-2-filename-label" x="953" y="1296" class="meta-label">파일명</text>
+
+      <text id="unit-6-content-1-slot-2-request" x="953" y="1333" class="request-label">요청내용</text>
+    </g>
+      </g>
+      <g id="unit-6-content-2" data-name="6단원 다각형">
+
+    <g id="unit-6-content-2-title" data-name="다각형 타이틀">
+      <rect id="unit-6-content-2-title-background" x="1156.3333333333333" y="816" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-6-content-2-title-text" x="1248" y="838" text-anchor="middle" class="content-title">다각형</text>
+    </g>
+
+    <g id="unit-6-content-2-slot-1" data-name="다각형 섬네일1">
+      <rect id="unit-6-content-2-slot-1-image" x="1156.3333333333333" y="862" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-6-content-2-slot-1-filename-label" x="1156.3333333333333" y="1012" class="meta-label">파일명</text>
+
+      <text id="unit-6-content-2-slot-1-request" x="1156.3333333333333" y="1049" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-6-content-2-slot-2" data-name="다각형 섬네일2">
+      <rect id="unit-6-content-2-slot-2-image" x="1156.3333333333333" y="1146" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-6-content-2-slot-2-filename-label" x="1156.3333333333333" y="1296" class="meta-label">파일명</text>
+
+      <text id="unit-6-content-2-slot-2-request" x="1156.3333333333333" y="1333" class="request-label">요청내용</text>
+    </g>
+      </g>
+      <g id="unit-6-content-3" data-name="6단원 평면도형의 이동">
+
+    <g id="unit-6-content-3-title" data-name="평면도형의 이동 타이틀">
+      <rect id="unit-6-content-3-title-background" x="1359.6666666666667" y="816" width="183.33333333333334" height="34" rx="3" fill="#e7e7e7"/>
+      <text id="unit-6-content-3-title-text" x="1451.3333333333335" y="838" text-anchor="middle" class="content-title">평면도형의 이동</text>
+    </g>
+
+    <g id="unit-6-content-3-slot-1" data-name="평면도형의 이동 섬네일1">
+      <rect id="unit-6-content-3-slot-1-image" x="1359.6666666666667" y="862" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-6-content-3-slot-1-filename-label" x="1359.6666666666667" y="1012" class="meta-label">파일명</text>
+
+      <text id="unit-6-content-3-slot-1-request" x="1359.6666666666667" y="1049" class="request-label">요청내용</text>
+    </g>
+
+    <g id="unit-6-content-3-slot-2" data-name="평면도형의 이동 섬네일2">
+      <rect id="unit-6-content-3-slot-2-image" x="1359.6666666666667" y="1146" width="183.33333333333334" height="128" fill="#d7d7d7" stroke="#cdcdcd" stroke-width="0.8"/>
+      <text id="unit-6-content-3-slot-2-filename-label" x="1359.6666666666667" y="1296" class="meta-label">파일명</text>
+
+      <text id="unit-6-content-3-slot-2-request" x="1359.6666666666667" y="1333" class="request-label">요청내용</text>
+    </g>
+      </g>
+  </g>
+</svg>
