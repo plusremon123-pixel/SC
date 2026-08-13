@@ -19,17 +19,20 @@ const UNIT_IMAGE_REUSE_VISIBILITY_KEY = 'unit-image-reuse-visibility-v1';
 const UNIT_IMAGE_GRADE_START_COLUMNS = [2, 10, 18, 26, 34, 42];
 const UNIT_IMAGE_CONTENT_VARIANT_RULES = {
   '3|수학|2': [['나눗셈'], ['원']],
-  '3|수학|4': [['분수'], ['들이와 무게', '무게와 들이']],
-  '3|수학|5': [['들이와 무게', '무게와 들이']],
+  '3|수학|3': [['나눗셈'], ['원']],
+  '3|수학|4': [['분수', '분수와 소수'], ['들이와 무게', '무게와 들이']],
+  '3|수학|5': [['분수', '분수와 소수'], ['들이와 무게', '무게와 들이']],
   '3|수학|6': [['그림그래프', '자료와 그림그래프']],
-  '4|수학|2': [['삼각형'], ['사각형'], ['분수의 덧셈과 뺄셈']],
-  '4|수학|3': [['소수의 덧셈과 뺄셈'], ['사각형']],
+  '4|수학|2': [['삼각형'], ['사각형'], ['분수의 덧셈과 뺄셈'], ['소수의 덧셈과 뺄셈']],
+  '4|수학|3': [['소수의 덧셈과 뺄셈'], ['규칙 찾기와 식 만들기'], ['사각형']],
+  '4|수학|4': [['사각형'], ['소수의 덧셈과 뺄셈'], ['다각형']],
   '4|수학|5': [['꺾은선그래프', '자료와 꺾은선그래프'], ['다각형']],
   '4|수학|6': [['다각형'], ['꺾은선그래프'], ['평면도형의 이동']],
   '5|수학|5': [['직육면체', '직육면체와 정육면체']],
   '6|수학|2': [['공간과 입체'], ['소수의 나눗셈']],
+  '6|수학|3': [['공간과 입체'], ['소수의 나눗셈', '소수의 곱셈']],
   '6|수학|4': [['비례식과 비례배분'], ['원의 둘레와 넓이']],
-  '6|수학|5': [['원의 넓이', '원의 둘레와 넓이', '원주율과 원의 넓이']],
+  '6|수학|5': [['비례식과 비례배분'], ['원의 넓이', '원의 둘레와 넓이', '원주율과 원의 넓이']],
   '5|과학|2': [['날씨와 우리 생활'], ['열과 우리 생활']],
 };
 
@@ -660,9 +663,9 @@ async function loadUnitImageScheduleFromSupabase() {
   try {
     const [versions, details] = await Promise.all([
       supabaseRest('unit_image_schedule_versions?select=id,source_file_name,source_count,match_count,unmatched_count,uploaded_at,activated_at,metadata&status=eq.active&order=activated_at.desc&limit=1'),
-      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=source_sheet,source_cell,schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,lesson_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
+      loadAllSupabaseRows('v_unit_image_schedule_active_detail?select=source_sheet,source_cell,input_value,schedule_date,schedule_month,lesson_date,grade,term_type,semester,subject,unit_number,unit_name,lesson_name,image_number,publisher,image_name,lesson_id,lesson_order,is_reuse,match_status,match_message&order=schedule_date.asc,grade.asc,unit_number.asc,image_number.asc'),
     ]);
-    unitImageActiveDetails = Array.isArray(details) ? details : [];
+    unitImageActiveDetails = rebuildStoredMathUnitImageDetails(Array.isArray(details) ? details : []);
     unitImageLessonSortInfo = buildUnitImageLessonSortInfo(unitImageActiveDetails);
     const contentAssignment = assignUnitImageNumbers(unitImageActiveDetails, unitImageActiveDetails);
     unitImageContentWarnings = contentAssignment.warnings;
@@ -691,6 +694,39 @@ async function loadUnitImageScheduleFromSupabase() {
     setUnitImageStatus(`Supabase 데이터 조회 실패: ${error.message}`, true);
     renderUnitImageVersion(null);
   }
+}
+
+function rebuildStoredMathUnitImageDetails(details) {
+  const mathSources = new Map();
+  const nonMathDetails = [];
+  (details || []).forEach(row => {
+    if (row.subject !== '수학') {
+      nonMathDetails.push(row);
+      return;
+    }
+    const sourceKey = `${row.source_sheet || ''}|${row.source_cell || ''}`;
+    if (mathSources.has(sourceKey)) return;
+    const parsed = parseUnitImageInput(row.input_value || '');
+    mathSources.set(sourceKey, {
+      source_sheet: row.source_sheet,
+      source_cell: row.source_cell,
+      schedule_date: String(row.schedule_date || row.lesson_date || '').slice(0, 10),
+      grade: row.grade,
+      term_type: row.term_type,
+      semester: row.semester,
+      input_value: row.input_value,
+      content_status: row.is_reuse ? UNIT_IMAGE_PURPLE : UNIT_IMAGE_RED,
+      subject: '수학',
+      unit_lesson_code: parsed.lessonCode || normalizeUnitImageLessonCode(row.input_value),
+    });
+  });
+  if (!mathSources.size) return details || [];
+  return [...nonMathDetails, ...buildUnitImageMatches([...mathSources.values()])]
+    .sort((left, right) => naturalCompare(left.schedule_date, right.schedule_date)
+      || Number(left.grade || 0) - Number(right.grade || 0)
+      || naturalCompare(left.subject, right.subject)
+      || naturalCompare(left.unit_number, right.unit_number)
+      || naturalCompare(left.source_cell, right.source_cell));
 }
 
 function aggregateUnitImageDetailRows(details) {
@@ -1014,22 +1050,18 @@ function buildUnitImageMatches(sources) {
       && (!source.semester || Number(normalizeGrade(row.학기)) === Number(source.semester))
       && row.과목 === source.subject
     );
-    const candidates = baseCandidates.filter(row =>
+    const sourceDate = source.schedule_date.replace(/-/g, '');
+    const codeCandidates = baseCandidates.filter(row =>
       normalizeUnitImageLessonCode(row.과목차시_clean) === source.unit_lesson_code
     );
-    const sourceDate = source.schedule_date.replace(/-/g, '');
-    let exact = candidates.filter(row => normalizeScheduleDate(row.노출일) === sourceDate);
+    const dateCandidates = baseCandidates.filter(row => normalizeScheduleDate(row.노출일) === sourceDate);
+    const candidates = source.subject === '수학'
+      ? (dateCandidates.length ? dateCandidates : codeCandidates)
+      : codeCandidates;
+    let exact = source.subject === '수학'
+      ? dateCandidates
+      : codeCandidates.filter(row => normalizeScheduleDate(row.노출일) === sourceDate);
 
-    // 수학은 출판사별 차시 진도가 달라도 같은 날짜에 같은 단원을 오픈할 수 있다.
-    // 이 경우 일정 셀의 차시 번호보다 실제 단원 번호를 우선해 모든 출판사를 연결한다.
-    if (source.subject === '수학') {
-      const sourceUnitNumber = String(source.unit_lesson_code || '').match(/^(\d+)/)?.[1] || '';
-      const sameDateAndUnit = baseCandidates.filter(row => {
-        if (normalizeScheduleDate(row.노출일) !== sourceDate) return false;
-        return parseUnitInformation(row.단원명, row.과목차시_clean).number === sourceUnitNumber;
-      });
-      if (sameDateAndUnit.length) exact = sameDateAndUnit;
-    }
     let selected = exact;
     let matchStatus = 'matched';
     let matchMessage = '';
@@ -1065,18 +1097,24 @@ function normalizeScheduleDate(value) {
 
 function makeUnitImageMatch(source, row, matchStatus, matchMessage) {
   const unit = parseUnitInformation(row?.단원명 || '', source.unit_lesson_code);
+  const sourceUnitNumber = String(source.unit_lesson_code || '').match(/^(\d+)/)?.[1] || '';
+  const scheduleDate = String(source.schedule_date || '').slice(0, 10);
   return {
     source_sheet: source.source_sheet,
     source_cell: source.source_cell,
+    input_value: source.input_value,
+    content_status: source.content_status,
+    schedule_date: scheduleDate,
+    schedule_month: scheduleDate ? `${scheduleDate.slice(0, 7)}-01` : null,
     lesson_id: row?.차시고유번호 || null,
-    lesson_order: extractUnitImageLessonOrder(row?.과목차시_clean || source.unit_lesson_code),
+    lesson_order: extractUnitImageLessonOrder(source.unit_lesson_code),
     lesson_date: row?.노출일 ? isoDateFromDigits(normalizeScheduleDate(row.노출일)) : source.schedule_date,
     lesson_name: row?.차시명 || null,
     grade: source.grade,
     term_type: source.term_type,
     semester: source.semester,
     subject: source.subject,
-    unit_number: unit.number,
+    unit_number: source.subject === '수학' && sourceUnitNumber ? sourceUnitNumber : unit.number,
     unit_name: unit.name,
     publisher: row?.교과서 || '공통',
     image_number: null,
