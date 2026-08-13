@@ -1541,6 +1541,7 @@ async function copySelectedUnitImageSvg() {
     await copyUnitImageSvgMarkup(svg);
     window.__lastUnitImageSvgMarkup = svg;
     unitImageSvgCopyBtn.dataset.svgLength = String(svg.length);
+    unitImageSvgCopyBtn.dataset.svgGroupCount = String((svg.match(/<g\b/gu) || []).length);
     unitImageSvgCopyBtn.textContent = '복사 완료';
     unitImageSvgCopyBtn.classList.add('copied');
     clearTimeout(unitImageSvgCopyBtn._copyResetTimer);
@@ -1742,17 +1743,15 @@ function renderUnitImageSvgNameText({ id, x, y, text }) {
   }, 0);
   const fontSize = Math.max(24, Math.min(68, Math.floor(820 / Math.max(widthUnits, 1))));
   const baselineY = y + 88 + fontSize * 0.35;
-  return `<text id="${id}" x="${x}" y="${baselineY}" text-anchor="middle" style="font-size:${fontSize}px;font-weight:700">${unitImageSvgEscape(text)}</text>`;
+  return `<text id="${id}" data-name="${unitImageSvgEscape(text)} 타이틀 글자" x="${x}" y="${baselineY}" text-anchor="middle" style="font-size:${fontSize}px;font-weight:700">${unitImageSvgEscape(text)}</text>`;
 }
 
 function renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex, columnIndex, y, filename, reuse }) {
   const x = UNIT_IMAGE_SVG_COLUMN_X + columnIndex * UNIT_IMAGE_SVG_COLUMN_STEP;
   return `
-      <g id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}" data-name="${unitImageSvgEscape(filename || `섬네일${slotIndex + 1}`)}">
-        <rect id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-placeholder" x="${x}" y="${y}" width="${UNIT_IMAGE_SVG_COLUMN_WIDTH}" height="611" fill="#d9d9d9"/>
-        <text id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-filename" x="${x}" y="${y + 735}" class="filename${reuse ? ' reuse-filename' : ''}">${unitImageSvgEscape(filename)}</text>
-        <text id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-request" x="${x}" y="${y + 855}" class="request-label">요청내용</text>
-      </g>`;
+      <rect id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-placeholder" data-name="${unitImageSvgEscape(filename || `섬네일${slotIndex + 1}`)} 이미지 자리" x="${x}" y="${y}" width="${UNIT_IMAGE_SVG_COLUMN_WIDTH}" height="611" fill="#d9d9d9"/>
+      <text id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-filename" data-name="${unitImageSvgEscape(filename || `섬네일${slotIndex + 1}`)} 파일명" x="${x}" y="${y + 735}" class="filename${reuse ? ' reuse-filename' : ''}">${unitImageSvgEscape(filename)}</text>
+      <text id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-request" data-name="${unitImageSvgEscape(filename || `섬네일${slotIndex + 1}`)} 요청내용" x="${x}" y="${y + 855}" class="request-label">요청내용</text>`;
 }
 
 function renderUnitImageSvgItem(unitId, itemData, itemIndex, columnIndex, metrics) {
@@ -1760,21 +1759,17 @@ function renderUnitImageSvgItem(unitId, itemData, itemIndex, columnIndex, metric
   const headerX = UNIT_IMAGE_SVG_HEADER_X + columnIndex * UNIT_IMAGE_SVG_COLUMN_STEP;
   const itemName = itemData.names.join(' / ');
   return `
-    <g id="${unitId}-item-${itemIndex + 1}" data-name="${unitImageSvgEscape(itemData.names[0])}">
-      <desc>출판사별 단원명: ${unitImageSvgEscape(itemName)}</desc>
-      <g id="${unitId}-item-${itemIndex + 1}-name-title" data-name="${unitImageSvgEscape(itemData.names[0])} 타이틀">
-        <rect id="${unitId}-item-${itemIndex + 1}-name-background" x="${x}" y="${metrics.nameY}" width="${UNIT_IMAGE_SVG_COLUMN_WIDTH}" height="176" rx="20" fill="#e9e9e9"/>
-        ${renderUnitImageSvgNameText({
-          id: `${unitId}-item-${itemIndex + 1}-name`,
-          x: headerX + UNIT_IMAGE_SVG_HEADER_WIDTH / 2,
-          y: metrics.nameY,
-          text: itemData.names[0],
-        })}
-      </g>
-      ${renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex: 0, columnIndex, y: metrics.imageY[0], filename: itemData.files[0], reuse: itemData.reuse })}
-      <line id="${unitId}-item-${itemIndex + 1}-divider" x1="${headerX - 15}" y1="${metrics.dividerY}" x2="${headerX + UNIT_IMAGE_SVG_HEADER_WIDTH + 39}" y2="${metrics.dividerY}" stroke="#b7b7b7" stroke-width="4"/>
-      ${renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex: 1, columnIndex, y: metrics.imageY[1], filename: itemData.files[1], reuse: itemData.reuse })}
-    </g>`;
+    <desc id="${unitId}-item-${itemIndex + 1}-description">출판사별 단원명: ${unitImageSvgEscape(itemName)}</desc>
+    <rect id="${unitId}-item-${itemIndex + 1}-name-background" data-name="${unitImageSvgEscape(itemData.names[0])} 타이틀 배경" x="${x}" y="${metrics.nameY}" width="${UNIT_IMAGE_SVG_COLUMN_WIDTH}" height="176" rx="20" fill="#e9e9e9"/>
+    ${renderUnitImageSvgNameText({
+      id: `${unitId}-item-${itemIndex + 1}-name`,
+      x: headerX + UNIT_IMAGE_SVG_HEADER_WIDTH / 2,
+      y: metrics.nameY,
+      text: itemData.names[0],
+    })}
+    ${renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex: 0, columnIndex, y: metrics.imageY[0], filename: itemData.files[0], reuse: itemData.reuse })}
+    <line id="${unitId}-item-${itemIndex + 1}-divider" data-name="${unitImageSvgEscape(itemData.names[0])} 구분선" x1="${headerX - 15}" y1="${metrics.dividerY}" x2="${headerX + UNIT_IMAGE_SVG_HEADER_WIDTH + 39}" y2="${metrics.dividerY}" stroke="#b7b7b7" stroke-width="4"/>
+    ${renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex: 1, columnIndex, y: metrics.imageY[1], filename: itemData.files[1], reuse: itemData.reuse })}`;
 }
 
 function renderUnitImageSvgUnit(unitData, bandIndex, startColumn) {
@@ -1783,13 +1778,9 @@ function renderUnitImageSvgUnit(unitData, bandIndex, startColumn) {
   const x = UNIT_IMAGE_SVG_HEADER_X + startColumn * UNIT_IMAGE_SVG_COLUMN_STEP;
   const width = unitData.items.length * UNIT_IMAGE_SVG_HEADER_WIDTH + (unitData.items.length - 1) * 124;
   return `
-  <g id="${unitId}" data-name="${unitImageSvgEscape(unitData.label)}">
-    <g id="${unitId}-title" data-name="${unitImageSvgEscape(unitData.label)} 타이틀">
-      <rect id="${unitId}-title-background" x="${x}" y="${metrics.headerY}" width="${width}" height="176" rx="20" fill="${UNIT_IMAGE_SVG_COLORS[unitData.tone]}"/>
-      <text id="${unitId}-title-text" x="${x + width / 2}" y="${metrics.headerY + 113}" text-anchor="middle" class="unit-title">${unitImageSvgEscape(unitData.label)}</text>
-    </g>
-    ${unitData.items.map((itemData, itemIndex) => renderUnitImageSvgItem(unitId, itemData, itemIndex, startColumn + itemIndex, metrics)).join('')}
-  </g>`;
+  <rect id="${unitId}-title-background" data-name="${unitImageSvgEscape(unitData.label)} 타이틀 배경" x="${x}" y="${metrics.headerY}" width="${width}" height="176" rx="20" fill="${UNIT_IMAGE_SVG_COLORS[unitData.tone]}"/>
+  <text id="${unitId}-title-text" data-name="${unitImageSvgEscape(unitData.label)} 타이틀 글자" x="${x + width / 2}" y="${metrics.headerY + 113}" text-anchor="middle" class="unit-title">${unitImageSvgEscape(unitData.label)}</text>
+  ${unitData.items.map((itemData, itemIndex) => renderUnitImageSvgItem(unitId, itemData, itemIndex, startColumn + itemIndex, metrics)).join('')}`;
 }
 
 function renderUnitImageSvgBand(band, bandIndex) {
@@ -1804,11 +1795,9 @@ function renderUnitImageSvgBand(band, bandIndex) {
 function renderUnitImageSvgLabels(bandIndex) {
   const metrics = unitImageSvgBandMetrics(bandIndex);
   return `
-    <g id="band-${bandIndex + 1}-labels" data-name="${bandIndex + 1}번째 행 라벨">
-      <text id="band-${bandIndex + 1}-unit-label" x="230" y="${metrics.headerY + 116}" class="row-label">단원</text>
-      <text id="band-${bandIndex + 1}-thumbnail-1-label" x="165" y="${metrics.imageY[0] + 350}" class="row-label">섬네일1</text>
-      <text id="band-${bandIndex + 1}-thumbnail-2-label" x="165" y="${metrics.imageY[1] + 350}" class="row-label">섬네일2</text>
-    </g>`;
+    <text id="band-${bandIndex + 1}-unit-label" data-name="${bandIndex + 1}번째 행 단원 라벨" x="230" y="${metrics.headerY + 116}" class="row-label">단원</text>
+    <text id="band-${bandIndex + 1}-thumbnail-1-label" data-name="${bandIndex + 1}번째 행 섬네일1 라벨" x="165" y="${metrics.imageY[0] + 350}" class="row-label">섬네일1</text>
+    <text id="band-${bandIndex + 1}-thumbnail-2-label" data-name="${bandIndex + 1}번째 행 섬네일2 라벨" x="165" y="${metrics.imageY[1] + 350}" class="row-label">섬네일2</text>`;
 }
 
 function renderUnitImageSvgSample(sample) {
@@ -1833,12 +1822,8 @@ function renderUnitImageSvgSample(sample) {
     .request-label { font-size: 46px; font-weight: 400; }
     .row-label { font-size: 52px; font-weight: 700; }
   </style>
-  <g id="board" data-name="작업표 배경">
-    <rect id="board-background" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="29.5" fill="#ffffff" stroke="#111111"/>
-  </g>
-  <g id="labels" data-name="행 라벨">
-    ${sample.bands.map((_, bandIndex) => renderUnitImageSvgLabels(bandIndex)).join('')}
-  </g>
+  <rect id="board-background" data-name="작업표 배경" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="29.5" fill="#ffffff" stroke="#111111"/>
+  ${sample.bands.map((_, bandIndex) => renderUnitImageSvgLabels(bandIndex)).join('')}
   ${dividers}
   ${sample.bands.map((band, bandIndex) => renderUnitImageSvgBand(band, bandIndex)).join('')}
 </svg>`;
