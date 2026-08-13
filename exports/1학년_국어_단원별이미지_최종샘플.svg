@@ -109,84 +109,84 @@
       </g>
     </g>
   </g>
-  <g id="band-2-unit-6" data-name="6단원">
-    <g id="band-2-unit-6-title" data-name="6단원 타이틀">
-      <rect id="band-2-unit-6-title-background" x="544" y="3409" width="936" height="176" rx="20" fill="#666666"/>
-      <text id="band-2-unit-6-title-text" x="1012" y="3522" text-anchor="middle" class="unit-title">6단원</text>
+  <g id="band-1-unit-6" data-name="6단원">
+    <g id="band-1-unit-6-title" data-name="6단원 타이틀">
+      <rect id="band-1-unit-6-title-background" x="3724" y="119" width="936" height="176" rx="20" fill="#666666"/>
+      <text id="band-1-unit-6-title-text" x="4192" y="232" text-anchor="middle" class="unit-title">6단원</text>
     </g>
     
-    <g id="band-2-unit-6-item-1" data-name="문장을 읽고 써요">
+    <g id="band-1-unit-6-item-1" data-name="문장을 읽고 써요">
       <desc>출판사별 단원명: 문장을 읽고 써요</desc>
-      <g id="band-2-unit-6-item-1-name-title" data-name="문장을 읽고 써요 타이틀">
-        <rect id="band-2-unit-6-item-1-name-background" x="552" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
-        <text id="band-2-unit-6-item-1-name" x="1012" y="3746.04" text-anchor="middle" style="font-size:68px;font-weight:700"><tspan id="band-2-unit-6-item-1-name-line-1" x="1012" dy="0">문장을 읽고 써요</tspan></text>
+      <g id="band-1-unit-6-item-1-name-title" data-name="문장을 읽고 써요 타이틀">
+        <rect id="band-1-unit-6-item-1-name-background" x="3732" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-1-unit-6-item-1-name" x="4192" y="456.04" text-anchor="middle" style="font-size:68px;font-weight:700"><tspan id="band-1-unit-6-item-1-name-line-1" x="4192" dy="0">문장을 읽고 써요</tspan></text>
       </g>
       
-      <g id="band-2-unit-6-item-1-thumbnail-1" data-name="1_국어_6_1">
-        <rect id="band-2-unit-6-item-1-thumbnail-1-placeholder" x="552" y="3880" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-6-item-1-thumbnail-1-filename" x="552" y="4615" class="filename">1_국어_6_1</text>
-        <text id="band-2-unit-6-item-1-thumbnail-1-request" x="552" y="4735" class="request-label">요청내용</text>
+      <g id="band-1-unit-6-item-1-thumbnail-1" data-name="1_국어_6_1">
+        <rect id="band-1-unit-6-item-1-thumbnail-1-placeholder" x="3732" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-6-item-1-thumbnail-1-filename" x="3732" y="1325" class="filename">1_국어_6_1</text>
+        <text id="band-1-unit-6-item-1-thumbnail-1-request" x="3732" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="band-2-unit-6-item-1-divider" x1="529" y1="5123.5" x2="1519" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
+      <line id="band-1-unit-6-item-1-divider" x1="3709" y1="1833.5" x2="4699" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="band-2-unit-6-item-1-thumbnail-2" data-name="1_국어_6_2">
-        <rect id="band-2-unit-6-item-1-thumbnail-2-placeholder" x="552" y="5212" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-6-item-1-thumbnail-2-filename" x="552" y="5947" class="filename">1_국어_6_2</text>
-        <text id="band-2-unit-6-item-1-thumbnail-2-request" x="552" y="6067" class="request-label">요청내용</text>
+      <g id="band-1-unit-6-item-1-thumbnail-2" data-name="1_국어_6_2">
+        <rect id="band-1-unit-6-item-1-thumbnail-2-placeholder" x="3732" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-6-item-1-thumbnail-2-filename" x="3732" y="2657" class="filename">1_국어_6_2</text>
+        <text id="band-1-unit-6-item-1-thumbnail-2-request" x="3732" y="2777" class="request-label">요청내용</text>
       </g>
     </g>
   </g>
-  <g id="band-2-unit-7" data-name="7단원">
-    <g id="band-2-unit-7-title" data-name="7단원 타이틀">
-      <rect id="band-2-unit-7-title-background" x="1604" y="3409" width="936" height="176" rx="20" fill="#666666"/>
-      <text id="band-2-unit-7-title-text" x="2072" y="3522" text-anchor="middle" class="unit-title">7단원</text>
+  <g id="band-1-unit-7" data-name="7단원">
+    <g id="band-1-unit-7-title" data-name="7단원 타이틀">
+      <rect id="band-1-unit-7-title-background" x="4784" y="119" width="936" height="176" rx="20" fill="#666666"/>
+      <text id="band-1-unit-7-title-text" x="5252" y="232" text-anchor="middle" class="unit-title">7단원</text>
     </g>
     
-    <g id="band-2-unit-7-item-1" data-name="무엇이 중요할까요">
+    <g id="band-1-unit-7-item-1" data-name="무엇이 중요할까요">
       <desc>출판사별 단원명: 무엇이 중요할까요</desc>
-      <g id="band-2-unit-7-item-1-name-title" data-name="무엇이 중요할까요 타이틀">
-        <rect id="band-2-unit-7-item-1-name-background" x="1612" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
-        <text id="band-2-unit-7-item-1-name" x="2072" y="3746.04" text-anchor="middle" style="font-size:68px;font-weight:700"><tspan id="band-2-unit-7-item-1-name-line-1" x="2072" dy="0">무엇이 중요할까요</tspan></text>
+      <g id="band-1-unit-7-item-1-name-title" data-name="무엇이 중요할까요 타이틀">
+        <rect id="band-1-unit-7-item-1-name-background" x="4792" y="349" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-1-unit-7-item-1-name" x="5252" y="456.04" text-anchor="middle" style="font-size:68px;font-weight:700"><tspan id="band-1-unit-7-item-1-name-line-1" x="5252" dy="0">무엇이 중요할까요</tspan></text>
       </g>
       
-      <g id="band-2-unit-7-item-1-thumbnail-1" data-name="1_국어_7_1">
-        <rect id="band-2-unit-7-item-1-thumbnail-1-placeholder" x="1612" y="3880" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-7-item-1-thumbnail-1-filename" x="1612" y="4615" class="filename">1_국어_7_1</text>
-        <text id="band-2-unit-7-item-1-thumbnail-1-request" x="1612" y="4735" class="request-label">요청내용</text>
+      <g id="band-1-unit-7-item-1-thumbnail-1" data-name="1_국어_7_1">
+        <rect id="band-1-unit-7-item-1-thumbnail-1-placeholder" x="4792" y="590" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-7-item-1-thumbnail-1-filename" x="4792" y="1325" class="filename">1_국어_7_1</text>
+        <text id="band-1-unit-7-item-1-thumbnail-1-request" x="4792" y="1445" class="request-label">요청내용</text>
       </g>
-      <line id="band-2-unit-7-item-1-divider" x1="1589" y1="5123.5" x2="2579" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
+      <line id="band-1-unit-7-item-1-divider" x1="4769" y1="1833.5" x2="5759" y2="1833.5" stroke="#b7b7b7" stroke-width="4"/>
       
-      <g id="band-2-unit-7-item-1-thumbnail-2" data-name="1_국어_7_2">
-        <rect id="band-2-unit-7-item-1-thumbnail-2-placeholder" x="1612" y="5212" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-7-item-1-thumbnail-2-filename" x="1612" y="5947" class="filename">1_국어_7_2</text>
-        <text id="band-2-unit-7-item-1-thumbnail-2-request" x="1612" y="6067" class="request-label">요청내용</text>
+      <g id="band-1-unit-7-item-1-thumbnail-2" data-name="1_국어_7_2">
+        <rect id="band-1-unit-7-item-1-thumbnail-2-placeholder" x="4792" y="1922" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-1-unit-7-item-1-thumbnail-2-filename" x="4792" y="2657" class="filename">1_국어_7_2</text>
+        <text id="band-1-unit-7-item-1-thumbnail-2-request" x="4792" y="2777" class="request-label">요청내용</text>
       </g>
     </g>
   </g>
   <g id="band-2-unit-8" data-name="8단원">
     <g id="band-2-unit-8-title" data-name="8단원 타이틀">
-      <rect id="band-2-unit-8-title-background" x="2664" y="3409" width="936" height="176" rx="20" fill="#666666"/>
-      <text id="band-2-unit-8-title-text" x="3132" y="3522" text-anchor="middle" class="unit-title">8단원</text>
+      <rect id="band-2-unit-8-title-background" x="544" y="3409" width="936" height="176" rx="20" fill="#666666"/>
+      <text id="band-2-unit-8-title-text" x="1012" y="3522" text-anchor="middle" class="unit-title">8단원</text>
     </g>
     
     <g id="band-2-unit-8-item-1" data-name="느끼고 표현해요">
       <desc>출판사별 단원명: 느끼고 표현해요</desc>
       <g id="band-2-unit-8-item-1-name-title" data-name="느끼고 표현해요 타이틀">
-        <rect id="band-2-unit-8-item-1-name-background" x="2672" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
-        <text id="band-2-unit-8-item-1-name" x="3132" y="3746.04" text-anchor="middle" style="font-size:68px;font-weight:700"><tspan id="band-2-unit-8-item-1-name-line-1" x="3132" dy="0">느끼고 표현해요</tspan></text>
+        <rect id="band-2-unit-8-item-1-name-background" x="552" y="3639" width="928" height="176" rx="20" fill="#e9e9e9"/>
+        <text id="band-2-unit-8-item-1-name" x="1012" y="3746.04" text-anchor="middle" style="font-size:68px;font-weight:700"><tspan id="band-2-unit-8-item-1-name-line-1" x="1012" dy="0">느끼고 표현해요</tspan></text>
       </g>
       
       <g id="band-2-unit-8-item-1-thumbnail-1" data-name="1_국어_8_1">
-        <rect id="band-2-unit-8-item-1-thumbnail-1-placeholder" x="2672" y="3880" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-8-item-1-thumbnail-1-filename" x="2672" y="4615" class="filename">1_국어_8_1</text>
-        <text id="band-2-unit-8-item-1-thumbnail-1-request" x="2672" y="4735" class="request-label">요청내용</text>
+        <rect id="band-2-unit-8-item-1-thumbnail-1-placeholder" x="552" y="3880" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-2-unit-8-item-1-thumbnail-1-filename" x="552" y="4615" class="filename">1_국어_8_1</text>
+        <text id="band-2-unit-8-item-1-thumbnail-1-request" x="552" y="4735" class="request-label">요청내용</text>
       </g>
-      <line id="band-2-unit-8-item-1-divider" x1="2649" y1="5123.5" x2="3639" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
+      <line id="band-2-unit-8-item-1-divider" x1="529" y1="5123.5" x2="1519" y2="5123.5" stroke="#b7b7b7" stroke-width="4"/>
       
       <g id="band-2-unit-8-item-1-thumbnail-2" data-name="1_국어_8_2">
-        <rect id="band-2-unit-8-item-1-thumbnail-2-placeholder" x="2672" y="5212" width="928" height="611" fill="#d9d9d9"/>
-        <text id="band-2-unit-8-item-1-thumbnail-2-filename" x="2672" y="5947" class="filename">1_국어_8_2</text>
-        <text id="band-2-unit-8-item-1-thumbnail-2-request" x="2672" y="6067" class="request-label">요청내용</text>
+        <rect id="band-2-unit-8-item-1-thumbnail-2-placeholder" x="552" y="5212" width="928" height="611" fill="#d9d9d9"/>
+        <text id="band-2-unit-8-item-1-thumbnail-2-filename" x="552" y="5947" class="filename">1_국어_8_2</text>
+        <text id="band-2-unit-8-item-1-thumbnail-2-request" x="552" y="6067" class="request-label">요청내용</text>
       </g>
     </g>
   </g>

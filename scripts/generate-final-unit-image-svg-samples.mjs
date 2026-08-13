@@ -11,6 +11,8 @@ const HEADER_X_BASE = 544;
 const COLUMN_WIDTH = 928;
 const HEADER_COLUMN_WIDTH = 936;
 const BAND_HEIGHT = 3290;
+const DEFAULT_COLUMNS_PER_BAND = 5;
+const MAX_MATH_COLUMNS_PER_BAND = 6;
 
 const samples = [
   {
@@ -27,6 +29,24 @@ const samples = [
         unit('6', '6단원', 'default', [item('문장을 읽고 써요', ['1_국어_6_1', '1_국어_6_2'])]),
         unit('7', '7단원', 'default', [item('무엇이 중요할까요', ['1_국어_7_1', '1_국어_7_2'])]),
         unit('8', '8단원', 'default', [item('느끼고 표현해요', ['1_국어_8_1', '1_국어_8_2'])]),
+      ],
+    ],
+  },
+  {
+    grade: 2,
+    subject: '국어',
+    output: '2학년_국어_단원별이미지_최종샘플.svg',
+    bands: [
+      [
+        unit('2', '[9월 작업] 2단원', 'active', [item('서로 존중해요', ['2_국어_2_1', ''])]),
+        unit('3', '3단원', 'default', [item('내용을 살펴요', ['2_국어_3_1', ''])]),
+        unit('4', '4단원', 'default', [item('마음을 전해요', ['2_국어_4_1', '2_국어_4_2'])]),
+        unit('5', '5단원', 'default', [item('바른 말로 이야기 나누어요', ['2_국어_5_1', '2_국어_5_2'])]),
+        unit('6', '6단원', 'default', [item('매체를 경험해요', ['2_국어_6_1', '2_국어_6_2'])]),
+      ],
+      [
+        unit('7', '7단원', 'default', [item('내 생각은 이래요', ['2_국어_7_1', '2_국어_7_2'])]),
+        unit('8', '8단원', 'default', [item('나도 작가', ['2_국어_8_1', '2_국어_8_2'])]),
       ],
     ],
   },
@@ -68,6 +88,35 @@ const samples = [
     ],
   },
   {
+    grade: 6,
+    subject: '수학',
+    output: '6학년_수학_단원별이미지_최종샘플.svg',
+    bands: [
+      [
+        unit('2', '[9월 작업] 2단원', 'active', [
+          item('공간과 입체', ['6_수학_2_1_1', '6_수학_2_1_2']),
+          item('소수의 나눗셈', ['6_수학_2_2_1', '6_수학_2_2_2']),
+        ]),
+        unit('3', '[앞단원 재사용] 3단원', 'reuse', [
+          item('공간과 입체', ['6_수학_2_1_1', '6_수학_2_1_2'], true),
+        ]),
+        unit('4', '4단원', 'default', [
+          item('비례식과 비례배분', ['6_수학_4_1_1', '6_수학_4_1_2']),
+          item('원의 둘레와 넓이', ['6_수학_4_2_1', '6_수학_4_2_2']),
+        ]),
+      ],
+      [
+        unit('5', '5단원', 'default', [
+          item(['원의 넓이', '원주율과 원의 넓이'], ['6_수학_5_1_1', '6_수학_5_1_2']),
+          item('원의 둘레와 넓이', ['6_수학_4_2_1', '6_수학_4_2_2'], true),
+        ]),
+        unit('6', '6단원', 'default', [
+          item('원기둥, 원뿔, 구', ['6_수학_6_1', '6_수학_6_2']),
+        ]),
+      ],
+    ],
+  },
+  {
     grade: 5,
     subject: '수학',
     output: '5학년_수학_단원별이미지_최종샘플.svg',
@@ -80,6 +129,44 @@ const samples = [
         unit('4', '4단원', 'default', [item('소수의 곱셈', ['5_수학_4_1', '5_수학_4_2'])]),
         unit('5', '5단원', 'default', [item(['직육면체와 정육면체', '직육면체'], ['5_수학_5_1', '5_수학_5_2'])]),
         unit('6', '6단원', 'default', [item('평균과 가능성', ['5_수학_6_1', '5_수학_6_2'])]),
+      ],
+    ],
+  },
+  {
+    grade: 1,
+    subject: '바슬즐',
+    output: '1학년_바슬즐_단원별이미지_최종샘플.svg',
+    bands: [
+      [
+        unit('2', '[9월 작업] 2단원', 'active', [item('약속', ['1_바슬즐_2_1', '1_바슬즐_2_2'])]),
+        unit('3', '3단원', 'default', [item('상상', ['1_바슬즐_3_1', '1_바슬즐_3_2'])]),
+        unit('4', '4단원', 'default', [item('이야기', ['1_바슬즐_4_1', '1_바슬즐_4_2'])]),
+      ],
+    ],
+  },
+  {
+    grade: 3,
+    subject: '과학',
+    output: '3학년_과학_단원별이미지_최종샘플.svg',
+    bands: [
+      [
+        unit('2', '[9월 작업] 2단원', 'active', [item('지구와 바다', ['3_과학_2_1', '3_과학_2_2'])]),
+        unit('3', '3단원', 'default', [item('소리의 성질', ['3_과학_3_1', '3_과학_3_2'])]),
+        unit('4', '4단원', 'default', [item('감염병과 건강한 생활', ['3_과학_4_1', '3_과학_4_2'])]),
+      ],
+    ],
+  },
+  {
+    grade: 6,
+    subject: '영어',
+    output: '6학년_영어_단원별이미지_최종샘플.svg',
+    bands: [
+      [
+        unit('9', '[9월 작업] 9단원', 'active', [item('How Can I Get to the Museum?', ['6_영어_9_1', ''])]),
+        unit('10', '10단원', 'default', [item('Who Painted the Picture?', ['6_영어_10_1', '6_영어_10_2'])]),
+        unit('11', '11단원', 'default', [item('Why Are You Happy?', ['6_영어_11_1', '6_영어_11_2'])]),
+        unit('12', '12단원', 'default', [item('How About Turning Off the Light?', ['6_영어_12_1', '6_영어_12_2'])]),
+        unit('13', '13단원', 'default', [item('What Do You Think?', ['6_영어_13_1', '6_영어_13_2'])]),
       ],
     ],
   },
@@ -131,6 +218,42 @@ function unit(number, label, tone, items) {
   return { number, label, tone, items };
 }
 
+function reflowBands(sample) {
+  const units = sample.bands.flat();
+  const hasMultiItemUnit = units.some((unitData) => unitData.items.length > 1);
+  const maxColumns = sample.subject === '수학' && hasMultiItemUnit
+    ? MAX_MATH_COLUMNS_PER_BAND
+    : DEFAULT_COLUMNS_PER_BAND;
+  const bands = [[]];
+  let availableColumns = maxColumns;
+
+  for (const unitData of units) {
+    if (unitData.items.length <= maxColumns && unitData.items.length > availableColumns) {
+      bands.push([]);
+      availableColumns = maxColumns;
+    }
+
+    let itemIndex = 0;
+
+    while (itemIndex < unitData.items.length) {
+      if (availableColumns === 0) {
+        bands.push([]);
+        availableColumns = maxColumns;
+      }
+
+      const itemCount = Math.min(availableColumns, unitData.items.length - itemIndex);
+      bands.at(-1).push({
+        ...unitData,
+        items: unitData.items.slice(itemIndex, itemIndex + itemCount),
+      });
+      itemIndex += itemCount;
+      availableColumns -= itemCount;
+    }
+  }
+
+  return bands.filter((band) => band.length > 0);
+}
+
 const colors = {
   active: '#ff6b00',
   reuse: '#8f3fab',
@@ -166,6 +289,31 @@ function renderNameText({ id, x, y, lines }) {
   return `<text id="${id}" x="${x}" y="${startY}" text-anchor="middle" style="font-size:${fontSize}px;font-weight:700">${tspans}</text>`;
 }
 
+function wrapDisplayName(value) {
+  const text = String(value || '').trim();
+  const limit = /[A-Za-z]/.test(text) ? 22 : 12;
+  if (text.length <= limit) return [text];
+
+  const words = text.split(/\s+/u);
+  if (words.length === 1) {
+    const splitAt = Math.ceil(text.length / 2);
+    return [text.slice(0, splitAt), text.slice(splitAt)];
+  }
+
+  const target = text.length / 2;
+  let bestIndex = 1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < words.length; index += 1) {
+    const firstLine = words.slice(0, index).join(' ');
+    const distance = Math.abs(firstLine.length - target);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  }
+  return [words.slice(0, bestIndex).join(' '), words.slice(bestIndex).join(' ')];
+}
+
 function renderSlot({ unitId, itemIndex, slotIndex, columnIndex, y, filename, reuse }) {
   const x = COLUMN_X_BASE + columnIndex * COLUMN_STEP;
   return `
@@ -189,7 +337,7 @@ function renderItem(unitId, itemData, itemIndex, columnIndex, metrics) {
           id: `${unitId}-item-${itemIndex + 1}-name`,
           x: headerX + HEADER_COLUMN_WIDTH / 2,
           y: metrics.nameY,
-          lines: [itemData.names[0]],
+          lines: wrapDisplayName(itemData.names[0]),
         })}
       </g>
       ${renderSlot({ unitId, itemIndex, slotIndex: 0, columnIndex, y: metrics.imageY[0], filename: itemData.files[0], reuse: itemData.reuse })}
@@ -234,10 +382,11 @@ function renderLabels(bandIndex) {
 }
 
 function renderSample(sample) {
-  const maxColumns = Math.max(...sample.bands.map((band) => band.reduce((sum, unitData) => sum + unitData.items.length, 0)), 5);
+  const layoutBands = reflowBands(sample);
+  const maxColumns = Math.max(...layoutBands.map((band) => band.reduce((sum, unitData) => sum + unitData.items.length, 0)), DEFAULT_COLUMNS_PER_BAND);
   const width = 6387 + (maxColumns - 5) * COLUMN_STEP;
-  const height = sample.bands.length * BAND_HEIGHT + 237;
-  const dividers = sample.bands.slice(0, -1).map((_, index) => (
+  const height = layoutBands.length * BAND_HEIGHT + 237;
+  const dividers = layoutBands.slice(0, -1).map((_, index) => (
     `<line id="band-${index + 1}-major-divider" x1="191" y1="${3254.5 + index * BAND_HEIGHT}" x2="${width - 327}" y2="${3254.5 + index * BAND_HEIGHT}" stroke="#b7b7b7" stroke-width="4"/>`
   )).join('');
 
@@ -257,10 +406,10 @@ function renderSample(sample) {
     <rect id="board-background" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="29.5" fill="#ffffff" stroke="#111111"/>
   </g>
   <g id="labels" data-name="행 라벨">
-    ${sample.bands.map((_, bandIndex) => renderLabels(bandIndex)).join('')}
+    ${layoutBands.map((_, bandIndex) => renderLabels(bandIndex)).join('')}
   </g>
   ${dividers}
-  ${sample.bands.map((band, bandIndex) => renderBand(band, bandIndex)).join('')}
+  ${layoutBands.map((band, bandIndex) => renderBand(band, bandIndex)).join('')}
 </svg>
 `;
 }
