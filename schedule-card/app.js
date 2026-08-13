@@ -131,6 +131,7 @@ const unitImageSubjectTabs = document.getElementById('unit-image-subject-tabs');
 const unitImageReuseToggle = document.getElementById('unit-image-reuse-toggle');
 const unitImageTableBody = document.getElementById('unit-image-table-body');
 const unitImageEmpty = document.getElementById('unit-image-empty');
+const unitImageSvgCopyBtn = document.getElementById('unit-image-svg-copy-btn');
 
 let unitImageMode = false;
 let unitImageMonthlyRows = [];
@@ -556,6 +557,7 @@ function initUnitImageFeature() {
     });
   });
   renderUnitImageReuseToggle();
+  unitImageSvgCopyBtn?.addEventListener('click', copySelectedUnitImageSvg);
   unitImageTableBody?.addEventListener('click', event => {
     const button = event.target.closest?.('[data-unit-image-copy]');
     if (!button || !unitImageTableBody.contains(button)) return;
@@ -1464,6 +1466,7 @@ function renderUnitImageSubfilters() {
       renderUnitImageTable();
     });
   });
+  renderUnitImageSvgCopyState();
 }
 
 function renderUnitImageTable() {
@@ -1499,6 +1502,346 @@ function renderUnitImageDataTable() {
       <td class="unit-image-id-cell">${renderUnitImageLessonNumbersWithCopy(row.lesson_numbers)}</td>
     </tr>`).join('');
   requestFrameResize();
+}
+
+const UNIT_IMAGE_SVG_COLUMN_STEP = 1060;
+const UNIT_IMAGE_SVG_COLUMN_X = 552;
+const UNIT_IMAGE_SVG_HEADER_X = 544;
+const UNIT_IMAGE_SVG_COLUMN_WIDTH = 928;
+const UNIT_IMAGE_SVG_HEADER_WIDTH = 936;
+const UNIT_IMAGE_SVG_BAND_HEIGHT = 3290;
+const UNIT_IMAGE_SVG_DEFAULT_COLUMNS = 5;
+const UNIT_IMAGE_SVG_MATH_COLUMNS = 6;
+const UNIT_IMAGE_SVG_COLORS = {
+  active: '#ff6b00',
+  reuse: '#8f3fab',
+  default: '#666666',
+};
+
+function renderUnitImageSvgCopyState() {
+  if (!unitImageSvgCopyBtn) return;
+  const hasSelection = Boolean(selectedUnitImageMonth)
+    && selectedUnitImageGrade !== 'all'
+    && selectedUnitImageSubject !== 'all';
+  const hasRows = hasSelection && getUnitImageTermRows().some(row => (
+    String(row.grade || '').trim() === selectedUnitImageGrade
+      && String(row.subject || '').trim() === selectedUnitImageSubject
+  ));
+  unitImageSvgCopyBtn.disabled = !hasRows;
+  unitImageSvgCopyBtn.title = hasRows
+    ? `${selectedUnitImageGrade}학년 ${selectedUnitImageSubject} SVG 복사`
+    : '학년과 과목을 선택해 주세요';
+}
+
+async function copySelectedUnitImageSvg() {
+  if (!unitImageSvgCopyBtn || unitImageSvgCopyBtn.disabled) return;
+  const defaultText = 'SVG 복사';
+  try {
+    const svg = buildSelectedUnitImageSvg();
+    await copyUnitImageSvgMarkup(svg);
+    window.__lastUnitImageSvgMarkup = svg;
+    unitImageSvgCopyBtn.dataset.svgLength = String(svg.length);
+    unitImageSvgCopyBtn.textContent = '복사 완료';
+    unitImageSvgCopyBtn.classList.add('copied');
+    clearTimeout(unitImageSvgCopyBtn._copyResetTimer);
+    unitImageSvgCopyBtn._copyResetTimer = setTimeout(() => {
+      unitImageSvgCopyBtn.textContent = defaultText;
+      unitImageSvgCopyBtn.classList.remove('copied');
+    }, 3000);
+  } catch (error) {
+    console.error(error);
+    alert(`SVG 복사에 실패했습니다.\n${error.message}`);
+  }
+}
+
+async function copyUnitImageSvgMarkup(svg) {
+  if (navigator.clipboard?.write && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([svg], { type: 'text/html' }),
+        'text/plain': new Blob([svg], { type: 'text/plain' }),
+      })]);
+      return;
+    } catch (error) {
+      console.warn('SVG clipboard item copy failed. Falling back to DOM copy.', error);
+    }
+  }
+
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;left:-100000px;top:0;width:1px;height:1px;overflow:hidden;';
+  holder.setAttribute('contenteditable', 'true');
+  holder.innerHTML = svg;
+  document.body.appendChild(holder);
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNode(holder.firstElementChild || holder);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  const copied = document.execCommand('copy');
+  selection.removeAllRanges();
+  holder.remove();
+  if (!copied) throw new Error('브라우저에서 클립보드 복사를 허용하지 않았습니다.');
+}
+
+function buildSelectedUnitImageSvg() {
+  if (!selectedUnitImageMonth || selectedUnitImageGrade === 'all' || selectedUnitImageSubject === 'all') {
+    throw new Error('월, 학년, 과목을 선택해 주세요.');
+  }
+  const rowsForSelection = getUnitImageTermRows().filter(row => (
+    String(row.grade || '').trim() === selectedUnitImageGrade
+      && String(row.subject || '').trim() === selectedUnitImageSubject
+  ));
+  if (!rowsForSelection.length) throw new Error('선택한 학년과 과목에 데이터가 없습니다.');
+
+  const sample = buildUnitImageSvgSample(rowsForSelection);
+  return renderUnitImageSvgSample(sample);
+}
+
+function buildUnitImageSvgSample(rowsForSelection) {
+  const units = new Map();
+  rowsForSelection.forEach(row => {
+    const unitNumber = String(row.unit_number || '').trim();
+    if (!unitNumber) return;
+    if (!units.has(unitNumber)) {
+      units.set(unitNumber, {
+        number: unitNumber,
+        rows: [],
+        items: new Map(),
+      });
+    }
+    const unitData = units.get(unitNumber);
+    unitData.rows.push(row);
+    const imageName = String(row.image_name || createUnitImageFileName(
+      row.grade,
+      row.subject,
+      unitNumber,
+      row.image_number,
+      row.content_variant,
+    )).trim();
+    const family = imageName.replace(/_\d+$/u, '');
+    if (!unitData.items.has(family)) {
+      unitData.items.set(family, {
+        family,
+        names: new Map(),
+        files: new Set(),
+        rows: [],
+      });
+    }
+    const item = unitData.items.get(family);
+    const name = String(row.unit_name || '').trim();
+    if (name) item.names.set(name, (item.names.get(name) || 0) + 1);
+    if (imageName) item.files.add(imageName);
+    item.rows.push(row);
+  });
+
+  const monthNumber = Number(selectedUnitImageMonth.split('-')[1]);
+  const normalizedUnits = [...units.values()]
+    .sort((left, right) => naturalCompare(left.number, right.number))
+    .map(unitData => {
+      const items = [...unitData.items.values()]
+        .map(item => {
+          const names = [...item.names.entries()]
+            .sort((left, right) => right[1] - left[1]
+              || left[0].length - right[0].length
+              || naturalCompare(left[0], right[0]))
+            .map(([name]) => name);
+          const files = [...item.files].sort((left, right) => {
+            const leftNumber = Number(left.match(/_(\d+)$/u)?.[1] || 0);
+            const rightNumber = Number(right.match(/_(\d+)$/u)?.[1] || 0);
+            return leftNumber - rightNumber || naturalCompare(left, right);
+          });
+          const assetUnitNumber = String(files[0] || '').split('_')[2] || unitData.number;
+          const allRowsAreReuse = item.rows.length > 0
+            && item.rows.every(row => row.is_reuse === true);
+          return {
+            names: names.length ? names : ['단원명 확인 필요'],
+            files: [files[0] || '', files[1] || ''],
+            reuse: assetUnitNumber !== unitData.number || allRowsAreReuse,
+          };
+        })
+        .sort((left, right) => naturalCompare(left.files[0], right.files[0])
+          || naturalCompare(left.names[0], right.names[0]));
+      const allReuse = items.length > 0 && items.every(item => item.reuse);
+      const worksInSelectedMonth = unitData.rows.some(row => (
+        unitImageDisplayMonth(row.schedule_month) === selectedUnitImageMonth
+      ));
+      const tone = allReuse ? 'reuse' : (worksInSelectedMonth ? 'active' : 'default');
+      const label = tone === 'reuse'
+        ? `[앞단원 재사용] ${unitData.number}단원`
+        : (tone === 'active' ? `[${monthNumber}월 작업] ${unitData.number}단원` : `${unitData.number}단원`);
+      return { number: unitData.number, label, tone, items };
+    })
+    .filter(unitData => unitData.items.length > 0);
+
+  return {
+    grade: Number(selectedUnitImageGrade),
+    subject: selectedUnitImageSubject,
+    bands: reflowUnitImageSvgBands(normalizedUnits, selectedUnitImageSubject),
+  };
+}
+
+function reflowUnitImageSvgBands(units, subject) {
+  const hasMultiItemUnit = units.some(unitData => unitData.items.length > 1);
+  const maxColumns = subject === '수학' && hasMultiItemUnit
+    ? UNIT_IMAGE_SVG_MATH_COLUMNS
+    : UNIT_IMAGE_SVG_DEFAULT_COLUMNS;
+  const bands = [[]];
+  let availableColumns = maxColumns;
+
+  units.forEach(unitData => {
+    if (unitData.items.length <= maxColumns && unitData.items.length > availableColumns) {
+      bands.push([]);
+      availableColumns = maxColumns;
+    }
+    let itemIndex = 0;
+    while (itemIndex < unitData.items.length) {
+      if (availableColumns === 0) {
+        bands.push([]);
+        availableColumns = maxColumns;
+      }
+      const itemCount = Math.min(availableColumns, unitData.items.length - itemIndex);
+      bands.at(-1).push({
+        ...unitData,
+        items: unitData.items.slice(itemIndex, itemIndex + itemCount),
+      });
+      itemIndex += itemCount;
+      availableColumns -= itemCount;
+    }
+  });
+  return bands.filter(band => band.length > 0);
+}
+
+function unitImageSvgBandMetrics(bandIndex) {
+  const offset = bandIndex * UNIT_IMAGE_SVG_BAND_HEIGHT;
+  return {
+    headerY: 119 + offset,
+    nameY: 349 + offset,
+    imageY: [590 + offset, 1922 + offset],
+    dividerY: 1833.5 + offset,
+  };
+}
+
+function unitImageSvgEscape(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
+function unitImageSvgId(value) {
+  return String(value || '').replace(/[^a-zA-Z0-9_-]+/g, '_');
+}
+
+function renderUnitImageSvgNameText({ id, x, y, text }) {
+  const widthUnits = [...text].reduce((sum, character) => {
+    if (/\s/u.test(character)) return sum + 0.32;
+    if (/[\u3131-\uD79D]/u.test(character)) return sum + 0.96;
+    return sum + 0.58;
+  }, 0);
+  const fontSize = Math.max(24, Math.min(68, Math.floor(820 / Math.max(widthUnits, 1))));
+  const baselineY = y + 88 + fontSize * 0.35;
+  return `<text id="${id}" x="${x}" y="${baselineY}" text-anchor="middle" style="font-size:${fontSize}px;font-weight:700">${unitImageSvgEscape(text)}</text>`;
+}
+
+function renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex, columnIndex, y, filename, reuse }) {
+  const x = UNIT_IMAGE_SVG_COLUMN_X + columnIndex * UNIT_IMAGE_SVG_COLUMN_STEP;
+  return `
+      <g id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}" data-name="${unitImageSvgEscape(filename || `섬네일${slotIndex + 1}`)}">
+        <rect id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-placeholder" x="${x}" y="${y}" width="${UNIT_IMAGE_SVG_COLUMN_WIDTH}" height="611" fill="#d9d9d9"/>
+        <text id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-filename" x="${x}" y="${y + 735}" class="filename${reuse ? ' reuse-filename' : ''}">${unitImageSvgEscape(filename)}</text>
+        <text id="${unitId}-item-${itemIndex + 1}-thumbnail-${slotIndex + 1}-request" x="${x}" y="${y + 855}" class="request-label">요청내용</text>
+      </g>`;
+}
+
+function renderUnitImageSvgItem(unitId, itemData, itemIndex, columnIndex, metrics) {
+  const x = UNIT_IMAGE_SVG_COLUMN_X + columnIndex * UNIT_IMAGE_SVG_COLUMN_STEP;
+  const headerX = UNIT_IMAGE_SVG_HEADER_X + columnIndex * UNIT_IMAGE_SVG_COLUMN_STEP;
+  const itemName = itemData.names.join(' / ');
+  return `
+    <g id="${unitId}-item-${itemIndex + 1}" data-name="${unitImageSvgEscape(itemData.names[0])}">
+      <desc>출판사별 단원명: ${unitImageSvgEscape(itemName)}</desc>
+      <g id="${unitId}-item-${itemIndex + 1}-name-title" data-name="${unitImageSvgEscape(itemData.names[0])} 타이틀">
+        <rect id="${unitId}-item-${itemIndex + 1}-name-background" x="${x}" y="${metrics.nameY}" width="${UNIT_IMAGE_SVG_COLUMN_WIDTH}" height="176" rx="20" fill="#e9e9e9"/>
+        ${renderUnitImageSvgNameText({
+          id: `${unitId}-item-${itemIndex + 1}-name`,
+          x: headerX + UNIT_IMAGE_SVG_HEADER_WIDTH / 2,
+          y: metrics.nameY,
+          text: itemData.names[0],
+        })}
+      </g>
+      ${renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex: 0, columnIndex, y: metrics.imageY[0], filename: itemData.files[0], reuse: itemData.reuse })}
+      <line id="${unitId}-item-${itemIndex + 1}-divider" x1="${headerX - 15}" y1="${metrics.dividerY}" x2="${headerX + UNIT_IMAGE_SVG_HEADER_WIDTH + 39}" y2="${metrics.dividerY}" stroke="#b7b7b7" stroke-width="4"/>
+      ${renderUnitImageSvgSlot({ unitId, itemIndex, slotIndex: 1, columnIndex, y: metrics.imageY[1], filename: itemData.files[1], reuse: itemData.reuse })}
+    </g>`;
+}
+
+function renderUnitImageSvgUnit(unitData, bandIndex, startColumn) {
+  const metrics = unitImageSvgBandMetrics(bandIndex);
+  const unitId = `band-${bandIndex + 1}-unit-${unitImageSvgId(unitData.number)}`;
+  const x = UNIT_IMAGE_SVG_HEADER_X + startColumn * UNIT_IMAGE_SVG_COLUMN_STEP;
+  const width = unitData.items.length * UNIT_IMAGE_SVG_HEADER_WIDTH + (unitData.items.length - 1) * 124;
+  return `
+  <g id="${unitId}" data-name="${unitImageSvgEscape(unitData.label)}">
+    <g id="${unitId}-title" data-name="${unitImageSvgEscape(unitData.label)} 타이틀">
+      <rect id="${unitId}-title-background" x="${x}" y="${metrics.headerY}" width="${width}" height="176" rx="20" fill="${UNIT_IMAGE_SVG_COLORS[unitData.tone]}"/>
+      <text id="${unitId}-title-text" x="${x + width / 2}" y="${metrics.headerY + 113}" text-anchor="middle" class="unit-title">${unitImageSvgEscape(unitData.label)}</text>
+    </g>
+    ${unitData.items.map((itemData, itemIndex) => renderUnitImageSvgItem(unitId, itemData, itemIndex, startColumn + itemIndex, metrics)).join('')}
+  </g>`;
+}
+
+function renderUnitImageSvgBand(band, bandIndex) {
+  let startColumn = 0;
+  return band.map(unitData => {
+    const rendered = renderUnitImageSvgUnit(unitData, bandIndex, startColumn);
+    startColumn += unitData.items.length;
+    return rendered;
+  }).join('');
+}
+
+function renderUnitImageSvgLabels(bandIndex) {
+  const metrics = unitImageSvgBandMetrics(bandIndex);
+  return `
+    <g id="band-${bandIndex + 1}-labels" data-name="${bandIndex + 1}번째 행 라벨">
+      <text id="band-${bandIndex + 1}-unit-label" x="230" y="${metrics.headerY + 116}" class="row-label">단원</text>
+      <text id="band-${bandIndex + 1}-thumbnail-1-label" x="165" y="${metrics.imageY[0] + 350}" class="row-label">섬네일1</text>
+      <text id="band-${bandIndex + 1}-thumbnail-2-label" x="165" y="${metrics.imageY[1] + 350}" class="row-label">섬네일2</text>
+    </g>`;
+}
+
+function renderUnitImageSvgSample(sample) {
+  const maxColumns = Math.max(
+    ...sample.bands.map(band => band.reduce((sum, unitData) => sum + unitData.items.length, 0)),
+    UNIT_IMAGE_SVG_DEFAULT_COLUMNS,
+  );
+  const width = 6387 + (maxColumns - UNIT_IMAGE_SVG_DEFAULT_COLUMNS) * UNIT_IMAGE_SVG_COLUMN_STEP;
+  const height = sample.bands.length * UNIT_IMAGE_SVG_BAND_HEIGHT + 237;
+  const dividers = sample.bands.slice(0, -1).map((_, index) => (
+    `<line id="band-${index + 1}-major-divider" x1="191" y1="${3254.5 + index * UNIT_IMAGE_SVG_BAND_HEIGHT}" x2="${width - 327}" y2="${3254.5 + index * UNIT_IMAGE_SVG_BAND_HEIGHT}" stroke="#b7b7b7" stroke-width="4"/>`
+  )).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">${sample.grade}학년 ${unitImageSvgEscape(sample.subject)} 단원별 이미지</title>
+  <desc id="svg-desc">선택한 월의 작업 단원과 앞 단원 재사용 정보를 반영한 Figma 편집용 SVG</desc>
+  <style>
+    text { font-family: 'NanumGothic', sans-serif; fill: #111111; letter-spacing: 0; }
+    .unit-title { fill: #ffffff; font-size: 72px; font-weight: 700; }
+    .filename { font-size: 52px; font-weight: 700; }
+    .reuse-filename { fill: #8f3fab; }
+    .request-label { font-size: 46px; font-weight: 400; }
+    .row-label { font-size: 52px; font-weight: 700; }
+  </style>
+  <g id="board" data-name="작업표 배경">
+    <rect id="board-background" x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="29.5" fill="#ffffff" stroke="#111111"/>
+  </g>
+  <g id="labels" data-name="행 라벨">
+    ${sample.bands.map((_, bandIndex) => renderUnitImageSvgLabels(bandIndex)).join('')}
+  </g>
+  ${dividers}
+  ${sample.bands.map((band, bandIndex) => renderUnitImageSvgBand(band, bandIndex)).join('')}
+</svg>`;
 }
 
 function renderUnitImageDateTable() {

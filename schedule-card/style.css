@@ -648,13 +648,47 @@ body.unit-image-only {
 }
 
 .unit-image-only .unit-image-only-title {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .unit-image-only-title h1 {
+  margin: 0;
   color: #102a43;
   font-size: 1.6rem;
   font-weight: 700;
+}
+
+.unit-image-svg-copy-btn {
+  min-width: 112px;
+  min-height: 42px;
+  padding: 0.62rem 1rem;
+  border: 1px solid #0f6f8e;
+  border-radius: 6px;
+  background: #117a9b;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unit-image-svg-copy-btn:hover:not(:disabled) {
+  border-color: #075985;
+  background: #075985;
+}
+
+.unit-image-svg-copy-btn.copied {
+  border-color: #2f855a;
+  background: #2f855a;
+}
+
+.unit-image-svg-copy-btn:disabled {
+  border-color: #d5dee7;
+  background: #e8eef4;
+  color: #8a9aaa;
+  cursor: default;
 }
 
 .unit-image-only .container {
