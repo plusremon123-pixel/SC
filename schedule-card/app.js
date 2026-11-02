@@ -4,8 +4,8 @@ const LS_KEY_FILES  = 'curriculum_filenames';
 const LS_KEY_APIKEY = 'openrouter_api_key';
 const LS_UPLOAD_MARKER = 'manual-upload-v3';
 const UPLOAD_AUTH_KEY = 'schedule-card-upload-auth-v1';
-const SUPABASE_URL = 'https://vmebzlinboxmgcrrorwv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR';
+const SUPABASE_URL = 'https://nifovpevsebyletmnwpz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_eXkKmspY2hVT_ofof3lrig_9zzYPzPO';
 const SUPABASE_BUCKET = 'schedule-data';
 const SUPABASE_SCHEDULE_CARD_PATH = 'schedule-card-data.json';
 const UNIT_IMAGE_QUERY = new URLSearchParams(window.location.search);
@@ -476,7 +476,8 @@ async function loadSharedScheduleCardData() {
 }
 
 async function getSharedScheduleCardData() {
-  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${SUPABASE_SCHEDULE_CARD_PATH}?t=${Date.now()}`, {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/${SUPABASE_BUCKET}/${SUPABASE_SCHEDULE_CARD_PATH}?t=${Date.now()}`, {
+    headers: { apikey: SUPABASE_KEY },
     cache: 'no-store',
   });
   if (response.status === 404) return null;
@@ -499,7 +500,6 @@ async function putJsonToSupabase(path, data) {
     method: 'PUT',
     headers: {
       apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json; charset=utf-8',
       'x-upsert': 'true',
     },
@@ -624,7 +624,6 @@ function setUnitImageStatus(message, isError = false) {
 function supabaseHeaders(contentType = false) {
   const headers = {
     apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
   };
   if (contentType) headers['Content-Type'] = 'application/json; charset=utf-8';
   return headers;
@@ -3142,4 +3141,5 @@ function copyBulkDayIdsExcel(day, btn) {
   btn.classList.add('copied');
   setTimeout(() => { btn.textContent = '엑셀 복사'; btn.classList.remove('copied'); }, 2000);
 }
+
 

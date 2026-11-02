@@ -9,13 +9,12 @@ const PUBLISHER_AUTH_KEY = "schedule-card-publisher-auth-v1";
 const ALL_DATES = "__all_dates__";
 const ALL_SUBJECTS = "__all_subjects__";
 const ALL_CATEGORIES = "__all_categories__";
-const SUPABASE_URL = "https://vmebzlinboxmgcrrorwv.supabase.co";
-const SUPABASE_KEY = "sb_publishable_zpANEcZ0GfP44NpyHgZECQ_LPxB1LhR";
+const SUPABASE_URL = "https://nifovpevsebyletmnwpz.supabase.co";
+const SUPABASE_KEY = 'sb_publishable_eXkKmspY2hVT_ofof3lrig_9zzYPzPO';
 const SUPABASE_BUCKET = "schedule-data";
 const SUPABASE_DATA_PATH = "current.xlsx";
 const SUPABASE_TIMELINE_PATH = "timeline.json";
 const SUPABASE_OVERALL_PATH = "overall-schedule.json";
-const LEGACY_SUPABASE_MATH_PUBLISHER_PATH = "math-publisher-config-v3.json";
 const SUPABASE_PUBLISHER_CONFIG_PATH = "open-publisher-config-v1.json";
 const WEEKLY_MATH_MASTER_LABELS = ["고고! 상위권 수학", "AI 유형클리어", "도전!경시문제"];
 const OVERALL_SCHEDULE_PATH = "./overall-schedule.json";
@@ -468,7 +467,7 @@ async function parseOverallScheduleWorkbook(base64, fileName) {
 
 async function loadSharedWorkbook() {
   try {
-    const response = await fetch(supabasePublicUrl(), { cache: "no-store" });
+    const response = await fetch(supabaseReadUrl(), { headers: { apikey: SUPABASE_KEY }, cache: "no-store" });
     if (!response.ok) return false;
 
     const buffer = await response.arrayBuffer();
@@ -504,7 +503,7 @@ async function loadOverallSchedule() {
 
 async function loadSharedOverallSchedule() {
   try {
-    const response = await fetch(supabasePublicUrl(SUPABASE_OVERALL_PATH), { cache: "no-store" });
+    const response = await fetch(supabaseReadUrl(SUPABASE_OVERALL_PATH), { headers: { apikey: SUPABASE_KEY }, cache: "no-store" });
     if (!response.ok) return false;
     state.overallSchedule = await response.json();
     return true;
@@ -2517,12 +2516,8 @@ function readMathPublisherConfig() {
 
 async function loadSharedMathPublisherConfig() {
   try {
-    let response = await fetch(supabasePublicUrl(SUPABASE_PUBLISHER_CONFIG_PATH), { cache: "no-store" });
-    let isLegacy = false;
-    if (!response.ok) {
-      response = await fetch(supabasePublicUrl(LEGACY_SUPABASE_MATH_PUBLISHER_PATH), { cache: "no-store" });
-      isLegacy = true;
-    }
+    const response = await fetch(supabaseReadUrl(SUPABASE_PUBLISHER_CONFIG_PATH), { headers: { apikey: SUPABASE_KEY }, cache: "no-store" });
+    const isLegacy = false;
     if (!response.ok) return false;
     const value = await response.json();
     if (!value || typeof value !== "object") return false;
@@ -3058,7 +3053,7 @@ function readTimelineMarks() {
 
 async function loadSharedTimeline() {
   try {
-    const response = await fetch(supabasePublicUrl(SUPABASE_TIMELINE_PATH), { cache: "no-store" });
+    const response = await fetch(supabaseReadUrl(SUPABASE_TIMELINE_PATH), { headers: { apikey: SUPABASE_KEY }, cache: "no-store" });
     if (!response.ok) return false;
     const value = await response.json();
     state.timelineMarks = migrateTimelineMarks(value);
@@ -3248,7 +3243,6 @@ async function putWorkbookToSupabase() {
     method: "POST",
     headers: {
       apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "x-upsert": "true",
     },
@@ -3272,7 +3266,6 @@ async function putJsonToSupabase(path, value) {
     method: "POST",
     headers: {
       apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
       "Content-Type": "application/json",
       "x-upsert": "true",
     },
@@ -3295,8 +3288,8 @@ function supabaseObjectUrl(path = SUPABASE_DATA_PATH) {
   return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${path}`;
 }
 
-function supabasePublicUrl(path = SUPABASE_DATA_PATH) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${path}?v=${Date.now()}`;
+function supabaseReadUrl(path = SUPABASE_DATA_PATH) {
+  return `${SUPABASE_URL}/storage/v1/object/authenticated/${SUPABASE_BUCKET}/${path}?v=${Date.now()}`;
 }
 
 function rowsMatchingSearch() {
@@ -3613,3 +3606,4 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
