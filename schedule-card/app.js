@@ -1,16 +1,12 @@
 // ─── 상수 ───────────────────────────────────────────────
 const LS_KEY_DATA   = 'curriculum_data';
 const LS_KEY_FILES  = 'curriculum_filenames';
-const LS_KEY_APIKEY = 'openrouter_api_key';
-const LS_UPLOAD_MARKER = 'manual-upload-v3';
-const UPLOAD_AUTH_KEY = 'schedule-card-upload-auth-v1';
 const SUPABASE_URL = 'https://nifovpevsebyletmnwpz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_eXkKmspY2hVT_ofof3lrig_9zzYPzPO';
 const SUPABASE_BUCKET = 'schedule-data';
 const SUPABASE_SCHEDULE_CARD_PATH = 'schedule-card-data.json';
 const UNIT_IMAGE_QUERY = new URLSearchParams(window.location.search);
 const IS_UNIT_IMAGE_ONLY = UNIT_IMAGE_QUERY.get('view') === 'unit-image-only';
-const IS_UNIT_IMAGE_ADMIN = UNIT_IMAGE_QUERY.get('admin') === '1';
 const UNIT_IMAGE_SCHEDULE_SHEET_PREFIX = '2026 스케줄';
 const UNIT_IMAGE_RED = '신규';
 const UNIT_IMAGE_PURPLE = '재사용';
@@ -52,17 +48,7 @@ const TERM_CONFIG = {
 };
 
 // ─── API Key 로드 (config.js → localStorage 자동 저장) ──
-function loadApiKey() {
-  const configKey = (window.CONFIG && CONFIG.API_KEY && !CONFIG.API_KEY.includes('여기에'))
-    ? CONFIG.API_KEY : null;
-  if (configKey) {
-    // config.js에 유효한 키가 있으면 localStorage에 덮어씀
-    localStorage.setItem(LS_KEY_APIKEY, configKey);
-    return configKey;
-  }
-  // config.js 키가 없으면 localStorage에서 복원
-  return localStorage.getItem(LS_KEY_APIKEY) || '';
-}
+
 
 // 과목 약어 → 전체명 (약어, 전체명 모두 허용)
 const SUBJECT_MAP = {
@@ -84,8 +70,6 @@ const DAYS = ['월', '화', '수', '목', '금'];
 // ─── DOM 참조 (단일 검색) ────────────────────────────────
 const fileStatusEl   = document.getElementById('file-status');
 const fileStatusText = document.getElementById('file-status-text');
-const csvInput       = document.getElementById('csv-input');
-const clearUploadBtn = document.getElementById('clear-upload-btn');
 const termButtons    = Array.from(document.querySelectorAll('[data-term]'));
 const termSwitchNote = document.getElementById('term-switch-note');
 const uniqueidInput    = document.getElementById('uniqueid-input');
@@ -99,16 +83,10 @@ const resultContent  = document.getElementById('result-content');
 
 // ─── DOM 참조 (복수 검색) ────────────────────────────────
 const bulkGradeSelect   = document.getElementById('bulk-grade');
-const bulkImageInput    = document.getElementById('bulk-image');
-const bulkImageName     = document.getElementById('bulk-image-name');
-const bulkPreviewWrap   = document.getElementById('bulk-preview-wrap');
-const bulkPreviewImg    = document.getElementById('bulk-preview');
-const bulkAnalyzeBtn    = document.getElementById('bulk-analyze-btn');
 const bulkEditSection   = document.getElementById('bulk-edit-section');
 const bulkSearchBtn     = document.getElementById('bulk-search-btn');
 const bulkResultSection = document.getElementById('bulk-result-section');
 const weekGrid          = document.getElementById('week-grid');
-const pasteZone         = document.getElementById('paste-zone');
 const EDIT_INPUTS = {
   '월': document.getElementById('edit-mon'),
   '화': document.getElementById('edit-tue'),
@@ -121,7 +99,6 @@ const EDIT_INPUTS = {
 const unitImageEntryBtn = document.getElementById('unit-image-entry-btn');
 const unitImageBackBtn = document.getElementById('unit-image-back-btn');
 const unitImageView = document.getElementById('unit-image-view');
-const unitImageFileInput = document.getElementById('unit-image-file-input');
 const unitImageSourceSummary = document.getElementById('unit-image-source-summary');
 const unitImageStatus = document.getElementById('unit-image-status');
 const unitImageMonthTabs = document.getElementById('unit-image-month-tabs');
@@ -170,7 +147,6 @@ const termFiles = { regular: [], vacation: [] };
 (async function init() {
   if (!TERM_CONFIG[activeTerm]) activeTerm = 'regular';
   loadDataJs();
-  loadSavedUploadedData();
   await loadSharedScheduleCardData();
   updateTermSwitchUI();
   switchTerm(activeTerm, true);
@@ -183,7 +159,6 @@ const termFiles = { regular: [], vacation: [] };
 })().catch(error => {
   console.error(error);
   loadDataJs();
-  loadSavedUploadedData();
   updateTermSwitchUI();
   switchTerm(activeTerm, true);
   initUnitImageFeature();
@@ -199,67 +174,6 @@ termButtons.forEach(btn => {
     switchTerm(this.dataset.term);
   });
 });
-
-if (csvInput) {
-  csvInput.addEventListener('change', async function () {
-    const files = Array.from(this.files || []);
-    if (!files.length) return;
-    if (!confirmUploadPassword()) {
-      alert('비밀번호가 맞지 않아 업로드를 취소했습니다.');
-      this.value = '';
-      return;
-    }
-    const label = TERM_CONFIG[activeTerm].label;
-    if (rows.length > 0 && !confirm(`${label} 데이터를 업로드한 CSV(${files.length}개)로 임시 교체하시겠습니까?`)) {
-      this.value = '';
-      return;
-    }
-
-    let pending = files.length;
-    const allRows = [];
-    const fileNames = [];
-    files.forEach(file => {
-      fileNames.push(file.name);
-      const reader = new FileReader();
-      reader.onload = e => {
-        const result = Papa.parse(e.target.result, { header: true, skipEmptyLines: true });
-        allRows.push(...processRows(result.data));
-        if (--pending === 0) {
-          if (!allRows.length) {
-            alert('유효한 데이터가 없습니다.');
-            return;
-          }
-          termRows[activeTerm] = allRows;
-          termFiles[activeTerm] = fileNames;
-          rows = allRows;
-          localStorage.setItem(TERM_CONFIG[activeTerm].dataKey, JSON.stringify(allRows));
-          localStorage.setItem(TERM_CONFIG[activeTerm].filesKey, JSON.stringify(fileNames));
-          localStorage.setItem(TERM_CONFIG[activeTerm].markerKey, LS_UPLOAD_MARKER);
-          refreshDataControls(false);
-          saveSharedScheduleCardData(activeTerm, allRows, fileNames)
-            .then(() => alert('스케쥴 카드 공유 데이터가 저장되었습니다.'))
-            .catch(error => {
-              console.error(error);
-              alert(error.message ? `화면에는 반영됐지만 공유 저장 실패: ${error.message}` : '화면에는 반영됐지만 공유 저장에 실패했습니다.');
-            });
-        }
-      };
-      reader.readAsText(file, 'EUC-KR');
-    });
-    this.value = '';
-  });
-}
-
-if (clearUploadBtn) {
-  clearUploadBtn.addEventListener('click', function () {
-    const cfg = TERM_CONFIG[activeTerm];
-    localStorage.removeItem(cfg.dataKey);
-    localStorage.removeItem(cfg.filesKey);
-    localStorage.removeItem(cfg.markerKey);
-    loadDataJs();
-    switchTerm(activeTerm);
-  });
-}
 
 // ─── 탭 전환 ─────────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -418,26 +332,7 @@ function normalizeGrade(value) {
 }
 
 // ─── data.js 로드 ────────────────────────────────────────
-function loadSavedUploadedData() {
-  Object.keys(TERM_CONFIG).forEach(term => {
-    const cfg = TERM_CONFIG[term];
-    if (localStorage.getItem(cfg.markerKey) !== LS_UPLOAD_MARKER) return;
-    const savedRows = localStorage.getItem(cfg.dataKey);
-    const savedFiles = localStorage.getItem(cfg.filesKey);
-    if (!savedRows) return;
 
-    try {
-      const parsedRows = JSON.parse(savedRows);
-      if (!Array.isArray(parsedRows) || !parsedRows.length) return;
-      termRows[term] = processRows(parsedRows);
-      termFiles[term] = savedFiles ? JSON.parse(savedFiles) : ['업로드 데이터'];
-    } catch {
-      localStorage.removeItem(cfg.dataKey);
-      localStorage.removeItem(cfg.filesKey);
-      localStorage.removeItem(cfg.markerKey);
-    }
-  });
-}
 
 function loadDataJs() {
   const byTerm = window.CURRICULUM_DATA_BY_TERM;
@@ -485,53 +380,6 @@ async function getSharedScheduleCardData() {
   return response.json();
 }
 
-async function saveSharedScheduleCardData(term, nextRows, fileNames) {
-  const current = await getSharedScheduleCardData().catch(() => null) || {};
-  current[term] = {
-    rows: nextRows,
-    files: fileNames,
-    updatedAt: new Date().toISOString(),
-  };
-  await putJsonToSupabase(SUPABASE_SCHEDULE_CARD_PATH, current);
-}
-
-async function putJsonToSupabase(path, data) {
-  const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${path}`, {
-    method: 'PUT',
-    headers: {
-      apikey: SUPABASE_KEY,
-      'Content-Type': 'application/json; charset=utf-8',
-      'x-upsert': 'true',
-    },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Supabase 저장 실패: ${response.status} ${text}`);
-  }
-}
-
-function confirmUploadPassword() {
-  const todayPassword = getTodayPassword();
-  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === todayPassword) return true;
-  const input = prompt('업로드 비밀번호를 입력해 주세요.');
-  if (input === todayPassword) {
-    sessionStorage.setItem(UPLOAD_AUTH_KEY, todayPassword);
-    return true;
-  }
-  return false;
-}
-
-function getTodayPassword() {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date());
-  const month = parts.find(part => part.type === 'month')?.value || '01';
-  const day = parts.find(part => part.type === 'day')?.value || '01';
-  return `${month}${day}`;
-}
 
 // ─── 단원별 이미지 차시목록 ─────────────────────────────
 function initUnitImageFeature() {
@@ -581,16 +429,6 @@ function initUnitImageFeature() {
       button.classList.remove('copied');
     }, 1200);
   });
-  unitImageFileInput?.addEventListener('change', async event => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    if (!confirmUploadPassword()) {
-      alert('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    await uploadUnitImageSchedule(file);
-  });
 }
 
 function setUnitImageMode(enabled) {
@@ -598,7 +436,7 @@ function setUnitImageMode(enabled) {
   unitImageEntryBtn?.classList.toggle('active', enabled);
   if (unitImageView) unitImageView.hidden = !enabled;
   const unitImageHeader = document.querySelector('.unit-image-header');
-  if (unitImageHeader) unitImageHeader.hidden = !(enabled && IS_UNIT_IMAGE_ADMIN);
+  if (unitImageHeader) unitImageHeader.hidden = !enabled || IS_UNIT_IMAGE_ONLY;
   const fileSection = document.getElementById('file-section');
   const tabNav = document.querySelector('.tab-nav');
   if (fileSection) fileSection.hidden = enabled;
@@ -629,13 +467,9 @@ function supabaseHeaders(contentType = false) {
   return headers;
 }
 
-async function supabaseRest(path, options = {}) {
+async function supabaseRest(path) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...options,
-    headers: {
-      ...supabaseHeaders(Boolean(options.body)),
-      ...(options.headers || {}),
-    },
+    headers: supabaseHeaders(),
     cache: 'no-store',
   });
   if (!response.ok) {
@@ -817,56 +651,6 @@ function renderUnitImageVersion(version) {
   ].filter(Boolean).join(' · ');
 }
 
-async function uploadUnitImageSchedule(file) {
-  if (!window.ExcelJS) {
-    setUnitImageStatus('엑셀 처리 기능을 불러오지 못했습니다. 화면을 새로고침해 주세요.', true);
-    return;
-  }
-  setUnitImageStatus('엑셀의 날짜와 신규/재사용 표시를 읽고 있습니다.');
-  try {
-    const bytes = await file.arrayBuffer();
-    const hash = await sha256Hex(bytes);
-    const parsed = await parseUnitImageWorkbook(bytes);
-    if (!parsed.sources.length) throw new Error('빨강 또는 보라색으로 표시된 일정이 없습니다.');
-
-    setUnitImageStatus(`일정 ${parsed.sources.length.toLocaleString('ko-KR')}건을 최신 차시 데이터와 연결하고 있습니다.`);
-    await loadSharedScheduleCardData();
-    const matches = buildUnitImageMatches(parsed.sources);
-    const contentAssignment = assignUnitImageNumbers(matches, unitImageActiveDetails);
-    const unmatchedSourceCount = new Set(matches
-      .filter(item => item.match_status !== 'matched')
-      .map(item => `${item.source_sheet}|${item.source_cell}`)).size;
-
-    setUnitImageStatus('Supabase에 저장하고 있습니다.');
-    await supabaseRest('rpc/save_unit_image_schedule', {
-      method: 'POST',
-      body: JSON.stringify({
-        p_password: getTodayPassword(),
-        p_source_file_name: file.name,
-        p_source_file_hash: hash,
-        p_source_file_size: file.size,
-        p_rows: parsed.sources,
-        p_matches: matches,
-        p_metadata: {
-          sheetName: parsed.sheetName,
-          redCount: parsed.redCount,
-          purpleCount: parsed.purpleCount,
-          ignoredMarkedCellCount: parsed.ignoredMarkedCellCount,
-          unmatchedSourceCount,
-          contentVariantReviewCount: contentAssignment.warnings.length,
-          contentVariantReviews: contentAssignment.warnings,
-          parsedAt: new Date().toISOString(),
-        },
-      }),
-    });
-    await loadUnitImageScheduleFromSupabase();
-    alert(`저장 완료\n신규 ${parsed.redCount}건 · 재사용 ${parsed.purpleCount}건\n매칭 확인 필요 ${unmatchedSourceCount}건${contentAssignment.warnings.length ? `\n콘텐츠 묶음 확인 필요 ${contentAssignment.warnings.length}건` : ''}${parsed.ignoredMarkedCellCount ? `\n일정 형식이 아닌 색상 셀 제외 ${parsed.ignoredMarkedCellCount}건` : ''}`);
-  } catch (error) {
-    console.error(error);
-    setUnitImageStatus(`저장 실패: ${error.message}`, true);
-    alert(`단원별 이미지 일정 저장에 실패했습니다.\n${error.message}`);
-  }
-}
 
 async function sha256Hex(buffer) {
   const digest = await crypto.subtle.digest('SHA-256', buffer.slice(0));
@@ -2570,7 +2354,7 @@ function refreshDataControls(isBundle = false) {
   clearRow2();
   clearRow3();
   resultSection.hidden = true;
-  bulkEditSection.hidden = true;
+  bulkEditSection.hidden = false;
   bulkResultSection.hidden = true;
   updateAnalyzeBtn();
 }
@@ -2698,50 +2482,9 @@ if (window.MutationObserver && document.body) {
 // ─── 복수 검색 ───────────────────────────────────────────
 // ════════════════════════════════════════════════════════
 
-// 현재 이미지 File 객체 (파일선택 또는 붙여넣기)
-let currentImageFile = null;
-
-function setBulkImage(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  currentImageFile = file;
-  bulkImageName.textContent = file.name || '붙여넣은 이미지';
-  const url = URL.createObjectURL(file);
-  bulkPreviewImg.src = url;
-  bulkPreviewWrap.hidden = false;
-  pasteZone.classList.add('paste-zone--has-image');
-  pasteZone.textContent = '✓ 이미지 준비됨  (다시 붙여넣으면 교체됩니다)';
-  updateBulkBtn();
-}
-
-function updateBulkBtn() {
-  bulkAnalyzeBtn.disabled = !(bulkGradeSelect.value && currentImageFile);
-}
-
-bulkGradeSelect.addEventListener('change', updateBulkBtn);
-
-// 파일 선택
-bulkImageInput.addEventListener('change', function () {
-  if (!this.files.length) return;
-  setBulkImage(this.files[0]);
-  this.value = '';
-});
-
-// 붙여넣기 (paste zone 클릭 포커스 후 Ctrl+V 또는 전역 paste)
-pasteZone.addEventListener('click', () => pasteZone.focus());
-
-function handlePaste(e) {
-  if (!document.getElementById('tab-bulk') || document.getElementById('tab-bulk').hidden) return;
-  const items = Array.from(e.clipboardData?.items || []);
-  const imgItem = items.find(item => item.type.startsWith('image/'));
-  if (!imgItem) return;
-  e.preventDefault();
-  setBulkImage(imgItem.getAsFile());
-}
-
-pasteZone.addEventListener('paste', handlePaste);
-document.addEventListener('paste', handlePaste);
-
-// 검색하기 (편집 후)
+// 조회 전용: 입력한 검색 조건만 사용합니다.
+let bulkMismatches = {};
+// 입력한 요일별 조건 검색
 bulkSearchBtn.addEventListener('click', function () {
   const grade = normalizeGrade(bulkGradeSelect.value);
   if (!grade) { alert('학년을 선택해 주세요.'); return; }
@@ -2755,117 +2498,6 @@ bulkSearchBtn.addEventListener('click', function () {
   bulkResultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
-bulkAnalyzeBtn.addEventListener('click', async function () {
-  const grade  = normalizeGrade(bulkGradeSelect.value);
-  const apiKey = loadApiKey();
-  if (!grade || !currentImageFile) return;
-  if (!apiKey) {
-    bulkImageName.textContent = '이미지 준비됨 · 자동 분석 키가 없어 추출 결과를 직접 입력해 주세요.';
-    bulkEditSection.hidden = false;
-    bulkResultSection.hidden = true;
-    requestFrameResize();
-    return;
-  }
-
-  this.textContent = '분석 중...';
-  this.disabled = true;
-  bulkResultSection.hidden = true;
-
-  try {
-    const { base64, mediaType } = await fileToBase64(currentImageFile);
-    const grade = normalizeGrade(bulkGradeSelect.value);
-    const schedule = await analyzeImageWithClaude(base64, mediaType, apiKey);
-
-    // 추출 결과를 편집 필드에 채우고 크로스체크
-    DAYS.forEach(day => {
-      const val = ((schedule[day] || []).filter(t => t.trim()))[0] || '';
-      EDIT_INPUTS[day].value = val;
-      validateEditInput(day, val, grade);
-    });
-
-    bulkEditSection.hidden = false;
-    bulkResultSection.hidden = true;
-    bulkEditSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (err) {
-    console.error(err);
-    bulkImageName.textContent = `자동 분석 실패 · 추출 결과를 직접 입력해 주세요. (${err.message})`;
-    bulkEditSection.hidden = false;
-    bulkResultSection.hidden = true;
-    requestFrameResize();
-  } finally {
-    this.textContent = '분석하기';
-    updateBulkBtn();
-  }
-});
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target.result;
-      const [header, data] = dataUrl.split(',');
-      const mediaType = header.match(/:(.*?);/)[1];
-      resolve({ base64: data, mediaType });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// 단일 API 호출 (내부용) — 열=요일 고정 프롬프트
-async function callAnalyzeApi(base64, mediaType, apiKey) {
-  const prompt = `이 이미지는 초등학교 주간 시간표입니다.
-
-규칙:
-1. 수업 내용(한글+숫자)이 있는 세로 열 5개를 찾으세요. 왼쪽의 주차/날짜 레이블 열과 오른쪽의 날짜 숫자 열은 제외합니다. 나머지 5개 열을 왼쪽부터 월, 화, 수, 목, 금으로 매핑합니다.
-2. 각 열에서 배경이 선명한 빨간색인 셀을 찾으세요. 노랑·주황·살구·분홍·보라·하늘·초록·회색·흰색은 제외합니다. 처음 발견한 빨간 셀과 동일한 색조의 셀을 전 열에서 빠짐없이 찾으세요.
-3. 열당 빨간 셀이 여러 개면 가장 위의 것 1개만 선택합니다.
-4. 선택된 셀의 텍스트를 있는 그대로 읽습니다 (예: "국4-3", "영5-1", "바2-단풍", "사1-단평").
-
-다른 텍스트 없이 반드시 아래 JSON 형식으로만 응답하세요:
-{"월":["텍스트"],"화":["텍스트"],"수":["텍스트"],"목":["텍스트"],"금":["텍스트"]}
-빨간 셀이 없는 요일은 빈 배열 []로 표시하세요.`;
-
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'openrouter/auto',
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image_url', image_url: { url: `data:${mediaType};base64,${base64}` } },
-          { type: 'text', text: prompt }
-        ]
-      }],
-      temperature: 0,
-      max_tokens: 2048
-    })
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API 오류 (${res.status})`);
-  }
-
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content?.trim() || '';
-  // 그리디 매칭으로 가장 큰 JSON 블록 추출 (사고 과정 이후 최종 JSON)
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('응답을 파싱할 수 없습니다:\n' + text);
-  return JSON.parse(jsonMatch[0]);
-}
-
-// ─── 이미지 분석 (단일 호출) ─────────────────────────────
-let bulkMismatches = {};
-
-async function analyzeImageWithClaude(base64, mediaType, apiKey) {
-  bulkMismatches = {};
-  return await callAnalyzeApi(base64, mediaType, apiKey);
-}
 
 // 셀 텍스트 파싱
 // - 1~2학년: 과목명 치환 + 과목차시 = 전체 텍스트
@@ -3141,5 +2773,6 @@ function copyBulkDayIdsExcel(day, btn) {
   btn.classList.add('copied');
   setTimeout(() => { btn.textContent = '엑셀 복사'; btn.classList.remove('copied'); }, 2000);
 }
+
 
 

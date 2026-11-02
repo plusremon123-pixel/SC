@@ -12,6 +12,7 @@
       <header class="topbar">
         <div>
           <h1>5,6개정 실무 관리 툴</h1>
+          <p>조회 전용</p>
         </div>
       </header>
 
@@ -26,10 +27,6 @@
 
       <div id="lessonView">
         <section class="view-action-bar lesson-action-bar">
-          <label class="file-button">
-            차시 엑셀 업로드/교체
-            <input id="fileInput" type="file" accept=".xlsx,.xls" />
-          </label>
           <button id="downloadButton" type="button" class="primary">날짜별 엑셀 다운로드</button>
         </section>
 
@@ -53,9 +50,9 @@
           <div class="timeline-head">
             <div id="timelineRange" class="timeline-range"></div>
             <div id="timelineSummary" class="timeline-summary"></div>
-            <div class="timeline-legend" aria-label="체크 상태 선택">
-              <button type="button" class="timeline-mode qa active" data-timeline-mode="qa">검증계</button>
-              <button type="button" class="timeline-mode stage" data-timeline-mode="stage">스테이징</button>
+            <div class="timeline-legend" aria-label="체크 상태 범례">
+              <span class="timeline-mode qa">검증계</span>
+              <span class="timeline-mode stage">스테이징</span>
               <button id="qaCopyButton" type="button" class="timeline-mode copy">QA 복사</button>
             </div>
           </div>
@@ -153,17 +150,13 @@
           <iframe
             id="scheduleCardFrame"
             title="스케쥴 카드"
-            src="./schedule-card/index.html?v=20261102-company-supabase"
+            src="./schedule-card/index.html?v=20261102-public-read-only"
           ></iframe>
         </section>
       </div>
 
       <div id="overallView" hidden>
         <section class="view-action-bar">
-          <label class="file-button">
-            콘텐츠 일정 업로드/교체
-            <input id="overallFileInput" type="file" accept=".xlsx,.xls" />
-          </label>
         </section>
         <section class="overall-panel">
           <div class="scroll-area overall-scroll">
@@ -180,7 +173,8 @@
     <div id="toast" class="toast" hidden></div>
 
     <script src="./vendor/exceljs.min.js?v=20260703-39"></script>
-    <script src="./app.js?v=20261102-company-supabase"></script>
+    <script src="./app.js?v=20261102-public-read-only"></script>
   </body>
 </html>
+
 

@@ -4,8 +4,6 @@ const TAB_ORDER_KEY = "schedule-card-tab-order-v1";
 const TIMELINE_KEY = "schedule-card-release-timeline-v1";
 const LEGACY_MATH_PUBLISHER_CONFIG_KEY = "schedule-card-math-publisher-config-v3";
 const PUBLISHER_CONFIG_KEY = "schedule-card-open-publisher-config-v1";
-const UPLOAD_AUTH_KEY = "schedule-card-upload-auth-v1";
-const PUBLISHER_AUTH_KEY = "schedule-card-publisher-auth-v1";
 const ALL_DATES = "__all_dates__";
 const ALL_SUBJECTS = "__all_subjects__";
 const ALL_CATEGORIES = "__all_categories__";
@@ -97,8 +95,6 @@ const els = {
   monthlyOpenViewButton: document.querySelector("#monthlyOpenViewButton"),
   scheduleCardViewButton: document.querySelector("#scheduleCardViewButton"),
   overallViewButton: document.querySelector("#overallViewButton"),
-  fileInput: document.querySelector("#fileInput"),
-  overallFileInput: document.querySelector("#overallFileInput"),
   downloadButton: document.querySelector("#downloadButton"),
   searchInput: document.querySelector("#searchInput"),
   dateTabs: document.querySelector("#dateTabs"),
@@ -107,7 +103,6 @@ const els = {
   timelineMonths: document.querySelector("#timelineMonths"),
   timelineRange: document.querySelector("#timelineRange"),
   timelineSummary: document.querySelector("#timelineSummary"),
-  timelineModeButtons: document.querySelectorAll("[data-timeline-mode]"),
   qaCopyButton: document.querySelector("#qaCopyButton"),
   primaryTabs: document.querySelector("#primaryTabs"),
   secondaryTabs: document.querySelector("#secondaryTabs"),
@@ -208,74 +203,6 @@ function bindEvents() {
     render();
   });
 
-  els.fileInput.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!confirmUploadPassword()) {
-      showToast("비밀번호가 맞지 않아 업로드를 취소했습니다.");
-      event.target.value = "";
-      return;
-    }
-    let base64;
-    const previousOpenDates = currentOpenDates();
-    const previousTimelineMarks = clonePlainObject(state.timelineMarks || {});
-    try {
-      base64 = await fileToBase64(file);
-      await loadWorkbook(base64);
-    } catch (error) {
-      console.error(error);
-      showToast("업로드한 엑셀을 읽지 못했습니다.");
-      event.target.value = "";
-      return;
-    }
-
-    state.workbookBase64 = base64;
-    localStorage.setItem(STORAGE_KEY, base64);
-    localStorage.setItem(SOURCE_KEY, `현재 데이터: ${file.name}`);
-    state.currentView = "lesson";
-    state.sourceName = `현재 데이터: ${file.name}`;
-    state.currentFileName = file.name;
-    const timelineMerge = mergeTimelineMarksAfterUpload(previousTimelineMarks, previousOpenDates);
-    state.timelineMarks = timelineMerge.marks;
-    localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
-    showToast("현재 데이터가 교체 저장되었습니다. Supabase 저장을 진행합니다.");
-    notifyOpenDateChanges(timelineMerge.addedDates, timelineMerge.removedDates, previousOpenDates.length > 0);
-    render();
-
-    try {
-      await saveCurrentWorkbookToSupabase();
-      await saveTimelineToSupabase("체크 일정을 저장했습니다.");
-    } catch (error) {
-      console.error(error);
-      showToast(error.message ? `화면에는 반영됐지만 공유 저장 실패: ${error.message}` : "화면에는 반영됐지만 공유 저장에 실패했습니다.");
-    } finally {
-      event.target.value = "";
-    }
-  });
-
-  els.overallFileInput.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!confirmUploadPassword()) {
-      showToast("비밀번호가 맞지 않아 전체 일정 업로드를 취소했습니다.");
-      event.target.value = "";
-      return;
-    }
-
-    try {
-      const base64 = await fileToBase64(file);
-      state.overallSchedule = await parseOverallScheduleWorkbook(base64, file.name);
-      state.currentView = "overall";
-      render();
-      await saveOverallScheduleToSupabase();
-    } catch (error) {
-      console.error(error);
-      showToast(error.message || "전체 일정 엑셀을 저장하지 못했습니다.");
-    } finally {
-      event.target.value = "";
-    }
-  });
-
   els.downloadButton.addEventListener("click", () => {
     downloadFilteredWorkbook().catch((error) => {
       console.error(error);
@@ -303,13 +230,6 @@ function bindEvents() {
       state.selectedTableGroup = "";
       state.selectedTableGrade = "";
       render();
-    });
-  });
-
-  els.timelineModeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      state.timelineMode = button.dataset.timelineMode;
-      renderTimelineMode();
     });
   });
 
@@ -344,38 +264,6 @@ function bindEvents() {
   });
 }
 
-function confirmUploadPassword() {
-  const todayPassword = getTodayPassword();
-  if (sessionStorage.getItem(UPLOAD_AUTH_KEY) === todayPassword) return true;
-
-  const password = window.prompt("수정 비밀번호를 입력해 주세요.");
-  if (password !== todayPassword) return false;
-
-  sessionStorage.setItem(UPLOAD_AUTH_KEY, todayPassword);
-  return true;
-}
-
-function confirmPublisherPassword() {
-  const todayPassword = getTodayPassword();
-  if (sessionStorage.getItem(PUBLISHER_AUTH_KEY) === todayPassword) return true;
-
-  const password = window.prompt("출판사 설정 수정 비밀번호를 입력해 주세요.");
-  if (password !== todayPassword) return false;
-
-  sessionStorage.setItem(PUBLISHER_AUTH_KEY, todayPassword);
-  return true;
-}
-
-function getTodayPassword() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Seoul",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const month = parts.find((part) => part.type === "month")?.value || "01";
-  const day = parts.find((part) => part.type === "day")?.value || "01";
-  return `${month}${day}`;
-}
 
 async function loadWorkbook(base64) {
   const workbook = new ExcelJS.Workbook();
@@ -665,11 +553,6 @@ function renderView() {
   els.overallViewButton.classList.toggle("active", isOverall);
 }
 
-function renderTimelineMode() {
-  els.timelineModeButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.timelineMode === state.timelineMode);
-  });
-}
 
 function isCategoryFirst() {
   return state.tabOrder !== "subject-first";
@@ -715,7 +598,6 @@ function renderDateTabs() {
 }
 
 function renderReleaseTimeline() {
-  renderTimelineMode();
   els.releaseTimeline.innerHTML = "";
   if (!state.selectedDate || state.selectedDate === ALL_DATES) {
     els.releaseTimelineSection.hidden = true;
@@ -738,36 +620,10 @@ function renderReleaseTimeline() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `timeline-cell${mark ? ` ${mark}` : ""}${blockedReason ? " disabled" : ""}`;
-    button.disabled = Boolean(blockedReason);
+    button.disabled = true;
     button.dataset.date = date;
     button.title = `${formatDateWithDay(date)} ${blockedReason || markLabel(mark)}`;
     button.innerHTML = `<span class="day">${Number(date.slice(8, 10))}일</span>`;
-    button.addEventListener("click", async () => {
-      if (isOpenDate) {
-        showToast("오픈일은 마지막 칸에 자동 표시됩니다.");
-        return;
-      }
-      if (!confirmUploadPassword()) {
-        showToast("비밀번호가 맞지 않아 체크 수정을 취소했습니다.");
-        return;
-      }
-      if (state.timelineMode === "clear") {
-        delete marks[date];
-      } else if (marks[date] === state.timelineMode) {
-        delete marks[date];
-      } else {
-        marks[date] = state.timelineMode;
-      }
-      state.timelineMarks[state.selectedDate] = normalizeTimelineMarksForDate(state.selectedDate, marks);
-      localStorage.setItem(TIMELINE_KEY, JSON.stringify(state.timelineMarks));
-      renderReleaseTimeline();
-      try {
-        await saveTimelineToSupabase();
-      } catch (error) {
-        console.error(error);
-        showToast(error.message || "체크 설정 저장 중 오류가 발생했습니다.");
-      }
-    });
     fragment.appendChild(button);
   });
   els.releaseTimeline.appendChild(fragment);
@@ -2322,24 +2178,11 @@ function publisherLane(grade, lane, title) {
   list.className = "publisher-chip-list";
   list.dataset.grade = grade;
   list.dataset.lane = lane;
-  list.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    list.classList.add("drag-over");
-  });
-  list.addEventListener("dragleave", () => list.classList.remove("drag-over"));
-  list.addEventListener("drop", (event) => {
-    event.preventDefault();
-    list.classList.remove("drag-over");
-    const payload = parseDragPayload(event.dataTransfer.getData("text/plain"));
-    if (!payload || payload.grade !== grade || payload.subject !== subject || payload.date !== date) return;
-    moveMathPublisher(grade, payload.publisher, lane, subject, date);
-  });
-
   const publishers = publishersForLane(config, lane);
   if (!publishers.length) {
     const empty = document.createElement("span");
     empty.className = "publisher-empty";
-    empty.textContent = lane === "disabled" ? "해제 없음" : "여기로 드래그";
+    empty.textContent = lane === "disabled" ? "해제 없음" : "설정 없음";
     list.appendChild(empty);
   }
 
@@ -2357,13 +2200,7 @@ function publisherChip(grade, publisher, lane) {
   const date = state.selectedMathAnalysisDate;
   const chip = document.createElement("div");
   chip.className = `publisher-chip publisher-chip-${lane}`;
-  chip.draggable = true;
-  chip.setAttribute("role", "button");
-  chip.setAttribute("tabindex", "0");
-  chip.addEventListener("dragstart", (event) => {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", JSON.stringify({ subject, date, grade, publisher, lane }));
-  });
+  chip.draggable = false;
 
   if (lane === "sub" || lane === "disabled") {
     const isDisabled = config.disabledSub.includes(publisher);
@@ -2371,10 +2208,7 @@ function publisherChip(grade, publisher, lane) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = !isDisabled;
-    checkbox.addEventListener("click", (event) => event.stopPropagation());
-    checkbox.addEventListener("change", () => {
-      toggleSubPublisher(grade, publisher, checkbox.checked, subject, date);
-    });
+    checkbox.disabled = true;
     chip.appendChild(checkbox);
   }
   const label = document.createElement("span");
@@ -2392,55 +2226,6 @@ function publishersForLane(config, lane) {
   return (config.sub || []).filter((publisher) => !(config.disabledSub || []).includes(publisher));
 }
 
-function parseDragPayload(value) {
-  try {
-    const payload = JSON.parse(value);
-    if (!payload?.subject || !payload?.date || !payload?.grade || !payload?.publisher) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-function moveMathPublisher(grade, publisher, targetLane, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
-  if (!confirmPublisherPassword()) {
-    showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
-    return;
-  }
-
-  const config = ensureGradePublisherConfig(grade, subject, date);
-  config.main = config.main.filter((item) => item !== publisher);
-  config.sub = config.sub.filter((item) => item !== publisher);
-  config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
-
-  if (targetLane === "main") {
-    config.main = unique([...config.main, publisher]).sort(localeSort);
-  } else {
-    config.sub = unique([...config.sub, publisher]).sort(localeSort);
-    if (targetLane === "disabled") {
-      config.disabledSub = unique([...config.disabledSub, publisher]).sort(localeSort);
-    }
-  }
-  saveMathPublisherConfig({ shared: true });
-  renderMathAnalysis();
-}
-
-function toggleSubPublisher(grade, publisher, enabled, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
-  if (!confirmPublisherPassword()) {
-    showToast("비밀번호가 맞지 않아 출판사 설정 변경을 취소했습니다.");
-    renderMathAnalysis();
-    return;
-  }
-
-  const config = ensureGradePublisherConfig(grade, subject, date);
-  if (enabled) {
-    config.disabledSub = config.disabledSub.filter((item) => item !== publisher);
-  } else {
-    config.disabledSub = unique([...config.disabledSub, publisher]).sort(localeSort);
-  }
-  saveMathPublisherConfig({ shared: true });
-  renderMathAnalysis();
-}
 
 function mathPublishersByGrade(rows) {
   return rows.reduce((acc, row) => {
@@ -2490,7 +2275,6 @@ function ensureMathPublisherConfig(publishersByGrade, subject = currentPublisher
   Object.keys(dateConfig).forEach((grade) => {
     if (!publishersByGrade[grade]) delete dateConfig[grade];
   });
-  saveMathPublisherConfig();
 }
 
 function ensureGradePublisherConfig(grade, subject = currentPublisherSubject(), date = state.selectedMathAnalysisDate) {
@@ -2599,21 +2383,6 @@ function currentPublisherSubject() {
     : "수학";
 }
 
-function saveMathPublisherConfig(options = {}) {
-  localStorage.setItem(PUBLISHER_CONFIG_KEY, JSON.stringify(state.mathPublisherConfig));
-  if (options.shared) {
-    saveMathPublisherConfigToSupabase().catch((error) => {
-      console.error(error);
-      showToast(error.message || "출판사 설정 저장 중 오류가 발생했습니다.");
-    });
-  }
-}
-
-async function saveMathPublisherConfigToSupabase() {
-  const result = await putJsonToSupabase(SUPABASE_PUBLISHER_CONFIG_PATH, mathPublisherConfigPayload());
-  if (!result.ok) throw new Error(result.message);
-  showToast("출판사 설정을 공유 저장했습니다.");
-}
 
 function mathSchoolworkRows() {
   const subject = currentPublisherSubject();
@@ -3065,17 +2834,6 @@ async function loadSharedTimeline() {
   }
 }
 
-async function saveTimelineToSupabase(message = "체크 설정을 저장했습니다.") {
-  const result = await putJsonToSupabase(SUPABASE_TIMELINE_PATH, sharedTimelinePayload());
-  if (!result.ok) throw new Error(result.message);
-  showToast(message);
-}
-
-async function saveOverallScheduleToSupabase() {
-  const result = await putJsonToSupabase(SUPABASE_OVERALL_PATH, state.overallSchedule);
-  if (!result.ok) throw new Error(result.message);
-  showToast("전체 일정을 저장했습니다.");
-}
 
 function migrateTimelineMarks(value) {
   const entries = Object.entries(value || {}).filter(([key]) => !isSharedMetaKey(key));
@@ -3222,71 +2980,6 @@ function markLabel(mark) {
   return "";
 }
 
-async function saveCurrentWorkbookToSupabase() {
-  if (!state.workbookBase64) {
-    showToast("먼저 엑셀을 업로드해 주세요.");
-    return;
-  }
-
-  const result = await putWorkbookToSupabase();
-  if (!result.ok) throw new Error(result.message);
-
-  state.sourceName = `공유 데이터: ${state.currentFileName || "current.xlsx"}`;
-  localStorage.setItem(SOURCE_KEY, state.sourceName);
-  showToast("Supabase에 공유 엑셀을 저장했습니다. 다른 사용자에게도 반영됩니다.");
-  render();
-}
-
-async function putWorkbookToSupabase() {
-  const bytes = base64ToArrayBuffer(state.workbookBase64);
-  const saveResponse = await fetch(supabaseObjectUrl(), {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "x-upsert": "true",
-    },
-    body: bytes,
-  });
-
-  if (!saveResponse.ok) {
-    const text = await saveResponse.text();
-    return {
-      ok: false,
-      status: saveResponse.status,
-      message: `Supabase 저장 실패: ${saveResponse.status} ${text}`,
-    };
-  }
-
-  return { ok: true, status: saveResponse.status };
-}
-
-async function putJsonToSupabase(path, value) {
-  const saveResponse = await fetch(supabaseObjectUrl(path), {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_KEY,
-      "Content-Type": "application/json",
-      "x-upsert": "true",
-    },
-    body: JSON.stringify(value),
-  });
-
-  if (!saveResponse.ok) {
-    const text = await saveResponse.text();
-    return {
-      ok: false,
-      status: saveResponse.status,
-      message: `Supabase 체크 설정 저장 실패: ${saveResponse.status} ${text}`,
-    };
-  }
-
-  return { ok: true, status: saveResponse.status };
-}
-
-function supabaseObjectUrl(path = SUPABASE_DATA_PATH) {
-  return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${path}`;
-}
 
 function supabaseReadUrl(path = SUPABASE_DATA_PATH) {
   return `${SUPABASE_URL}/storage/v1/object/authenticated/${SUPABASE_BUCKET}/${path}?v=${Date.now()}`;
@@ -3606,4 +3299,5 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
 
